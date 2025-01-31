@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: solace-broker-api
+
+#logging:
+#  level:
+#    org.springframework: DEBUG
+#    org.springdoc: DEBUG
+
+server:
+  port: 8081
+  forward-headers-strategy: framework
+
+springdoc:
+  version: '@springdoc.version@'
+  api-docs:
+    version: openapi_3_1
+    path: /api-docs
+  swagger-ui:
+    display-request-duration: true
+    groups-order: desc
+    operations-sorter: method
+    disable-swagger-default-url: true
+    use-root-path: true
+  show-actuator: true
+
+management:
+  endpoints:
+    web:
+      base-path: /rest/actuator
+      exposure:
+        include: '*'

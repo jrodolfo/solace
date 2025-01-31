@@ -1,0 +1,43 @@
+
+							Prompt:
+
+I need to create a web single page application using React and:
+
+	- Vite
+	- Axios (for the API calls)
+	- TypeScript
+	- Bootstrap (an open-source CSS framework)
+	
+The app sends POST request to an API that talks to the Solace Cloud PubSub+.
+
+This app should have a form with 5 fields:
+
+- User Name
+- Password
+- Host
+- Event VPN Name
+- Topic Name
+- Message
+
+The POST request will be sent to this endpoint:
+
+localhost:8081/api/v1/messages/message/
+
+with this message as part of the body of the request:
+
+{
+	"messageId": "001",
+	"destination": "solace/java/direct/system-01",
+	"deliveryMode": "PERSISTENT",
+	"priority": 3,
+	"properties": {
+		"property01": "value01",
+		"property02": "value02"
+		},
+	"payload": {
+			"type": "binary",
+			"content": "01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001"
+		}
+}
+
+Please help me creating this code.

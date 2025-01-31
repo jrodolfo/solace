@@ -1,0 +1,76 @@
+
+	Installing Solace PubSub+ software locally
+
+STEPS:
+
+01) Install Git (Mac) or Git Bash (Windows)
+
+02) Install Docker
+
+03) Start Docker
+
+04) cd C:\dev\workspace\solace\labs
+
+05) Clone this git repository:
+
+    git clone https://github.com/SolaceLabs/solace-single-docker-compose.git
+	
+06) cd solace-single-docker-compose/template
+
+07) Run this command:
+
+    docker-compose -f PubSubStandard_singleNode.yml up -d
+	
+08) Check http://localhost:8080/ using admin, admin as credentials.
+
+09) Back to the console, to access the "Solace CLI management", enter the
+following docker exec command:
+
+    docker exec -it pubSubStandardSingleNode /usr/sw/loads/currentload/bin/cli -A
+
+10) Enter the following commands to enter configuration mode:
+
+    solace> enable
+    solace# config
+    solace(configure)#
+
+11) Issue configuration or monitoring commands. For a list of commands currently
+supported on the message broker, refer to Software Message Broker CLI Commands at
+
+	https://docs.solace.com/Admin-Ref/CLI-Reference/VMR_CLI_Commands.html
+
+Reference:
+
+The PubSub+ software event broker is available as a container image:
+https://docs.solace.com/Software-Broker/SW-Broker-Set-Up/Containers/Set-Up-Container-Image.htm
+
+Troubleshooting:
+
+docker ps -a
+docker-compose -f PubSubStandard_singleNode.yml logs
+
+================================================================================
+================================================================================
+================================================================================
+
+Download Docker images for Solace
+
+solace/solace-pubsub-standard
+https://hub.docker.com/r/solace/solace-pubsub-standard
+
+Run the command (according to the video):
+
+docker run -d -p 8080:8080 -p 55555:55555 -p 80:80 --shm-size=2g --env username_admin_globalaccesslevel=admin --env username_admin_password=admin --name=solacePSPlusStandard solace/solace-pubsub-standard
+
+	Ref: Getting Started with Solace PubSub+ for Docker
+	https://www.youtube.com/watch?v=s2n5V-IXCaM&list=PLY1Ks8JEfJR7VciBYCjglVak2gJj3al32&index=25
+	At 3 min 30 seconds
+
+OR
+
+Run the command (from https://solace.com/products/event-broker/software/getting-started/):
+
+docker run -d -p 8080:8080 -p 55555:55555 -p 8008:8008 -p 1883:1883 -p 8000:8000 -p 5672:5672 -p 9000:9000 -p 2222:2222 --shm-size=2g --env username_admin_globalaccesslevel=admin --env username_admin_password=admin --name=solace solace/solace-pubsub-standard
+
+
+

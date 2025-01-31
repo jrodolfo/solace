@@ -1,0 +1,123 @@
+================================================================================	
+
+	How to load and run Solace Java Code Examples
+
+================================================================================	
+
+There are 4 ways to use Java and Solace:
+
+	i)   Using Java Message Service (JMS)
+	ii)  Using PubSub+ Messaging API for JCSMP
+	iii) Using PubSub+ Messaging API for Java (version 1.7) <===== BEST OPTION!
+	iv)  Using SDKPerf
+
+================================================================================	
+
+	i) Using Java Message Service (JMS)
+
+01) Go to https://solace.com/downloads/
+
+02) Download JMS files, specially sol-jms-10.25.1.zip
+
+03) Unzipping the file will generate the folder "sol-jms-10.25.1".
+    Copy this folder into the folder: C:\dev\workspace\solace\sandbox
+
+04) Install Apache Ant from https://ant.apache.org/bindownload.cgi
+
+05) If you are using Windows, define the variable: 
+
+	ANT_HOME
+	C:\dev\program\ant-1.10.15
+
+	And add this to the Path environment variable:
+	%ANT_HOME%\bin;
+
+06) Using your IDE (I use IntelliJ), load the project from:
+
+	C:\dev\workspace\solace\sandbox\sol-jms-10.25.1\
+
+07) Using the command line interface, from the folder sol-jms-10.25.1,
+    type "cd samples".
+
+08) Type "ant build".
+
+09) Type "cd bin".
+
+10) Type ".\run.bat intro.SolJMSHelloWorldPub"
+	You should get this reply:
+
+	Copyright 2004-2024 Solace Corporation. All rights reserved.
+	Usage: SolJMSHelloWorldPub <jndi-provider-url> <vpn> <client-username>
+	<connection-factory> <jndi-topic>
+
+Next Steps:
+
+	Step 1) Learn how to define the variables jndi-provider-url, vpn, client-username,
+	connection-factory, jndi-topic considering that I have a Solace PubSub+
+	running on my local machine inside a Docker container.
+
+	Step 2) Test the other classes and understand the code.
+
+	Step 3) Build a Spring Boot project using the knowledge from Step 2.
+
+
+================================================================================
+
+	ii)  Using PubSub+ Messaging API for JCSMP
+
+
+================================================================================
+
+	iii) Using PubSub+ Messaging API for Java (version 1.7)
+
+Step 1) Watch this video:
+
+	Solace Connect | PubSub+ Messaging API For Java
+	https://www.youtube.com/watch?v=S9bjuT6vcNQ&t=232s
+
+Step 2) Clone this repository:
+
+	git clone https://github.com/SolaceSamples/solace-samples-java
+
+Step 3) Start with this Java code:
+	https://github.com/SolaceSamples/solace-samples-java/blob/main/src/main/java/com/solace/samples/java/snippets/HowToPublishDirectMessage.java
+
+Step 4) Further info:
+
+	https://docs.solace.com/API/Messaging-APIs/Java-API/java-api-home.htm
+	
+Step 5) Maven/Gradle artifact:
+
+	https://docs.solace.com/API/API-Developer-Guide-Java/Java-API-supported-environments.htm
+
+	https://mvnrepository.com/artifact/com.solace/solace-messaging-client
+	Date: Sep 16, 2024
+
+	<!-- Maven -->
+	<dependency>
+		<groupId>com.solace</groupId>
+		<artifactId>solace-messaging-client</artifactId>
+		<version>1.7.0</version>
+	</dependency>
+
+	// Gradle
+	implementation group: 'com.solace', name: 'solace-messaging-client', version: '1.7.0'
+
+
+PS C:\dev\workspace\solace\samples\solace-samples-java> .\gradlew assemble
+PS C:\dev\workspace\solace\samples\solace-samples-java> cd \build\staged\bin
+PS C:\dev\workspace\solace\samples\solace-samples-java\build\staged\bin> .\HelloWorld
+Usage: HelloWorld <host:port> <message-vpn> <client-username> [password]
+  e.g. HelloWorld localhost default default
+PS C:\dev\workspace\solace\samples\solace-samples-java\build\staged\bin> .\HelloWorld localhost:55554 default default
+
+
+================================================================================
+
+		iv)  Using SDKPerf
+
+Step 1) Documentation: https://docs.solace.com/API/SDKPerf/SDKPerf.htm#Quick
+
+Step 2) Download file sdkperf-jcsmp-8.4.17.5.zip from:
+
+		https://solace.com/downloads/?fwp_downloads_search=SDKPerf

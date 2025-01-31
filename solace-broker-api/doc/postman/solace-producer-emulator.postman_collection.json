@@ -1,0 +1,40 @@
+{
+	"info": {
+		"_postman_id": "6c765f14-e668-474a-a161-02edb602610e",
+		"name": "solace-producer-emulator",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5262710"
+	},
+	"item": [
+		{
+			"name": "post message",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"messageId\": \"001\",\r\n\t\"destination\": \"solace/java/direct/system-01\",\r\n\t\"deliveryMode\": \"PERSISTENT\",\r\n\t\"priority\": 3,\r\n\t\"properties\": {\r\n\t\t\"property01\": \"value01\",\r\n\t\t\"property02\": \"value02\"\r\n\t\t},\r\n\t\"payload\": {\r\n\t\t\t\"type\": \"binary\",\r\n\t\t\t\"content\": \"01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001\"\r\n\t\t}\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8081/api/v1/messages/message",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1",
+						"messages",
+						"message"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

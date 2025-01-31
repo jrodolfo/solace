@@ -1,0 +1,46 @@
+
+		Comprehensive Learning Resources for
+		   React and Front-End Development
+
+Below is a curated list of high-quality resources for mastering React and related front-end development tools.
+
+1) Vite: The Complete Developer's Guide
+by James Charlesworth
+https://ibm-learning.udemy.com/course/vite-developers-guide
+
+2) React 18 for Beginners
+by Mosh Hamedani
+https://codewithmosh.com/p/ultimate-react-part1
+https://github.com/mosh-hamedani/react-course-part1
+
+3) React 18 Fundamentals
+by Roland Guijt
+https://www.pluralsight.com/courses/react-18-fundamentals
+https://github.com/RolandGuijt/ps-react-fundamentals
+
+4) React and React Native: Build cross-platform JavaScript and TypeScript apps for the web, desktop, and mobile
+by Mikhail Sakhniuk (Author), Adam Boduch (Author) 
+https://www.amazon.ca/gp/product/B0CQTK654D
+https://github.com/PacktPublishing/React-and-React-Native-5E
+REST API endpoints for users
+https://docs.github.com/en/rest/users/users?apiVersion=2022-11-28
+
+5) React - The Complete Guide 2025 (including Next.js & Redux)
+by Maximilian Schwarzmuller
+https://www.udemy.com/course/react-the-complete-guide-incl-redux
+https://ibm-learning.udemy.com/course/react-the-complete-guide-incl-redux
+https://codesandbox.io/p/devbox/sending-http-requests-starter-7t9kk3
+https://github.com/academind/react-complete-guide-course-resources
+What is a RESTful API? | Creating a REST API with Node.js
+https://www.youtube.com/watch?v=0oXYLzuucwE
+
+6) Axios Crash Course | HTTP Library
+by Traversy Media
+https://www.youtube.com/watch?v=6LyagkoRWYA
+https://github.com/bradtraversy/axios-crash
+https://jsonplaceholder.typicode.com/
+https://jsonplaceholder.typicode.com/todos?_limit=5
+
+These resources provide a structured learning path for developers seeking to enhance their proficiency in React, front-end development, and API integration.
+
+

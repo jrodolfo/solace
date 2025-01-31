@@ -1,0 +1,11 @@
+What are the priority values for the Solace Event Broker messages?
+
+Solace Event Brokers support ten levels of message priority, ranging from 0 (lowest priority) to 9 (highest priority).
+
+If a message does not have a priority field, it is treated as priority 4 by default.
+
+This priority system helps ensure that higher-priority messages are delivered before lower-priority ones, optimizing the
+message flow based on importance.
+
+Reference:
+https://docs.solace.com/Messaging/Guaranteed-Msg/Message-Priority.htm

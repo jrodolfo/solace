@@ -1,0 +1,54 @@
+
+				Solace Ports
+
+(1)
+
+8080.....management port for the web console, and also the fully RESTful
+         management API for remote configuration
+		 
+55555....the default Solace messaging port for messaging APIs
+
+80.......the WebSocket port for web messaging
+
+Ref: Getting Started with Solace PubSub+ for Docker
+https://www.youtube.com/watch?v=s2n5V-IXCaM&list=PLY1Ks8JEfJR7VciBYCjglVak2gJj3al32&index=25
+At 1 min 30 seconds
+
+(2)
+
+port 8080 — Use this port when configuring the message broker container with Solace PubSub+ Broker Manager.
+
+port 55555 (Windows | Linux) / port 55554 (Mac OS) — Your applications can
+           use Solace APIs to connect to the message broker on this port.
+		   Note that for Mac users we are mapping port 55554 to the
+		   default Solace SMF port of 55555 because Mac OS now reserves port 55555.
+		   
+port 8008 — The JavaScript sample applications below use this port to pass Web Messaging traffic through the message broker.
+
+ports 1883 & 8000 — Ports for MQTT connectivity, over TCP and over WebSockets respectively
+
+port 5672 — AMQP 1.0 applications using Apache QPID APIs would connect here
+
+port 9000 — Use REST to send messaging and event data with Solace’s RESTful API port
+
+port 2222 — Use SSH to connect to the Solace Command Line Interface (CLI) for advanced configuration
+
+Ref: https://solace.com/products/event-broker/software/getting-started/
+
+
+(3) Ref: https://docs.solace.com/Admin/Default-Port-Numbers.htm
+
+
+(4) I have this configuration for ports:
+
+		localhost:55554:55555(TCP)
+
+What does the first and the second number mean?
+
+In the configuration localhost:55554:55555(TCP), the numbers represent different ports used for network communication:
+
+•  55554: This is the local port on your machine. It is the port that your local application will use to send or receive data.
+
+•  55555: This is the remote port on the destination machine. It is the port that the remote application will use to send or receive data.
+
+Essentially, this configuration sets up a connection where data sent from port 55554 on your local machine is directed to port 55555 on the remote machine, using the TCP protocol.

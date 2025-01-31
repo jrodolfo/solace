@@ -1,0 +1,166 @@
+QUESTION:
+
+I am working on an enterprise integration software project, and we are using
+Solace PubSub+ message broker. There are 4 important variables that needs to be
+used when an app needs to establish a connection with the broker:
+
+- user
+- password
+- url
+- vpn
+
+I have the user, password and url, but I do not have the vpn.
+How is the way to set up a value for the vpn?
+
+
+ANSWER:
+
+To set up a value for the VPN (Virtual Private Network) in Solace PubSub+, you
+need to configure a Message VPN on your event broker. A Message VPN is a logical
+entity that segregates topic spaces and clients, ensuring that messages
+published within a particular group are only visible to that group's clients.
+
+Here are the steps to set up a basic Message VPN:
+
+1. Access the Solace CLI: Connect to your Solace PubSub+ event broker using the
+command line interface (CLI).
+
+2. Enable Configuration Mode:
+
+solace> enable
+solace# configure
+
+1. Create and Configure the Message VPN:
+
+solace(configure)# message-vpn <vpn-name>
+solace(configure/message-vpn)# no shutdown
+
+1. Set Up Client Username for the VPN:
+
+solace(configure)# client-username <username> message-vpn <vpn-name>
+solace(configure/client-username)# no shutdown
+
+1. Save the Configuration:
+
+solace(configure/client-username)# end
+
+Replace <vpn-name> with your desired VPN name and <username> with the client
+username you want to use. This will create and activate a Message VPN that you
+can use in your application configuration
+
+If you need more detailed instructions or have specific requirements,
+the Solace documentation provides comprehensive guidance.
+
+https://docs.solace.com/Get-Started/message-vpn.htm
+https://docs.solace.com/Appliance/Appliance-Set-Up/Setting-Basic-Configurations.htm
+
+
+====
+
+message-vpn vpn-popcorn
+no shutdown
+client-username admin message-vpn vpn-popcorn
+no shutdown
+end
+
+====
+
+I have tried the first command you sent me. It did not work:
+
+ef70c4903070(configure)# message-vpn vpn-popcorn
+ERROR:  Cannot enter message-vpn mode: not found.
+ef70c4903070(configure)#
+
+Please advise.
+
+====
+
+It looks like the command didn't work because the message-vpn mode wasn't found.
+This could be due to a few reasons:
+
+1. Permissions: Ensure that your user has the necessary permissions to create
+and configure Message VPNs.
+
+2. Default VPN: Some Solace PubSub+ event brokers come with a default Message
+VPN named default. You might need to enable and configure this default VPN
+instead of creating a new one.
+
+3. Software Version: Verify that your Solace PubSub+ software version supports
+the creation of Message VPNs. Some versions or configurations might have
+limitations.
+
+Here are some steps to troubleshoot and resolve the issue:
+
+Check Permissions
+
+Ensure that your user has administrative privileges to create and manage
+Message VPNs.
+
+Enable Default VPN
+
+If the default VPN is available, you can enable and use it:
+
+solace> enable
+solace# configure
+solace(configure)# message-vpn default
+solace(configure/message-vpn)# no shutdown
+
+Verify Software Version
+
+Make sure your Solace PubSub+ event broker version supports Message VPNs.
+You can check the documentation or contact Solace support for more details.
+
+Use Solace PubSub+ Manager
+
+You can also use the Solace PubSub+ Manager (web interface) to create and manage
+Message VPNs. This might provide a more user-friendly way to configure your VPN.
+
+If these steps don't resolve the issue, please provide more details about your
+setup, and I'll be happy to assist further!
+
+====
+
+====
+
+message-vpn default
+no shutdown
+client-username admin message-vpn default
+no shutdown
+end
+
+====
+
+I have tried one of the commands you gave me and it did not work:
+
+ef70c4903070(configure/message-vpn)# client-username admin message-vpn default
+
+ Invalid command input
+        client-username admin message-vpn default
+        ^
+         -> unknown command, or command not available in current mode
+ef70c4903070(configure/message-vpn)#
+
+Please advise.
+
+====
+
+ports:
+
+1443
+1883
+1943
+2222
+55003
+55443
+55554
+55555
+5671
+5672
+8000
+8008
+8080
+8443
+8883
+9000
+
+

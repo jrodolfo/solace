@@ -1,0 +1,59 @@
+
+	How can I configure a Solace Broker using the PubSub+ Cloud Platform?
+
+Configuring a Solace Broker using the PubSub+ Cloud Platform involves several
+steps. Here's a high-level overview to get you started:
+
+
+1. Log in to the PubSub+ Cloud Console:
+
+•  Access the PubSub+ Cloud Console using your credentials. The URL may vary
+based on your authentication scheme.
+
+	https://docs.solace.com/Cloud/using-broker-manager-cloud.htm
+
+
+2. Create an Event Broker Service:
+
+•  In the Cloud Console, navigate to the Cluster Manager.
+
+•  Click on "Create Event Broker Service" and follow the prompts to set up your
+broker. You can choose from various cloud providers and configurations.
+
+	https://docs.solace.com/Cloud/using-broker-manager-cloud.htm
+
+
+3. Open PubSub+ Broker Manager:
+
+•  Once your event broker service is running, select it from the Cluster Manager.
+
+•  Click on "More Actions" and select "Open Broker Manager" to access the
+browser-based management console.
+
+	https://docs.solace.com/Cloud/using-broker-manager-cloud.htm
+
+
+4. Configure Your Broker:
+
+•  Use the PubSub+ Broker Manager to configure various aspects of your broker,
+such as queues, topic endpoints, and message VPNs.
+
+https://docs.solace.com/Cloud/using-broker-manager-cloud.htm
+
+•  You can also set up advanced features like message replay, Kafka bridging,
+and REST connectors.
+
+	https://docs.solace.com/Cloud/using-broker-manager-cloud.htm
+
+
+5. Deploy and Test:
+
+•  After configuring your broker, deploy it and test your setup using the
+provided tools and documentation.
+
+	https://solace.com/products/event-broker/software/get-started/
+
+For detailed instructions and additional configuration options, you can refer to
+the Solace PubSub+ Technical Documentation.
+
+	https://docs.solace.com/

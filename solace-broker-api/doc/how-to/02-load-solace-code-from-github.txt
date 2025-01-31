@@ -1,0 +1,42 @@
+Loading Solace code from GitHub
+
+There are 4 Solace main repositories in GitHub: labs, products, samples and training:
+
+    https://github.com/SolaceLabs
+    https://github.com/SolaceProducts
+    https://github.com/SolaceSamples
+    https://github.com/SolaceTraining
+
+I created 4 shell scripts to load all projects from these 4 repositories (except for SourceLabs – I decided to cherry-pick 49 projects from the list of 79).
+
+Make sure you have git installed in your Mac, or git-bash installed in your Windows machine.
+
+The scripts are:
+
+    clone-labs.sh
+    clone-products.sh
+    clone-samples.sh
+    clone-training.sh
+
+Create these 4 folders:
+
+    ~/dev/workspace/solace/labs
+    ~/dev/workspace/solace/products
+    ~/dev/workspace/solace/samples
+    ~/dev/workspace/solace/training
+
+Copy each script to the correspondent folder.
+
+If you are using Mac, you may need to run
+
+dos2unix clone-labs.sh
+
+Open a shell console and make and make sure the script is executable by running:
+
+chmod a+x clone-labs.sh
+
+Then you run the command by typing:
+
+./clone-labs.sh
+
+Do this for each of the 4 scripts saved in the 4 different folders.

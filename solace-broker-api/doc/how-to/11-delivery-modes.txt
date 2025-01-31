@@ -1,0 +1,23 @@
+What are the deliveryMode for the Solace Event Broker messages?
+
+Solace Event Brokers support several message delivery modes, each suited for different use cases:
+
+1. Direct Messaging: This mode is designed for high-speed applications that can tolerate occasional message loss.
+   Messages are delivered to consumers with matching topic subscriptions but are not persisted on the event broker.
+
+2. Persistent (Guaranteed) Messaging: This mode ensures that messages are never lost. Messages are saved in the event
+   broker's message spool before being acknowledged back to the producers. This mode is used when data must be received
+   by the consuming application, even if they are offline.
+
+3. Non-Persistent Messaging: This mode is used to fulfill JMS specification requirements and is similar to persistent
+   messaging in function but without the persistence guarantee.
+
+4. Transacted Delivery: This mode supports session-based and XA transactions, ensuring that a series of operations are
+   completed successfully before being committed.
+
+Each mode offers different levels of reliability and performance, allowing you to choose the best option for your
+specific application needs.
+
+References:
+https://docs.solace.com/API/API-Developer-Guide/Message-Delivery-Modes.htm
+https://solace.com/blog/delivery-modes-direct-messaging-vs-persistent-messaging/

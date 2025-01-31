@@ -1,0 +1,93 @@
+
+	How to see the messages?
+
+QUESTION 01
+
+I am using Solace PubSub+ that is running inside a Docker container. I want to
+see the messages that my Java app is publishing. I do no see any message in the
+web interface. Is there a way to see these messages?
+
+ANSWER 01
+
+To view the messages that your Java application is publishing to Solace PubSub+
+running inside a Docker container, you can use the following methods:
+
+1. Solace CLI: You can access the Solace CLI from within the Docker container to
+monitor messages. Use the following commands to enter the container:
+
+docker ps
+docker exec -it <container_id> /bin/bash
+
+Once inside, you can use Solace CLI commands to view messages.
+
+1. Solace PubSub+ Manager: Ensure that the web interface is correctly configured
+to display the messages. You might need to check the subscription settings and
+ensure that the correct topic is being monitored.
+
+2. Logging: Enable logging within the Solace PubSub+ container to capture
+message activity. You can configure logging settings to output message details
+to a log file.
+
+3. Solace SDK: Use the Solace SDK for Java to create a subscriber application
+that listens to the same topic your publisher is using. This can help you verify
+that messages are being published correctly.
+
+4. Docker Logs: Check the Docker logs for any errors or messages related to your
+Solace container:
+
+docker logs <container_id>
+
+If you continue to have issues, ensure that your Java application is correctly
+configured to publish messages to the expected topic and that there are no
+network issues preventing communication between your application and the Solace
+PubSub+ broker.
+
+================================================================================
+
+QUESTION 02
+
+You mentioned that once I enter the container using the command:
+
+	docker exec -it <container_id> /bin/bash
+
+I should be able to use Solace CLI commands to view messages.
+
+What are these commands?
+
+ANSWER 02
+
+Once you are inside the Docker container running Solace PubSub+, you can use the
+Solace CLI to view messages. Here are some useful commands:
+
+1. Log in to the CLI:
+
+	cli -A
+
+2. Show client connections:
+
+	show client
+
+3. Show message spool statistics:
+
+	show message-spool
+
+4. Show queue details:
+
+	show queue <queue_name>
+
+5. Show subscriptions:
+
+	show subscription
+
+6. Monitor messages on a specific topic:
+
+	show topic <topic_name>
+
+These commands will help you monitor and troubleshoot the messages being
+published and received by your Solace PubSub+ broker
+
+	https://docs.solace.com/Admin/Solace-CLI/Using-Solace-CLI.htm
+
+	https://docs.solace.com/Admin/Solace-CLI/Command-Line-Reference.htm
+
+	https://docs.solace.com/Admin/Solace-CLI/cli-quick-reference.htm

@@ -1,0 +1,38 @@
+
+	Example of a json file that complies with the Solace Message Format (SMF)
+
+{
+	"messageId": "001",
+	"destination": "solace/java/direct/system-01",
+	"deliveryMode": "PERSISTENT",
+	"priority": 3,
+	"properties": {
+		"property01": "value01",
+		"property02": "value02"
+		},
+	"payload": {
+			"type": "binary",
+			"content": "01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001"
+		}
+}
+
+In this example:
+
+•  messageId: A unique identifier for the message.
+
+•  destination: The topic or queue to which the message is sent.
+
+•  deliveryMode: Indicates whether the message is persistent or non-persistent.
+
+•  priority: The priority level of the message.
+
+•  properties: Custom properties that can be added to the message.
+
+•  payload: The actual content of the message, which can be of various types (e.g., text, binary).
+
+This structure ensures that the message contains all necessary metadata and
+payload information required by Solace PubSub+
+
+https://solace.com/blog/inside-solace-message-introduction
+
+https://solace.com/blog/text-data-solace-apis-xml-json

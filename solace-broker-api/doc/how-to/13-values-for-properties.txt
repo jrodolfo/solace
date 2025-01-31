@@ -1,0 +1,22 @@
+What are the possible values for properties of the Solace Event Broker messages?
+
+Solace Event Broker messages have several properties that can be set to control
+their behavior and routing. Here are some key properties and their possible values:
+
+1. Time-to-Live (TTL): This property sets the lifespan of a message in milliseconds.
+   A value of 0 means the message never expires.
+
+2. Dead Message Queue (DMQ) Eligibility: Messages can be flagged as eligible for
+   a Dead Message Queue if they exceed their TTL or maximum redelivery attempts.
+
+3. Eliding Eligibility: This property determines if a message can be elided
+   (i.e., skipped) under certain conditions to optimize bandwidth.
+
+4. Partition Key: Used to ensure messages with the same key are routed to the
+   same partition, maintaining order.
+
+These properties help manage how messages are handled, ensuring efficient and reliable
+message delivery within your event-driven architecture.
+
+Reference:
+https://docs.solace.com/API/Solace-JMS-API/Setting-Message-Properties.htm

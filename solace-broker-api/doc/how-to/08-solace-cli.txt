@@ -1,0 +1,36 @@
+
+	These commands will help you monitor and troubleshoot the messages being
+	published and received by your Solace PubSub+ broker running on Docker:
+
+PS C:\Users\rod> docker ps
+// docker exec -it <container_id_that_you_got_by_running_docker_ps> /bin/bash
+
+PS C:\Users\rod> docker exec -it f5747110e38b /bin/bash
+[appuser@f5747110e38b sw]$ pwd
+[appuser@f5747110e38b sw]$ whoami
+[appuser@f5747110e38b sw]$ ls -la
+[appuser@f5747110e38b sw]$ cli -A
+f5747110e38b> show message-spool
+f5747110e38b> tree
+f5747110e38b> show client ...
+f5747110e38b> show queue ...
+f5747110e38b> show message-vpn ...
+f5747110e38b> show message-spool
+f5747110e38b> show version
+f5747110e38b> show logging debug
+
+Ref:
+
+	https://docs.solace.com/Admin/Solace-CLI/Using-Solace-CLI.htm
+	https://docs.solace.com/Admin/Solace-CLI/Command-Line-Reference.htm
+	https://docs.solace.com/Admin/Solace-CLI/cli-quick-reference.htm
+
+Note: there are at least two ways to access the CLI on a container, either
+connect via ssh on port 2222 (assuming you are using the default ports) or run
+the cli command in the container. For example, run the following Docker command:
+
+> docker exec -it <container_name> /usr/sw/loads/currentload/bin/cli -A
+
+OR
+
+> docker exec -it <container_id_that_you_got_by_running_docker_ps> /bin/bash
