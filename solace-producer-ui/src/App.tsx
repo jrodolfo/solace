@@ -1,6 +1,7 @@
 import {useState} from "react";
-import axios from "axios";
+import axios, {AxiosResponse} from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import ShowOutput from "./ShowOutput.tsx";
 
 function App() {
 
@@ -11,6 +12,8 @@ function App() {
     const [vpnName, setVpnName] = useState("");
     const [host, setHost] = useState("");
     const [message, setMessage] = useState("");
+    const [response, setResponse] = useState<AxiosResponse<any, any> | null>(null);
+    const [showResponse, setShowResponse] = useState(false);
 
     // Submit handler
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -34,11 +37,25 @@ function App() {
                     },
                 }
             );
-            console.log("Response:", response.data);
+            console.log("Response:", response);
             alert("Message Published Successfully!");
+            setShowResponse(true);
+            setResponse(response);
         } catch (error) {
             console.error("Error publishing message:", error);
             alert("Failed to publish the message. See console for details.");
+            setShowResponse(true);
+            // setResponse(response);
+            setResponse({
+                data: "Unknown error occurred. Please check console for details.",
+                status: 500,
+                statusText: "Internal Server Error",
+                headers: {},
+                config: {
+                    headers: {}
+                },
+            });
+
         }
     };
 
@@ -154,6 +171,11 @@ function App() {
                     </button>
                 </div>
             </form>
+
+            <div className="col-lg-12 mt-6 mb-6">
+                {showResponse && <ShowOutput res={response}></ShowOutput>}
+            </div>
+
         </div>
     );
 }
