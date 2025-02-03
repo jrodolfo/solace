@@ -71,7 +71,7 @@ Follow these steps to get the application up and running on your local machine:
     - Or read this document to learn how to configure the Solace Broker on the cloud and get the values of these 4 variables:
 
 ```bash
-  ../solace-broker-api/doc/how-to/01-using-solace-pubsubplus.txt
+  ../solace/solace-broker-api/doc/how-to/01-using-solace-pubsubplus.txt
 ```
 
 ---

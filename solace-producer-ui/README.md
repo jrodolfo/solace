@@ -1,21 +1,97 @@
-# Solace Publisher User Interface
+# Solace Producer UI
 
 ## What this app does
 
-This application is designed to [insert what your app does—e.g., manage tasks, streamline user communications, visualize data, etc.]. It is built with **React** and **TypeScript** to ensure optimal performance and scalability. Here's a quick overview of its functionality:
+This application is designed to allow the user to send messages to the Solace Broker API. It is built with **React** and **TypeScript** to ensure optimal performance and scalability.
 
-- **[Feature 1]**: Describe the feature (e.g., Users can upload files and organize them into folders).
-- **[Feature 2]**: Describe the feature (e.g., Provides real-time updates for collaboration among team members).
-- **[Feature 3]**: Describe the feature (e.g., Generates customizable reports for detailed analysis).
-
-The app aims to [expand on your app’s goals—e.g., provide a seamless user experience for managing workflows or delivering valuable insights].
 
 ## Key Features
 
-- List unique features here, for example:
-    - Real-time updates using WebSockets or REST APIs
+    - Real-time-ish updates using REST APIs
     - A modern and responsive UI for ease of use
-    - Integration with external tools like [Tool/Service Name]
+    - Integration with the external tool Solace Broker API
+
+# Technology Stack
+
+The application uses the following technologies:
+
+<pre style="font-family: 'Courier New', Courier, monospace;">
+- React.........18.3.1
+- React DOM.....18.3.1
+- TypeScript....5.7.3
+- Node..........23.6.0
+- NPM...........11.0.0
+- Axios.........1.7.9
+- Bootstrap.....5.3.3
+</pre>
+
+
+## Running the Application
+
+To run the application, open a terminal and execute the following commands:
+
+```bash
+cd solace-producer-ui
+npm install
+npm run dev
+```
+
+Then open your browser and navigate to:
+
+[http://localhost:5173/](http://localhost:5173/)
+
+---
+
+## Prerequisites
+
+Before running the application, ensure the following:
+
+1. The **solace-broker-api** application (located at `../solace/solace-broker-api`) is up and running.
+
+2. You have the following **4 required credentials**:
+    - `SOLACE_CLOUD_USERNAME`
+    - `SOLACE_CLOUD_PASSWORD`
+    - `SOLACE_CLOUD_HOST`
+    - `SOLACE_CLOUD_VPN`
+
+   Refer to the file
+
+```bash
+  ../solace/solace-broker-api/doc/how-to/01-using-solace-pubsubplus.txt
+```
+
+   to learn how to obtain these credentials.
+
+---
+
+## Testing the Application
+
+You can use the message below for testing purposes:
+
+### Sample Message:
+
+```json
+{
+  "messageId": "001",
+  "destination": "solace/java/direct/system-01",
+  "deliveryMode": "PERSISTENT",
+  "priority": 3,
+  "properties": {
+    "property01": "value01",
+    "property02": "value02"
+  },
+  "payload": {
+    "type": "binary",
+    "content": "01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001"
+  }
+}
+```
+
+### Topic for Testing:
+
+Use this value for the topic:  
+`solace/java/direct/system-01`
+
 
 ## React + TypeScript + Vite
 
