@@ -1,4 +1,4 @@
-# Solace Consumer Application
+# Solace Subscriber Application
 
 This project provides functionality to connect and interact with a **Solace PubSub+ Broker**. It demonstrates how to configure and use Solace messaging APIs in a Java application by leveraging environment variables and properties for authentication and connection setup.
 
@@ -72,8 +72,8 @@ Before running this application, ensure the following:
 ### Clone the Repository
 
 ```bash
-git clone https://github.ibm.com/roliveir/solace-consumer
-cd solace-consumer
+git clone https://github.ibm.com/roliveir/solace-subscriber
+cd solace-subscriber
 ```
 
 ### Build the Project
@@ -100,7 +100,7 @@ export SOLACE_CLOUD_PASSWORD=your_password
 Start the application:
 
 ```bash
-java -jar target/solace-consumer-1.0-SNAPSHOT.jar
+java -jar target/solace-subscriber-1.0-SNAPSHOT.jar
 ```
 
 ---

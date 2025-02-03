@@ -3,8 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/solace.iml" filepath="$PROJECT_DIR$/.idea/solace.iml" />
-      <module fileurl="file://$PROJECT_DIR$/solace-consumer/solace-consumer.iml" filepath="$PROJECT_DIR$/solace-consumer/solace-consumer.iml" />
-      <module fileurl="file://$PROJECT_DIR$/solace-broker-api/solace.broker.api.iml" filepath="$PROJECT_DIR$/solace-broker-api/solace.broker.api.iml" />
     </modules>
   </component>
 </project>

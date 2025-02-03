@@ -11,16 +11,16 @@ The backend service that powers message exchanges. All integrations and API test
 
 **Path:** `solace/solace-broker-api`
 
-### 2. **Solace Producer UI**
+### 2. **Solace Publisher UI**
 The React-based application that provides a user-friendly interface for interacting with the broker and sending messages.
 
-**Path:** `solace/solace-producer-ui`
+**Path:** `solace/solace-publisher-ui`
 
 ---
 
 ## Running the UI Application
 
-The **Solace Producer UI** uses the following technologies:
+The **Solace Publisher UI** uses the following technologies:
 
 ```text
 React.........18.3.1
@@ -37,7 +37,7 @@ Bootstrap.....5.3.3
 1. Open your terminal of choice.
 2. Navigate to the project directory:
    ```bash
-   cd solace/solace-producer-ui
+   cd solace/solace-publisher-ui
    ```
 3. Install dependencies:
    ```bash
@@ -82,7 +82,7 @@ You can test the **Solace Broker API** in three different ways:
 
 ### 3. **Using the UI Application**
 - Follow the steps described above to run the UI:  
-  `../solace/solace-producer-ui`
+  `../solace/solace-publisher-ui`
 
 ---
 
@@ -137,7 +137,7 @@ You can test the **Solace Broker API** in 3 ways:
 
 3. **Using the UI Application**  
    Follow the steps described in this **README.md** file to run the application:  
-   `../solace/solace-producer-ui/README.md`
+   `../solace/solace-publisher-ui/README.md`
 
 Enjoy exploring the Solace Platform! 🚀
 

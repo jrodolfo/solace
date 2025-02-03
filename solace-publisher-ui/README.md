@@ -1,4 +1,4 @@
-# Solace Producer UI
+# Solace Publisher UI
 
 ## What this app does
 
@@ -31,7 +31,7 @@ The application uses the following technologies:
 To run the application, open a terminal and execute the following commands:
 
 ```bash
-cd solace-producer-ui
+cd solace-publisher-ui
 npm install
 npm run dev
 ```

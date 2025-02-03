@@ -1,4 +1,4 @@
-package org.orgname.solace.consumer;
+package org.orgname.solace.subscriber;
 
 public class Constants {
 

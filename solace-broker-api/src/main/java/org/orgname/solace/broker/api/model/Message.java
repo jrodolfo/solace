@@ -35,7 +35,7 @@ public class Message {
      * Messages are delivered to consumers with matching topic subscriptions but are not persisted on the event broker.
      * <p>
      * 2. Persistent (Guaranteed) Messaging: This mode ensures that messages are never lost. Messages are saved in the event
-     * broker's message spool before being acknowledged back to the producers. This mode is used when data must be received
+     * broker's message spool before being acknowledged back to the publishers. This mode is used when data must be received
      * by the consuming application, even if they are offline.
      * <p>
      * 3. Non-Persistent Messaging: This mode is used to fulfill JMS specification requirements and is similar to persistent

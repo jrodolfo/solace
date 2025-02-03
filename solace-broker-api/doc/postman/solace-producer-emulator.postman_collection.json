@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "6c765f14-e668-474a-a161-02edb602610e",
-		"name": "solace-producer-emulator",
+		"name": "solace-publisher-emulator",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5262710"
 	},

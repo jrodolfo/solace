@@ -242,14 +242,14 @@ mvn test
 To execute smoke tests, run the Postman collection available at the doc folder of this repository:
 
 ```bash
-  ../solace-broker-api/doc/postman/solace-producer-emulator.postman_collection.json
+  ../solace-broker-api/doc/postman/solace-publisher-emulator.postman_collection.json
 ```
 
 ### Running Stress Tests
 To execute smoke tests, run the JMeter script available at the doc folder of this repository:
 
 ```bash
-  ../solace-broker-api/doc/jmeter/solace-producer-emulator.jmx
+  ../solace-broker-api/doc/jmeter/solace-publisher-emulator.jmx
 ```
 ---
 

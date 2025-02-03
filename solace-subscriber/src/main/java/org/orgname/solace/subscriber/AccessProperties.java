@@ -1,4 +1,4 @@
-package org.orgname.solace.consumer;
+package org.orgname.solace.subscriber;
 
 import com.solace.messaging.config.SolaceProperties;
 import com.solace.messaging.config.SolaceProperties.AuthenticationProperties;

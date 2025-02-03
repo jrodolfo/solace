@@ -1,4 +1,4 @@
-package org.orgname.solace.consumer;
+package org.orgname.solace.subscriber;
 
 import com.solace.messaging.MessagingService;
 import com.solace.messaging.config.profile.ConfigurationProfile;
@@ -10,7 +10,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.orgname.solace.consumer.Constants.TOPIC_NAME;
+import static org.orgname.solace.subscriber.Constants.TOPIC_NAME;
 
 /**
  * Application that subscribes to a topic.
@@ -67,12 +67,12 @@ public class DirectReceiver {
             // since Direct messages, check if there have been any lost any messages
             if (inboundMessage.getMessageDiscardNotification().hasBrokerDiscardIndication() ||
                     inboundMessage.getMessageDiscardNotification().hasInternalDiscardIndication()) {
-                // If the consumer is being over-driven (i.e. publish rates too high), the broker might discard some messages for this consumer
+                // If the subscriber is being over-driven (i.e. publish rates too high), the broker might discard some messages for this subscriber
                 // check this flag to know if that's happened
                 // to avoid discards:
                 //  a) reduce publish rate
                 //  b) use multiple-threads or shared subscriptions for parallel processing
-                //  c) increase size of consumer's D-1 egress buffers (check client-profile) (helps more with bursts)
+                //  c) increase size of subscriber's D-1 egress buffers (check client-profile) (helps more with bursts)
                 hasDetectedDiscard = true;  // set my own flag
             }
         };
