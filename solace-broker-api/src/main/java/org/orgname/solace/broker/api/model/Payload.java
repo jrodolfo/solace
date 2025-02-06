@@ -30,5 +30,4 @@ public class Payload {
         this.type = type;
         this.content = content;
     }
-
 }

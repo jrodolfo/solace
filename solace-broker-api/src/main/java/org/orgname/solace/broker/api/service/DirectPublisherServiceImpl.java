@@ -1,6 +1,5 @@
 package org.orgname.solace.broker.api.service;
 
-import org.orgname.solace.broker.api.constants.AccessProperties;
 import com.solace.messaging.MessagingService;
 import com.solace.messaging.config.SolaceProperties.MessageProperties;
 import com.solace.messaging.config.profile.ConfigurationProfile;
@@ -18,6 +17,8 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.orgname.solace.broker.api.constants.Constants.ERROR_EMPTY_MESSAGE_OR_TOPIC_NAME;
+
 /**
  * Code that publishes to a topic
  * Disclaimer: most of the code below comes from the Solace training material
@@ -32,13 +33,18 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
     @Override
     public String sendMessage(String topicName, String content, Optional<SolaceParameters> solaceParametersOptional) throws Exception {
 
+        // check mandatory parameters
+        if (topicName == null || topicName.isEmpty() || content == null || content.isEmpty()) {
+            throw new IllegalArgumentException(ERROR_EMPTY_MESSAGE_OR_TOPIC_NAME);
+        }
+
         final Properties properties;
 
         SolaceParameters solaceParameters = solaceParametersOptional.orElse(null);
         if (solaceParameters == null) {
-            properties = AccessProperties.getPropertiesPublisher();
+            properties = AccessPropertiesImpl.getPropertiesPublisher();
         } else {
-            properties = AccessProperties.getPropertiesPublisher(solaceParameters);
+            properties = AccessPropertiesImpl.getPropertiesPublisher(solaceParameters);
         }
 
         final MessagingService messagingService = MessagingService.builder(ConfigurationProfile.V1)
@@ -76,7 +82,8 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         OutboundMessageBuilder messageBuilder = messagingService.messageBuilder();
 
         try {
-            messageBuilder.withProperty(MessageProperties.APPLICATION_MESSAGE_ID, UUID.randomUUID().toString());  // as an example of a header
+            // as an example of a header
+            messageBuilder.withProperty(MessageProperties.APPLICATION_MESSAGE_ID, UUID.randomUUID().toString());
             OutboundMessage message = messageBuilder.build(payload);  // binary payload message
             logger.log(Level.INFO, "OutboundMessage: " + message);
             publisher.publish(message, Topic.of(topicName));  // send the message
@@ -98,7 +105,11 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         System.out.println(msg);
         logger.log(Level.INFO, msg);
 
-        return "{\"destination\":\"" + topicName + "\",\"content\":\"" + content + "\"}";
+        String returnMessage = "{\"destination\":\"" + topicName + "\",\"content\":\"" + content + "\"}";
+        System.out.println("returnMessage" + returnMessage);
+        logger.log(Level.INFO, "returnMessage" + returnMessage);
+
+        return returnMessage;
     }
 
 }

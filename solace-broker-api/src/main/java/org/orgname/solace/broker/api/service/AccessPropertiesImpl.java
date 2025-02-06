@@ -1,10 +1,12 @@
-package org.orgname.solace.broker.api.constants;
+package org.orgname.solace.broker.api.service;
 
 import org.orgname.solace.broker.api.model.SolaceParameters;
 import com.solace.messaging.config.SolaceProperties;
 import com.solace.messaging.config.SolaceProperties.AuthenticationProperties;
 import com.solace.messaging.config.SolaceProperties.TransportLayerProperties;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.Properties;
 import java.util.logging.Level;
@@ -15,9 +17,17 @@ import java.util.logging.Logger;
  *
  * See: https://docs.solace.com/Solace-PubSub-Messaging-APIs/API-Developer-Guide/Configuring-Connection-T.htm
  */
-public class AccessProperties {
+@Component
+public class AccessPropertiesImpl implements AccessProperties {
 
-    private static final Logger logger = Logger.getLogger(AccessProperties.class.getName());
+    private static final Logger logger = Logger.getLogger(AccessPropertiesImpl.class.getName());
+
+    static public EnvironmentConfig environmentConfig;
+
+    @Autowired
+    public AccessPropertiesImpl(EnvironmentConfigImpl environmentConfigImpl) {
+        this.environmentConfig = environmentConfigImpl;
+    }
 
     private static Properties getPropertiesFromMethodParameters(SolaceParameters solaceParameters) throws Exception {
 
@@ -57,10 +67,10 @@ public class AccessProperties {
     private static Properties getPropertiesFromEnv() throws Exception {
 
         // Retrieve environment variables
-        String host = System.getenv("SOLACE_CLOUD_HOST");
-        String vpnName = System.getenv("SOLACE_CLOUD_VPN");
-        String userName = System.getenv("SOLACE_CLOUD_USERNAME");
-        String password = System.getenv("SOLACE_CLOUD_PASSWORD");
+        String host = environmentConfig.getEnv("SOLACE_CLOUD_HOST");
+        String vpnName = environmentConfig.getEnv("SOLACE_CLOUD_VPN");
+        String userName = environmentConfig.getEnv("SOLACE_CLOUD_USERNAME");
+        String password = environmentConfig.getEnv("SOLACE_CLOUD_PASSWORD");
 
         // Check if they are good
         if (host == null || host.trim().isEmpty() ||
