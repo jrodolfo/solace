@@ -1,0 +1,23 @@
+
+QUESTION:
+
+    I want to test my React app created with Vite.
+    This app uses TypeScript.
+    What are the libraries that I need to install?
+
+ANSWER:
+
+Follow the steps described on this README file:
+
+https://github.com/bonnie/udemy-TESTING-LIBRARY/tree/main/vite-starter
+
+Reference:
+
+        React Testing Library with Jest / Vitest
+        by Bonnie Schulkin
+        https://www.udemy.com/course/react-testing-library
+        https://github.com/bonnie/udemy-TESTING-LIBRARY
+
+Run your test with this command:
+
+    npm test

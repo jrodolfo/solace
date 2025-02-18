@@ -8,6 +8,6 @@
     "target": "esnext",
     "lib": ["esnext", "dom"], // Add necessary modern libraries
     "skipLibCheck": true,     // Temporarily disable type checking in `.d.ts` files
-    "types": []               // Ignore global type definitions from node_modules
+    "types": ["jest"]
   }
 }

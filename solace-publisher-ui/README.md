@@ -16,13 +16,15 @@ This application is designed to allow the user to send messages to the Solace Br
 The application uses the following technologies:
 
 <pre style="font-family: 'Courier New', Courier, monospace;">
-- React.........18.3.1
-- React DOM.....18.3.1
-- TypeScript....5.7.3
-- Node..........23.6.0
-- NPM...........11.0.0
-- Axios.........1.7.9
-- Bootstrap.....5.3.3
+- React...................18.3.1
+- React DOM...............18.3.1
+- TypeScript..............5.7.3
+- Node....................23.6.0
+- NPM.....................11.0.0
+- Axios...................1.7.9
+- Bootstrap................5.3.3
+- React Testing Library....
+- Vitest...................
 </pre>
 
 

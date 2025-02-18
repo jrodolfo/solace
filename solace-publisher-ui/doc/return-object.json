@@ -1,0 +1,44 @@
+{
+    "data": {
+        "destination": "solace/java/direct/system-01",
+        "content": "01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001"
+    },
+    "status": 201,
+    "statusText": "",
+    "headers": {
+        "content-length": "175",
+        "content-type": "application/json"
+    },
+    "config": {
+        "transitional": {
+            "silentJSONParsing": true,
+            "forcedJSONParsing": true,
+            "clarifyTimeoutError": false
+        },
+        "adapter": [
+            "xhr",
+            "http",
+            "fetch"
+        ],
+        "transformRequest": [
+            null
+        ],
+        "transformResponse": [
+            null
+        ],
+        "timeout": 0,
+        "xsrfCookieName": "XSRF-TOKEN",
+        "xsrfHeaderName": "X-XSRF-TOKEN",
+        "maxContentLength": -1,
+        "maxBodyLength": -1,
+        "env": {},
+        "headers": {
+            "Accept": "application/json, text/plain, */*",
+            "Content-Type": "application/json"
+        },
+        "method": "post",
+        "url": "http://localhost:8081/api/v1/messages/message",
+        "data": "{\"userName\":\"solace-cloud-client\",\"password\":\"try-to-guess\",\"host\":\"wss://mr-connection-try-to-guess.messaging.solace.cloud:443\",\"vpnName\":\"my-solace-broker-on-aws\",\"topicName\":\"solace/java/direct/system-01\",\"message\":{\"messageId\":\"001\",\"destination\":\"solace/java/direct/system-01\",\"deliveryMode\":\"PERSISTENT\",\"priority\":3,\"properties\":{\"property01\":\"value01\",\"property02\":\"value02\"},\"payload\":{\"type\":\"binary\",\"content\":\"01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001\"}}}"
+    },
+    "request": {}
+}

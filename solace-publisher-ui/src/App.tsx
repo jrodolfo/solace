@@ -1,5 +1,5 @@
 import {useState} from "react";
-import axios, {AxiosResponse} from "axios";
+import axios, {AxiosRequestHeaders, AxiosResponse} from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import ShowOutput from "./ShowOutput.tsx";
 
@@ -18,7 +18,7 @@ function App() {
     // Submit handler
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault(); // Stop browser refresh
-
+        console.log("Submitting form...");
         try {
             // Send POST request using Axios
             const response = await axios.post(
@@ -44,15 +44,17 @@ function App() {
         } catch (error) {
             console.error("Error publishing message:", error);
             alert("Failed to publish the message. See console for details.");
+            const DEFAULT_EMPTY_HEADERS = {} as AxiosRequestHeaders;
+            const DEFAULT_ERROR_MESSAGE = "Unknown error occurred. Please check console for details.";
             setShowResponse(true);
             // setResponse(response);
             setResponse({
-                data: "Unknown error occurred. Please check console for details.",
+                data: DEFAULT_ERROR_MESSAGE,
                 status: 500,
                 statusText: "Internal Server Error",
-                headers: {},
+                headers: DEFAULT_EMPTY_HEADERS,
                 config: {
-                    headers: {}
+                    headers: DEFAULT_EMPTY_HEADERS
                 },
             });
 

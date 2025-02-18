@@ -41,6 +41,11 @@ https://github.com/bradtraversy/axios-crash
 https://jsonplaceholder.typicode.com/
 https://jsonplaceholder.typicode.com/todos?_limit=5
 
+7) React Testing Library with Jest / Vitest
+by Bonnie Schulkin
+https://www.udemy.com/course/react-testing-library
+https://github.com/bonnie/udemy-TESTING-LIBRARY
+
 These resources provide a structured learning path for developers seeking to enhance their proficiency in React, front-end development, and API integration.
 
 
