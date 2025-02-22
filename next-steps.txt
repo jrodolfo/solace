@@ -1,24 +1,24 @@
 
 			Next Steps
 
-01) Create the open source git repositories inside & outside IBM.....DONE ✓
+01) Create the open source git repositories inside & outside IBM ..... DONE ✓
 
 	https://github.ibm.com/roliveir/solace
 	https://github.com/jrodolfo/solace
 
-02) Display the response on the Publisher UI.........................DONE ✓
+02) Display the response on the Publisher UI ......................... DONE ✓
 
-03) Add instructions on how to run the app on the README files.......DONE ✓
+03) Add instructions on how to run the app on the README files ....... DONE ✓
 
-04) Rename solace-producer-ui to solace-publisher-ui.................DONE ✓
+04) Rename solace-producer-ui to solace-publisher-ui ................. DONE ✓
 
-05) Rename solace-consumer to solace-subscriber......................DONE ✓
+05) Rename solace-consumer to solace-subscriber ...................... DONE ✓
 
-06) Write unit tests for solace-broker-api...........................DONE ✓
+06) Write unit tests for solace-broker-api ........................... DONE ✓
 
-07) Write unit tests for solace-subscriber...........................
+07) Write unit tests for solace-subscriber ...........................
 
-08) Write unit tests for front end...................................DOING ◦◦◦
+08) Write unit tests for front end ................................... DONE ✓
 
 	React Testing Library with Jest / Vitest
 	https://ibm-learning.udemy.com/course/react-testing-library
@@ -26,11 +26,11 @@
     React Testing Library and Jest: The Complete Guide
 	https://ibm-learning.udemy.com/course/react-testing-library-and-jest
 
-09) Integrate the request of the API into a MySQL database...........
+09) Save the request to the API into a MySQL/Docker database ......... DOING ◦◦◦
 
-10) Develop the Subscriber UI........................................
+10) Develop the Subscriber UI ........................................
 
-11) The Subscriber UI & Publisher UI app should be just one app......
+11) The Subscriber UI & Publisher UI app should be just one app ......
 
-12) Add menu to select service other than Solace PubSub+ service.....
+12) Add menu to select service other than Solace PubSub+ service .....
 

@@ -1,0 +1,46 @@
+[
+  {
+    "userId": 1,
+    "name": "Rod Oliveira",
+    "email": "jrodolfo@gmail.com",
+    "properties": [
+      {
+        "id": 1,
+        "propertyKey": "key01",
+        "propertyValue": "value01"
+      },
+      {
+        "id": 2,
+        "propertyKey": "key02",
+        "propertyValue": "value02"
+      },
+      {
+        "id": 3,
+        "propertyKey": "key03",
+        "propertyValue": "value03"
+      }
+    ]
+  },
+  {
+    "userId": 2,
+    "name": "Rod Oliveira",
+    "email": "jrodolfo@gmail.com",
+    "properties": [
+      {
+        "id": 4,
+        "propertyKey": "key01",
+        "propertyValue": "value01"
+      },
+      {
+        "id": 5,
+        "propertyKey": "key02",
+        "propertyValue": "value02"
+      },
+      {
+        "id": 6,
+        "propertyKey": "key03",
+        "propertyValue": "value03"
+      }
+    ]
+  }
+]

@@ -1,0 +1,53 @@
+cURL Command
+
+=== After adding "properties" ===
+
+curl -X POST http://localhost:8080/demo/add \
+     -H "Content-Type: application/json" \
+     -d '{
+           "name": "Rod Oliveira",
+           "email": "jrodolfo@gmail.com",
+           "properties": {
+               "key01": "value01",
+               "key02": "value02",
+               "key03": "value03"
+           }
+         }'
+
+=== Before adding "properties" ===
+
+$ curl http://localhost:8080/demo/all
+[]
+
+$ curl http://localhost:8080/demo/add -d name='Rod Oliveira' -d email=jrodolfo@gmail.com
+Saved
+
+$ curl http://localhost:8080/demo/add -d name='Rod Oliveira' -d email=roliveir@ca.ibm.com
+Saved
+
+$ curl http://localhost:8080/demo/all
+[{"id":1,"name":"Rod Oliveira","email":"jrodolfo@gmail.com"},{"id":2,"name":"Rod Oliveira","email":"roliveir@ca.ibm.com"}]
+
+$ curl http://localhost:8080/demo/add -d name='Rod Oliveira' email=jrodolfo@outlook.com
+{"timestamp":"2025-02-20T16:40:27.559+00:00","status":400,"error":"Bad Request","path":"/demo/add"}
+
+http://localhost:8080/demo/all
+[
+    {
+        "id": 1,
+        "name": "Rod Oliveira",
+        "email": "jrodolfo@gmail.com"
+    },
+    {
+        "id": 2,
+        "name": "Rod Oliveira",
+        "email": "jrodolfo@outlook.com"
+    },
+    {
+        "id": 52,
+        "name": "Rod Oliveira",
+        "email": "roliveir@ca.ibm.com"
+    }
+]
+
+
