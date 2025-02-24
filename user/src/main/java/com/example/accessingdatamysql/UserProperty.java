@@ -6,7 +6,8 @@ import lombok.Data;
 
 @Data
 @Entity
-public class UserProperty {
+public class UserProperty extends Auditable {  // Extend Auditable to inherit timestamps
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "property_id")
@@ -22,7 +23,7 @@ public class UserProperty {
      * The User entity has a list of UserProperty objects, and each UserProperty holds a reference back to the User.
      * When Jackson (the JSON serializer used by Spring Boot) tries to serialize the User, it recursively serializes
      * the UserProperty objects, which in turn try to serialize the User again, and so on. To resolve this, you can
-     * break the recursion using this approaches: annotate with @JsonManagedReference and @JsonBackReference
+     * break the recursion using this approach: annotate with @JsonManagedReference and @JsonBackReference
      */
     @JsonBackReference
     @ManyToOne
