@@ -142,3 +142,15 @@ The expected response will look like:
   }
 ]
 ```
+---
+## Contact
+
+For issues or inquiries, feel free to contact the maintainer:
+
+- **Name:** Rod Oliveira
+- **Role:** Software Developer
+- **Emails:** jrodolfo@gmail.com & roliveir@ca.ibm.com
+- **GitHub links:** https://github.com/jrodolfo & https://github.ibm.com/roliveir
+- **LinkedIn:** https://www.linkedin.com/in/rodoliveira
+- **Webpage:** https://jrodolfo.net
+---

@@ -1,0 +1,86 @@
+[
+  {
+    "createdAt": "2025-02-24T16:07:48.798977",
+    "updatedAt": "2025-02-24T16:07:48.798977",
+    "id": 4,
+    "innerMessageId": "001",
+    "destination": "solace/java/direct/system-01",
+    "deliveryMode": "PERSISTENT",
+    "priority": 3,
+    "properties": [
+      {
+        "createdAt": "2025-02-24T16:07:48.926256",
+        "updatedAt": "2025-02-24T16:07:48.926256",
+        "id": 7,
+        "propertyKey": "property01",
+        "propertyValue": "value01"
+      },
+      {
+        "createdAt": "2025-02-24T16:07:48.93463",
+        "updatedAt": "2025-02-24T16:07:48.93463",
+        "id": 8,
+        "propertyKey": "property02",
+        "propertyValue": "value02"
+      }
+    ],
+    "payload": {
+      "createdAt": "2025-02-24T16:07:48.91584",
+      "updatedAt": "2025-02-24T16:07:48.91584",
+      "id": 4,
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+    },
+    "parameter": {
+      "createdAt": "2025-02-24T16:07:48.90408",
+      "updatedAt": "2025-02-24T16:07:48.90408",
+      "id": 4,
+      "userName": "solace-cloud-client",
+      "password": "super-difficult",
+      "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
+      "vpnName": "my-solace-broker-on-aws",
+      "topicName": "solace/java/direct/system-01"
+    }
+  },
+  {
+    "createdAt": "2025-02-25T09:35:13.086787",
+    "updatedAt": "2025-02-25T09:35:13.086787",
+    "id": 5,
+    "innerMessageId": "001",
+    "destination": "solace/java/direct/system-01",
+    "deliveryMode": "PERSISTENT",
+    "priority": 3,
+    "properties": [
+      {
+        "createdAt": "2025-02-25T09:35:13.165876",
+        "updatedAt": "2025-02-25T09:35:13.165876",
+        "id": 9,
+        "propertyKey": "property01",
+        "propertyValue": "value01"
+      },
+      {
+        "createdAt": "2025-02-25T09:35:13.174617",
+        "updatedAt": "2025-02-25T09:35:13.174617",
+        "id": 10,
+        "propertyKey": "property02",
+        "propertyValue": "value02"
+      }
+    ],
+    "payload": {
+      "createdAt": "2025-02-25T09:35:13.157267",
+      "updatedAt": "2025-02-25T09:35:13.157267",
+      "id": 5,
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+    },
+    "parameter": {
+      "createdAt": "2025-02-25T09:35:13.147121",
+      "updatedAt": "2025-02-25T09:35:13.147121",
+      "id": 5,
+      "userName": null,
+      "password": null,
+      "host": null,
+      "vpnName": null,
+      "topicName": null
+    }
+  }
+]

@@ -3,8 +3,10 @@ package com.example.accessingdatamysql;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
+@EqualsAndHashCode(callSuper = true) // explicitly indicated that I want the call to the superclass’s equals and hashCode implementations
 @Entity
 public class UserProperty extends Auditable {  // Extend Auditable to inherit timestamps
 

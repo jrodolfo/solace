@@ -1,0 +1,159 @@
+cURL Commands and URL to use inside the web browser
+
+First of all:
+
+## Run the Application
+
+1. Make sure your Docker is up and running.
+2. Verify no other applications are using the same ports.
+3. From the project’s root directory, run either:
+
+    ./gradlew bootRun
+
+    or
+
+    ./mvnw spring-boot:run
+
+
+$ curl http://localhost:8080/demo/all
+[]
+
+$ curl -X POST http://localhost:8080/demo/add \
+     -H "Content-Type: application/json" \
+     -d '{
+           "userName": "solace-cloud-client",
+           "password": "super-difficult",
+           "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
+           "vpnName": "my-solace-broker-on-aws",
+           "topicName": "solace/java/direct/system-01",
+
+           "message": {
+             "innerMessageId": "001",
+             "destination": "solace/java/direct/system-01",
+             "deliveryMode": "PERSISTENT",
+             "priority": 3,
+
+             "properties": {
+               "property01": "value01",
+               "property02": "value02"
+             },
+
+             "payload": {
+               "type": "binary",
+               "content": "01001000 01100101 01101100 01101100"
+             }
+
+           }
+         }'
+
+$ curl -X POST http://localhost:8080/demo/add \
+     -H "Content-Type: application/json" \
+     -d '{
+           "message": {
+             "innerMessageId": "001",
+             "destination": "solace/java/direct/system-01",
+             "deliveryMode": "PERSISTENT",
+             "priority": 3,
+
+             "properties": {
+               "property01": "value01",
+               "property02": "value02"
+             },
+
+             "payload": {
+               "type": "binary",
+               "content": "01001000 01100101 01101100 01101100"
+             }
+
+           }
+         }'
+
+http://localhost:8080/demo/all
+$ curl http://localhost:8080/demo/all
+
+[
+  {
+    "createdAt": "2025-02-24T15:51:14.964895",
+    "updatedAt": "2025-02-24T15:51:14.964895",
+    "id": 1,
+    "innerMessageId": "001",
+    "destination": "solace/java/direct/system-01",
+    "deliveryMode": "PERSISTENT",
+    "priority": 3,
+    "properties": [
+      {
+        "createdAt": "2025-02-24T15:51:15.046596",
+        "updatedAt": "2025-02-24T15:51:15.046596",
+        "id": 1,
+        "propertyKey": "property01",
+        "propertyValue": "value01"
+      },
+      {
+        "createdAt": "2025-02-24T15:51:15.053151",
+        "updatedAt": "2025-02-24T15:51:15.053151",
+        "id": 2,
+        "propertyKey": "property02",
+        "propertyValue": "value02"
+      }
+    ],
+    "payload": {
+      "createdAt": "2025-02-24T15:51:15.03842",
+      "updatedAt": "2025-02-24T15:51:15.03842",
+      "id": 1,
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+    },
+    "parameter": {
+      "createdAt": "2025-02-24T15:51:15.03017",
+      "updatedAt": "2025-02-24T15:51:15.03017",
+      "id": 1,
+      "userName": "solace-cloud-client",
+      "password": "super-difficult",
+      "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
+      "vpnName": "my-solace-broker-on-aws",
+      "topicName": "solace/java/direct/system-01"
+    }
+  },
+  {
+    "createdAt": "2025-02-24T15:51:32.507615",
+    "updatedAt": "2025-02-24T15:51:32.507615",
+    "id": 2,
+    "innerMessageId": "001",
+    "destination": "solace/java/direct/system-01",
+    "deliveryMode": "PERSISTENT",
+    "priority": 3,
+    "properties": [
+      {
+        "createdAt": "2025-02-24T15:51:32.519334",
+        "updatedAt": "2025-02-24T15:51:32.519334",
+        "id": 3,
+        "propertyKey": "property01",
+        "propertyValue": "value01"
+      },
+      {
+        "createdAt": "2025-02-24T15:51:32.523145",
+        "updatedAt": "2025-02-24T15:51:32.523145",
+        "id": 4,
+        "propertyKey": "property02",
+        "propertyValue": "value02"
+      }
+    ],
+    "payload": {
+      "createdAt": "2025-02-24T15:51:32.515588",
+      "updatedAt": "2025-02-24T15:51:32.515588",
+      "id": 2,
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+    },
+    "parameter": {
+      "createdAt": "2025-02-24T15:51:32.511855",
+      "updatedAt": "2025-02-24T15:51:32.511855",
+      "id": 2,
+      "userName": "solace-cloud-client",
+      "password": "super-difficult",
+      "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
+      "vpnName": "my-solace-broker-on-aws",
+      "topicName": "solace/java/direct/system-01"
+    }
+  }
+]
