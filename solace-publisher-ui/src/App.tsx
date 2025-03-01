@@ -8,7 +8,6 @@ function App() {
     // State hooks for input fields
     const [userName, setUserName] = useState("");
     const [password, setPassword] = useState("");
-    const [topicName, setTopicName] = useState("");
     const [vpnName, setVpnName] = useState("");
     const [host, setHost] = useState("");
     const [message, setMessage] = useState("");
@@ -28,7 +27,6 @@ function App() {
                     password,   // Sent as a plain string
                     host,       // Sent as a plain string
                     vpnName,    // Sent as a plain string
-                    topicName,  // Sent as a plain string
                     message: JSON.parse(message) // preserve the json object structure of the message
                 },
                 {
@@ -42,12 +40,12 @@ function App() {
             setShowResponse(true);
             setResponse(response);
         } catch (error) {
-            console.error("Error publishing message:", error);
-            alert("Failed to publish the message. See console for details.");
+            const errorMessage = "Failed to publish the message. See console for details.";
+            console.error(errorMessage, error);
+            alert(errorMessage);
             const DEFAULT_EMPTY_HEADERS = {} as AxiosRequestHeaders;
-            const DEFAULT_ERROR_MESSAGE = "Unknown error occurred. Please check console for details.";
+            const DEFAULT_ERROR_MESSAGE = errorMessage;
             setShowResponse(true);
-            // setResponse(response);
             setResponse({
                 data: DEFAULT_ERROR_MESSAGE,
                 status: 500,
@@ -57,7 +55,6 @@ function App() {
                     headers: DEFAULT_EMPTY_HEADERS
                 },
             });
-
         }
     };
 
@@ -130,22 +127,6 @@ function App() {
                         value={vpnName}
                         onChange={(e) => setVpnName(e.target.value)}
                         placeholder="Enter the VPN name"
-                        required
-                    />
-                </div>
-
-                {/* Topic Name Field */}
-                <div className="col-lg-12">
-                    <label htmlFor="topicName" className="form-label">
-                        Topic Name
-                    </label>
-                    <input
-                        id="topicName"
-                        type="text"
-                        className="form-control w-100 mt-1 mb-4"
-                        value={topicName}
-                        onChange={(e) => setTopicName(e.target.value)}
-                        placeholder="Enter the topic name"
                         required
                     />
                 </div>

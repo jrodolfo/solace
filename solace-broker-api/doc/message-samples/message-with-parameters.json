@@ -1,0 +1,25 @@
+{
+  "userName": "solace-cloud-client",
+  "password": "super-difficult",
+  "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
+  "vpnName": "my-solace-broker-on-aws",
+  "topicName": "solace/java/direct/system-01",
+
+  "message": {
+    "innerMessageId": "001",
+    "destination": "solace/java/direct/system-01",
+    "deliveryMode": "PERSISTENT",
+    "priority": 3,
+
+    "properties": {
+      "property01": "value01",
+      "property02": "value02"
+    },
+
+    "payload": {
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+    }
+
+  }
+}

@@ -2,7 +2,7 @@ package org.orgname.solace.broker.api.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.orgname.solace.broker.api.model.SolaceParameters;
+import org.orgname.solace.broker.api.dto.ParameterDTO;
 
 import java.util.Properties;
 
@@ -45,14 +45,14 @@ class AccessPropertiesImplTest {
 
     @Test
     void testPropertiesFromSolaceParameters() throws Exception {
-        // Create a SolaceParameters instance
-        SolaceParameters mockParams = new SolaceParameters();
+        // Create a ParameterDTO instance
+        ParameterDTO mockParams = new ParameterDTO();
         mockParams.setHost("test-host");
         mockParams.setVpnName("test-vpn");
         mockParams.setUserName("test-user");
         mockParams.setPassword("test-pass");
 
-        // Invoke the method that uses SolaceParameters
+        // Invoke the method that uses ParameterDTO
         Properties props = accessPropertiesImpl.getPropertiesPublisher(mockParams);
         assertNotNull(props, "Properties object should not be null");
 

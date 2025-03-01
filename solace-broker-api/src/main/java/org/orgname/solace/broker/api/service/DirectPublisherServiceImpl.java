@@ -7,7 +7,7 @@ import com.solace.messaging.publisher.DirectMessagePublisher;
 import com.solace.messaging.publisher.OutboundMessage;
 import com.solace.messaging.publisher.OutboundMessageBuilder;
 import com.solace.messaging.resources.Topic;
-import org.orgname.solace.broker.api.model.SolaceParameters;
+import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -31,7 +31,7 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
 
 
     @Override
-    public String sendMessage(String topicName, String content, Optional<SolaceParameters> solaceParametersOptional) throws Exception {
+    public String sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) throws Exception {
 
         // check mandatory parameters
         if (topicName == null || topicName.isEmpty() || content == null || content.isEmpty()) {
@@ -40,11 +40,11 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
 
         final Properties properties;
 
-        SolaceParameters solaceParameters = solaceParametersOptional.orElse(null);
-        if (solaceParameters == null) {
+        ParameterDTO parameterDTO = solaceParametersOptional.orElse(null);
+        if (parameterDTO == null) {
             properties = AccessPropertiesImpl.getPropertiesPublisher();
         } else {
-            properties = AccessPropertiesImpl.getPropertiesPublisher(solaceParameters);
+            properties = AccessPropertiesImpl.getPropertiesPublisher(parameterDTO);
         }
 
         final MessagingService messagingService = MessagingService.builder(ConfigurationProfile.V1)

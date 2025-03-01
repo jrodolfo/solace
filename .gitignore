@@ -1,3 +1,4 @@
+
 HELP.md
 target/
 !.mvn/wrapper/maven-wrapper.jar
@@ -57,3 +58,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+### Gradle ###
+**/.gradle/*

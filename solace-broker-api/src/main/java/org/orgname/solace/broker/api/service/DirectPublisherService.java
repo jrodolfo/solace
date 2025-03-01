@@ -1,9 +1,9 @@
 package org.orgname.solace.broker.api.service;
 
-import org.orgname.solace.broker.api.model.SolaceParameters;
+import org.orgname.solace.broker.api.dto.ParameterDTO;
 
 import java.util.Optional;
 
 public interface DirectPublisherService {
-    String sendMessage(String topicName, String content, Optional<SolaceParameters> solaceParametersOptional) throws Exception;
+    String sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) throws Exception;
 }

@@ -1,6 +1,6 @@
 package org.orgname.solace.broker.api.service;
 
-import org.orgname.solace.broker.api.model.SolaceParameters;
+import org.orgname.solace.broker.api.dto.ParameterDTO;
 import com.solace.messaging.config.SolaceProperties;
 import com.solace.messaging.config.SolaceProperties.AuthenticationProperties;
 import com.solace.messaging.config.SolaceProperties.TransportLayerProperties;
@@ -29,12 +29,12 @@ public class AccessPropertiesImpl implements AccessProperties {
         this.environmentConfig = environmentConfigImpl;
     }
 
-    private static Properties getPropertiesFromMethodParameters(SolaceParameters solaceParameters) throws Exception {
+    private static Properties getPropertiesFromMethodParameters(ParameterDTO parameterDTO) throws Exception {
 
-        String host = solaceParameters.getHost();
-        String vpnName = solaceParameters.getVpnName();
-        String userName = solaceParameters.getUserName();
-        String password = solaceParameters.getPassword();
+        String host = parameterDTO.getHost();
+        String vpnName = parameterDTO.getVpnName();
+        String userName = parameterDTO.getUserName();
+        String password = parameterDTO.getPassword();
 
         // Check if they are good
         if (host == null || host.trim().isEmpty() ||
@@ -92,8 +92,8 @@ public class AccessPropertiesImpl implements AccessProperties {
         return getPropertiesFromEnv();
     }
 
-    public static Properties getPropertiesPublisher(SolaceParameters solaceParameters) throws Exception {
-        return getPropertiesFromMethodParameters(solaceParameters);
+    public static Properties getPropertiesPublisher(ParameterDTO parameterDTO) throws Exception {
+        return getPropertiesFromMethodParameters(parameterDTO);
     }
 
     public static Properties getPropertiesReceiver() throws Exception {

@@ -1,6 +1,15 @@
 spring:
   application:
     name: solace-broker-api
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydatabase
+    username: myuser
+    password: secret
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
 #logging:
 #  level:
@@ -30,3 +39,4 @@ management:
       base-path: /rest/actuator
       exposure:
         include: '*'
+

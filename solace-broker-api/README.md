@@ -9,6 +9,7 @@ This repository contains a Spring Boot application that exposes RESTful APIs and
 - Swagger UI for testing and interacting with the API.
 - Configurable `application.yml` for flexibility in API and Swagger settings.
 - Actuator support for application monitoring.
+- All requests are persisted in a MySQL database running inside a Docker container
 
 ---
 
@@ -18,6 +19,7 @@ This repository contains a Spring Boot application that exposes RESTful APIs and
 - **Spring Boot**
     - Spring Web
     - Spring Actuator
+    - Docker Compose
 - **SpringDoc OpenAPI** for API documentation and Swagger UI
 - **Maven** for dependency management
 
@@ -28,7 +30,8 @@ This repository contains a Spring Boot application that exposes RESTful APIs and
 - Java 21 or higher
 - Maven 3.9 or higher
 - Any IDE for development (e.g., IntelliJ IDEA)
-- A REST client (Postman, Swagger UI, JMeter or browser-based)
+- A REST client (Postman, Swagger UI, JMeter, cURL, or a browser-based app)
+- Docker
 
 ---
 
@@ -61,7 +64,9 @@ Follow these steps to get the application up and running on your local machine:
 7. **Install Git Bash**  
    [Download Git Bash](https://git-scm.com/downloads)
 
-8. **Set Solace Environment Variables**
+8. **Install Docker**
+
+9. **Set Solace Environment Variables**
     - Register the following **4 system variables**:
         - `SOLACE_CLOUD_HOST`: The host URL of the Solace PubSub+ Broker (formatted as `host:port`)
         - `SOLACE_CLOUD_VPN`: The Virtual Private Network (VPN) name
@@ -80,9 +85,15 @@ Follow these steps to get the application up and running on your local machine:
 
 1. **Clone the Repository**  
    Run the following command to clone the repository:
+
    ```bash
-   git clone https://github.ibm.com/roliveir/solace-broker-api.git
-   cd solace-broker-api
+   git clone https://github.com/jrodolfo/solace.git
+   cd solace
+   ```
+   or
+   ```bash
+   git clone https://github.ibm.com/roliveir/solace.git
+   cd solace
    ```
 
 2. **Load the Project into IntelliJ**
@@ -101,6 +112,8 @@ Follow these steps to get the application up and running on your local machine:
 5. **Load the Postman Collection**
     - Import the Postman collection available in the repository:
       ```
+      https://github.com/jrodolfo/solace/tree/main/solace-broker-api/doc/postman
+      or
       https://github.ibm.com/roliveir/solace-broker-api/tree/main/doc/postman
       ```
 
@@ -129,27 +142,68 @@ By following these steps, you'll have the application running and ready to consu
 
   #### Sample Request (JSON):
   ```
-  {
-    "messageId": "001",
-    "destination": "solace/java/direct/system-01",
-    "deliveryMode": "PERSISTENT",
-    "priority": 3,
-    "properties": {
-        "property01": "value01",
-        "property02": "value02"
-    },
-    "payload": {
-        "type": "binary",
-        "content": "01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001"
+  Message with parameters:
+  
+    {
+        "userName": "solace-cloud-client",
+        "password": "super-difficult",
+        "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
+        "vpnName": "my-solace-broker-on-aws",
+        
+        "message": {
+        "innerMessageId": "001",
+        "destination": "solace/java/direct/system-01",
+        "deliveryMode": "PERSISTENT",
+        "priority": 3,
+        
+            "properties": {
+              "property01": "value01",
+              "property02": "value02"
+            },
+        
+            "payload": {
+              "type": "binary",
+              "content": "01001000 01100101 01101100 01101100"
+            }
+        
+        }
+    }
+    
+  Message without parameters:
+  
+    {
+        "message": {
+        "innerMessageId": "001",
+        "destination": "solace/java/direct/system-01",
+        "deliveryMode": "PERSISTENT",
+        "priority": 3,
+        
+            "properties": {
+              "property01": "value01",
+              "property02": "value02"
+            },
+        
+            "payload": {
+              "type": "binary",
+              "content": "01001000 01100101 01101100 01101100"
+            }
+        
+        }
     }
     ```
 
-  #### Sample Response:
+  #### Samples Response:
   ```
+  Sample 1)
+  
   {
     "destination": "solace/java/direct/system-01",
-    "content": "01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001"
+    "content": "01001000 01100101 01101100 01101100"
   }
+  
+  Sample 2)
+  
+  com.solacesystems.jcsmp.InvalidPropertiesException: All hosts in the host list: 'wss://mr-connection-blahblahblah.messaging.solace.cloud:443' are not resolvable
   ```
 
 ---

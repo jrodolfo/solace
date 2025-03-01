@@ -14,7 +14,7 @@ test('it shows 5 inputs and 1 button', () => {
     const inputs = screen.getAllByRole('textbox');
     const button = screen.getByRole('button');
     // Assertion - make sure the component is doing what we expect it to do
-    expect(inputs).toHaveLength(5);
+    expect(inputs).toHaveLength(4);
     expect(button).toBeInTheDocument();
 });
 
@@ -46,7 +46,6 @@ describe("Form Submission Tests", () => {
         await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
         await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
         await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
-        await userEvent.type(screen.getByLabelText(/Topic Name/i), "testTopic");
         // we deal with the message text input in a different way because its
         // content is a json string that is not properly handled by screen.getByLabelText
         const messageInput = screen.getByLabelText(/Message/i);
@@ -66,7 +65,6 @@ describe("Form Submission Tests", () => {
                 password: "testPass",
                 host: "localhost",
                 vpnName: "testVPN",
-                topicName: "testTopic",
                 message: {key: "value"}, // JSON parsed message
             },
             {
@@ -89,7 +87,6 @@ describe("Form Submission Tests", () => {
         await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
         await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
         await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
-        await userEvent.type(screen.getByLabelText(/Topic Name/i), "testTopic");
         // we deal with the message text input in a different way because its
         // content is a json string that is not properly handled by screen.getByLabelText
         const messageInput = screen.getByLabelText(/Message/i);
