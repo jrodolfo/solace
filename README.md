@@ -107,6 +107,50 @@ Here's an example message format you can use to test the application:
 }
 ```
 
+For Postman:
+```json
+{
+  "message": {
+    "innerMessageId": "001",
+    "destination": "solace/java/direct/system-01",
+    "deliveryMode": "PERSISTENT",
+    "priority": 3,
+
+    "properties": {
+      "property01": "value01",
+      "property02": "value02"
+    },
+
+    "payload": {
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+    }
+
+  }
+}
+```
+
+For Solace Publisher UI:
+```json
+{
+    "innerMessageId": "001",
+    "destination": "solace/java/direct/system-01",
+    "deliveryMode": "PERSISTENT",
+    "priority": 3,
+
+    "properties": {
+      "property01": "value01",
+      "property02": "value02"
+    },
+
+    "payload": {
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+    }
+}
+```
+
+
 ### Testing Topic:
 Use the following topic for your tests:  
 `solace/java/direct/system-01`
