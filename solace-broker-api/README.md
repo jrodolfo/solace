@@ -141,68 +141,65 @@ By following these steps, you'll have the application running and ready to consu
   Sends a message using `application/json`, `application/xml`, or `application/x-www-form-urlencoded`.
 
   #### Sample Request (JSON):
-  ```
-  Message with parameters:
-  
-    {
-        "userName": "solace-cloud-client",
-        "password": "super-difficult",
-        "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
-        "vpnName": "my-solace-broker-on-aws",
-        
-        "message": {
-        "innerMessageId": "001",
-        "destination": "solace/java/direct/system-01",
-        "deliveryMode": "PERSISTENT",
-        "priority": 3,
-        
-            "properties": {
-              "property01": "value01",
-              "property02": "value02"
-            },
-        
-            "payload": {
-              "type": "binary",
-              "content": "01001000 01100101 01101100 01101100"
-            }
-        
-        }
-    }
+
+  - Message with parameters:
+    ```json
+      {
+          "userName": "solace-cloud-client",
+          "password": "super-difficult",
+          "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
+          "vpnName": "my-solace-broker-on-aws",
+          "message": {
+              "innerMessageId": "001",
+              "destination": "solace/java/direct/system-01",
+              "deliveryMode": "PERSISTENT",
+              "priority": 3,
+              "properties": {
+                "property01": "value01",
+                "property02": "value02"
+              },
+              "payload": {
+                "type": "binary",
+                "content": "01001000 01100101 01101100 01101100"
+              }
+          }
+      }
+    ```
     
-  Message without parameters:
-  
-    {
-        "message": {
-        "innerMessageId": "001",
-        "destination": "solace/java/direct/system-01",
-        "deliveryMode": "PERSISTENT",
-        "priority": 3,
-        
-            "properties": {
-              "property01": "value01",
-              "property02": "value02"
-            },
-        
-            "payload": {
-              "type": "binary",
-              "content": "01001000 01100101 01101100 01101100"
-            }
-        
-        }
-    }
+    Message without parameters:
+    ```json
+      {
+          "message": {
+              "innerMessageId": "001",
+              "destination": "solace/java/direct/system-01",
+              "deliveryMode": "PERSISTENT",
+              "priority": 3,
+              "properties": {
+                "property01": "value01",
+                "property02": "value02"
+              },
+              "payload": {
+                "type": "binary",
+                "content": "01001000 01100101 01101100 01101100"
+              }
+          }
+      }
     ```
 
-  #### Samples Response:
-  ```
-  Sample 1)
+    #### Samples Response:
   
+- Sample 1)
+
+  ```json
   {
     "destination": "solace/java/direct/system-01",
     "content": "01001000 01100101 01101100 01101100"
   }
-  
-  Sample 2)
-  
+  ```
+
+- Sample 2)
+
+  ```
   com.solacesystems.jcsmp.InvalidPropertiesException: All hosts in the host list: 'wss://mr-connection-blahblahblah.messaging.solace.cloud:443' are not resolvable
   ```
 

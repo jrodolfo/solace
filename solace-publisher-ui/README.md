@@ -72,20 +72,21 @@ You can use the message below for testing purposes:
 
 ### Sample Message:
 
+Use this format inside the field for the message in Solace Publisher UI:
 ```json
 {
-  "messageId": "001",
-  "destination": "solace/java/direct/system-01",
-  "deliveryMode": "PERSISTENT",
-  "priority": 3,
-  "properties": {
-    "property01": "value01",
-    "property02": "value02"
-  },
-  "payload": {
-    "type": "binary",
-    "content": "01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001"
-  }
+   "innerMessageId": "001",
+   "destination": "solace/java/direct/system-01",
+   "deliveryMode": "PERSISTENT",
+   "priority": 3,
+   "properties": {
+      "property01": "value01",
+      "property02": "value02"
+   },
+   "payload": {
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+   }
 }
 ```
 

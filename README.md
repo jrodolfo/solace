@@ -88,26 +88,34 @@ You can test the **Solace Broker API** in three different ways:
 
 ## Sending a Test Message
 
-Here's an example message format you can use to test the application:
+Here is an example of a message format with parameters that you can use to test the application using Postman:
 
 ```json
 {
-  "messageId": "001",
-  "destination": "solace/java/direct/system-01",
-  "deliveryMode": "PERSISTENT",
-  "priority": 3,
-  "properties": {
-    "property01": "value01",
-    "property02": "value02"
-  },
-  "payload": {
-    "type": "binary",
-    "content": "01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001"
+  "userName": "solace-cloud-client",
+  "password": "super-difficult",
+  "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
+  "vpnName": "my-solace-broker-on-aws",
+  "topicName": "solace/java/direct/system-01",
+  "message": {
+    "innerMessageId": "001",
+    "destination": "solace/java/direct/system-01",
+    "deliveryMode": "PERSISTENT",
+    "priority": 3,
+    "properties": {
+      "property01": "value01",
+      "property02": "value02"
+    },
+    "payload": {
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+    }
   }
 }
 ```
 
-For Postman:
+And here is an example of a message format without parameters that you can use to test the application using Postman:
+
 ```json
 {
   "message": {
@@ -115,34 +123,29 @@ For Postman:
     "destination": "solace/java/direct/system-01",
     "deliveryMode": "PERSISTENT",
     "priority": 3,
-
     "properties": {
       "property01": "value01",
       "property02": "value02"
     },
-
     "payload": {
       "type": "binary",
       "content": "01001000 01100101 01101100 01101100"
     }
-
   }
 }
 ```
 
-For Solace Publisher UI:
+Use this format inside the field for the message in Solace Publisher UI:
 ```json
 {
     "innerMessageId": "001",
     "destination": "solace/java/direct/system-01",
     "deliveryMode": "PERSISTENT",
     "priority": 3,
-
     "properties": {
       "property01": "value01",
       "property02": "value02"
     },
-
     "payload": {
       "type": "binary",
       "content": "01001000 01100101 01101100 01101100"
