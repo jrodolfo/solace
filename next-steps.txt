@@ -26,22 +26,20 @@
     React Testing Library and Jest: The Complete Guide
 	https://ibm-learning.udemy.com/course/react-testing-library-and-jest
 
-09) Save the request to the API into a MySQL/Docker database ......... DOING ◦◦◦
+09) Save the request to the API into a MySQL/Docker database .................................................... DONE ✓
 
     09.01) Tutorial: "Accessing data with MySQL" at https://spring.io/guides/gs/accessing-data-mysql ............ DONE ✓
-    09.02) Add complexity to the example given on the tutorial. Create the "message" project .................... DONE ✓
-    09.03) Add more complexity to the "user" project so that we can persist a Solace message ............ DONE ✓
-           Create the "message" project
+    09.02) Add complexity to the example given on the tutorial. Create the "user" project ....................... DONE ✓
+    09.03) Create the "message" project from "user" project so that we can persist a Solace message ............. DONE ✓
     09.04) Merge the code from "message" into "solace-broken-api" ............................................... DONE ✓
     09.05) Adjust the Unit Tests ................................................................................ DONE ✓
     09.06) Adjust the README.md file ............................................................................ DONE ✓
-    09.07) Remove the topic name field from the front end
-    09.08) Run an integration test (solace-publisher-ui | curl | postman | jmeter) + backend + Solace PubSub+ ....
-    09.09) Check the code into IBM and Public GitHub
+    09.07) Remove the topic name field from the front end........................................................ DONE ✓
+    09.08) Run an integration test (solace-publisher-ui | curl | postman | jmeter) + backend + Solace PubSub+ ... DONE ✓
+    09.09) Check the code into IBM and Public GitHub ............................................................ DONE ✓
 
-10) Develop the Subscriber UI ........................................
+10) Fix the unit test for the solace-broker-api controller............
 
-11) The Subscriber UI & Publisher UI app should be just one app ......
+11) Develop the Subscriber UI ........................................
 
 12) Add menu to select service other than Solace PubSub+ service .....
-
