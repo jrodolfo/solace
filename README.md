@@ -1,20 +1,43 @@
 # Solace Projects Overview
 
-Welcome to the Solace Suite! This repository provides everything you need to work with the **Solace Broker API** and the accompanying **UI application**. Follow this guide to get started, test the API, and dive into the features.
+Welcome to the Solace Suite! This repository provides everything you need to start working with the **Solace Broker API** and the accompanying **UI application**. Follow this guide to get started, test the API, and dive into the features. This suite was created in 2025.
+
+![Screenshot or Description](doc/solace.png)
 
 ---
 
 ## Project Structure
 
-### 1. **Solace Broker API**
+### 1. **Publisher Emulator (FrontEnd App)**
+The React-based application that provides a user-friendly interface for interacting with the broker and sending messages.
+
+**Path:** `solace/solace-publisher-ui`
+
+### 2. **Publisher Emulator (Postman)**
+A Postman Collection to send messages to the Solace Broker API.
+
+**Path:** `solace/solace-broker-api/doc/postman/solace-producer-emulator.postman_collection.json`
+
+### 3. **Publisher Emulator (JMeter)**
+A JMeter script to send messages to the Solace Broker API.
+
+**Path:** `solace/solace-broker-api/doc/jmeter/solace-producer-emulator.jmx`
+
+### 4. **Solace Broker API**
 The backend service that powers message exchanges. All integrations and API tests are managed here.
 
 **Path:** `solace/solace-broker-api`
 
-### 2. **Solace Publisher UI**
-The React-based application that provides a user-friendly interface for interacting with the broker and sending messages.
+### 5. **Broker on Solace Cloud & AWS**
+Follow the instructions on the how-to folder to create a Solace Broker on the cloud.
 
-**Path:** `solace/solace-publisher-ui`
+**Path:** `solace/solace-broker-api/how-to/01-using-solace-pubsubplus.txt`
+
+### 6. **Subscriber Emulator (Java App)**
+Use this app to receive the messages created by the publisher emulators.
+
+**Path:** `solace/solace-subscriber`
+
 
 ---
 
