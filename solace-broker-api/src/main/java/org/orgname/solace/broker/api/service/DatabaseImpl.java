@@ -9,11 +9,14 @@ import org.orgname.solace.broker.api.jpa.Payload;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.repository.MessageRepository;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class DatabaseImpl implements Database {
@@ -25,8 +28,29 @@ public class DatabaseImpl implements Database {
     }
 
     @Override
-    public PagedMessagesResponseDTO getAllMessages(int page, int size) {
-        return new PagedMessagesResponseDTO(messageRepository.findAll(PageRequest.of(page, size)));
+    public PagedMessagesResponseDTO getAllMessages(
+            int page,
+            int size,
+            String destination,
+            String deliveryMode,
+            String innerMessageId,
+            String sortBy,
+            String sortDirection) {
+        Specification<Message> specification = Specification.where(null);
+
+        if (hasText(destination)) {
+            specification = specification.and(stringContains("destination", destination));
+        }
+        if (hasText(deliveryMode)) {
+            specification = specification.and(stringContains("deliveryMode", deliveryMode));
+        }
+        if (hasText(innerMessageId)) {
+            specification = specification.and(stringContains("innerMessageId", innerMessageId));
+        }
+
+        Sort.Direction direction = Sort.Direction.fromString(sortDirection);
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        return new PagedMessagesResponseDTO(messageRepository.findAll(specification, pageRequest));
     }
 
     @Override
@@ -65,6 +89,16 @@ public class DatabaseImpl implements Database {
         // Save the entire structure (cascade persists related entities)
         messageRepository.save(message);
         return message;
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private static Specification<Message> stringContains(String fieldName, String value) {
+        String normalizedValue = "%" + value.trim().toLowerCase() + "%";
+        return (root, query, criteriaBuilder) ->
+                criteriaBuilder.like(criteriaBuilder.lower(root.get(fieldName)), normalizedValue);
     }
 
 }

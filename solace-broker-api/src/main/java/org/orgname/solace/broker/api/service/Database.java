@@ -8,6 +8,13 @@ public interface Database {
 
     Message saveMessage(MessageWrapperDTO wrapper);
 
-    PagedMessagesResponseDTO getAllMessages(int page, int size);
+    PagedMessagesResponseDTO getAllMessages(
+            int page,
+            int size,
+            String destination,
+            String deliveryMode,
+            String innerMessageId,
+            String sortBy,
+            String sortDirection);
 
 }

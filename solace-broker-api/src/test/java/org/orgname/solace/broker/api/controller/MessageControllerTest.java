@@ -23,8 +23,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -60,12 +62,12 @@ class MessageControllerTest {
 
     @Test
     void shouldReturnAllMessagesFromRepository() throws Exception {
-        Message first = storedMessage("001", "solace/java/direct/system-01");
-        Message second = storedMessage("002", "solace/java/direct/system-02");
+        Message first = storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, "2026-04-20T10:00:00");
+        Message second = storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1, "2026-04-19T10:00:00");
         database.storedMessages.add(first);
         database.storedMessages.add(second);
 
-        PagedMessagesResponseDTO messages = controller.getAllMessages(0, 20);
+        PagedMessagesResponseDTO messages = controller.getAllMessages(0, 20, null, null, null, "createdAt", "desc");
         assertEquals(2, messages.getItems().size());
         assertEquals(2L, messages.getTotalElements());
         assertEquals(1, messages.getTotalPages());
@@ -88,8 +90,8 @@ class MessageControllerTest {
 
     @Test
     void shouldRespectExplicitPaginationParameters() throws Exception {
-        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01"));
-        database.storedMessages.add(storedMessage("002", "solace/java/direct/system-02"));
+        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, "2026-04-20T10:00:00"));
+        database.storedMessages.add(storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1, "2026-04-19T10:00:00"));
 
         mockMvc.perform(get("/api/v1/messages/all?page=1&size=1"))
                 .andExpect(status().isOk())
@@ -103,12 +105,44 @@ class MessageControllerTest {
     }
 
     @Test
-    void shouldRejectInvalidPaginationParameters() throws Exception {
+    void shouldFilterMessagesByDestination() throws Exception {
+        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, "2026-04-20T10:00:00"));
+        database.storedMessages.add(storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1, "2026-04-19T10:00:00"));
+
+        mockMvc.perform(get("/api/v1/messages/all?destination=system-02"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("002"))
+                .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-02"));
+    }
+
+    @Test
+    void shouldRespectExplicitSortingParameters() throws Exception {
+        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, "2026-04-20T10:00:00"));
+        database.storedMessages.add(storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1, "2026-04-19T10:00:00"));
+
+        mockMvc.perform(get("/api/v1/messages/all?sortBy=priority&sortDirection=asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("002"))
+                .andExpect(jsonPath("$.items[1].innerMessageId").value("001"));
+    }
+
+    @Test
+    void shouldRejectInvalidPaginationAndSortParameters() throws Exception {
         mockMvc.perform(get("/api/v1/messages/all?page=-1&size=0"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value("page must be greater than or equal to 0"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
+    }
+
+    @Test
+    void shouldRejectInvalidSortField() throws Exception {
+        mockMvc.perform(get("/api/v1/messages/all?sortBy=updatedAt"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("sortBy must be one of createdAt, priority, destination, innerMessageId"))
                 .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
     }
 
@@ -224,13 +258,15 @@ class MessageControllerTest {
         return wrapper;
     }
 
-    private static Message storedMessage(String innerMessageId, String destination) {
+    private static Message storedMessage(String innerMessageId, String destination, String deliveryMode, int priority, String createdAt) {
         Message message = new Message();
         message.setId("001".equals(innerMessageId) ? 1L : 2L);
         message.setInnerMessageId(innerMessageId);
         message.setDestination(destination);
-        message.setDeliveryMode("PERSISTENT");
-        message.setPriority(3);
+        message.setDeliveryMode(deliveryMode);
+        message.setPriority(priority);
+        message.setCreatedAt(java.time.LocalDateTime.parse(createdAt));
+        message.setUpdatedAt(java.time.LocalDateTime.parse(createdAt));
 
         Payload payload = new Payload();
         payload.setId(20L);
@@ -278,11 +314,39 @@ class MessageControllerTest {
         }
 
         @Override
-        public PagedMessagesResponseDTO getAllMessages(int page, int size) {
-            int start = Math.min(page * size, storedMessages.size());
-            int end = Math.min(start + size, storedMessages.size());
-            List<Message> content = storedMessages.subList(start, end);
-            return new PagedMessagesResponseDTO(new PageImpl<>(content, PageRequest.of(page, size), storedMessages.size()));
+        public PagedMessagesResponseDTO getAllMessages(
+                int page,
+                int size,
+                String destination,
+                String deliveryMode,
+                String innerMessageId,
+                String sortBy,
+                String sortDirection) {
+            List<Message> filteredMessages = storedMessages.stream()
+                    .filter(message -> matches(message.getDestination(), destination))
+                    .filter(message -> matches(message.getDeliveryMode(), deliveryMode))
+                    .filter(message -> matches(message.getInnerMessageId(), innerMessageId))
+                    .sorted(comparatorFor(sortBy, sortDirection))
+                    .collect(Collectors.toList());
+
+            int start = Math.min(page * size, filteredMessages.size());
+            int end = Math.min(start + size, filteredMessages.size());
+            List<Message> content = filteredMessages.subList(start, end);
+            return new PagedMessagesResponseDTO(new PageImpl<>(content, PageRequest.of(page, size), filteredMessages.size()));
+        }
+
+        private static boolean matches(String actualValue, String filterValue) {
+            return filterValue == null || actualValue.toLowerCase().contains(filterValue.toLowerCase());
+        }
+
+        private static Comparator<Message> comparatorFor(String sortBy, String sortDirection) {
+            Comparator<Message> comparator = switch (sortBy) {
+                case "priority" -> Comparator.comparing(Message::getPriority);
+                case "destination" -> Comparator.comparing(Message::getDestination, String.CASE_INSENSITIVE_ORDER);
+                case "innerMessageId" -> Comparator.comparing(Message::getInnerMessageId, String.CASE_INSENSITIVE_ORDER);
+                default -> Comparator.comparing(Message::getCreatedAt);
+            };
+            return "asc".equalsIgnoreCase(sortDirection) ? comparator : comparator.reversed();
         }
     }
 }

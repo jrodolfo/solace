@@ -57,7 +57,8 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldReturnStoredMessagesJsonContract() throws Exception {
-        when(database.getAllMessages(0, 20)).thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01")), 0, 20, 1));
+        when(database.getAllMessages(0, 20, null, null, null, "createdAt", "desc"))
+                .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all"))
                 .andExpect(status().isOk())
@@ -76,7 +77,8 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldReturnExplicitPageOfStoredMessages() throws Exception {
-        when(database.getAllMessages(1, 1)).thenReturn(messagePageResponse(List.of(storedMessage("002", "solace/java/direct/system-02")), 1, 1, 2));
+        when(database.getAllMessages(1, 1, null, null, null, "createdAt", "desc"))
+                .thenReturn(messagePageResponse(List.of(storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1)), 1, 1, 2));
 
         mockMvc.perform(get("/api/v1/messages/all?page=1&size=1"))
                 .andExpect(status().isOk())
@@ -90,11 +92,44 @@ class MessageControllerWebMvcTest {
     }
 
     @Test
+    void shouldFilterStoredMessagesByDeliveryMode() throws Exception {
+        when(database.getAllMessages(0, 20, null, "PERSISTENT", null, "createdAt", "desc"))
+                .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 1));
+
+        mockMvc.perform(get("/api/v1/messages/all?deliveryMode=PERSISTENT"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].deliveryMode").value("PERSISTENT"));
+    }
+
+    @Test
+    void shouldRespectExplicitSortFieldAndDirection() throws Exception {
+        when(database.getAllMessages(0, 20, null, null, null, "priority", "asc"))
+                .thenReturn(messagePageResponse(List.of(
+                        storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1),
+                        storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 2));
+
+        mockMvc.perform(get("/api/v1/messages/all?sortBy=priority&sortDirection=asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("002"))
+                .andExpect(jsonPath("$.items[1].innerMessageId").value("001"));
+    }
+
+    @Test
     void shouldRejectInvalidPageRequest() throws Exception {
         mockMvc.perform(get("/api/v1/messages/all?page=-1&size=0"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("page must be greater than or equal to 0"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
+    }
+
+    @Test
+    void shouldRejectInvalidSortDirection() throws Exception {
+        mockMvc.perform(get("/api/v1/messages/all?sortDirection=sideways"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("sortDirection must be asc or desc"))
                 .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
     }
 
@@ -199,13 +234,13 @@ class MessageControllerWebMvcTest {
         return wrapper;
     }
 
-    private static Message storedMessage(String innerMessageId, String destination) {
+    private static Message storedMessage(String innerMessageId, String destination, String deliveryMode, int priority) {
         Message message = new Message();
         message.setId("001".equals(innerMessageId) ? 1L : 2L);
         message.setInnerMessageId(innerMessageId);
         message.setDestination(destination);
-        message.setDeliveryMode("PERSISTENT");
-        message.setPriority(3);
+        message.setDeliveryMode(deliveryMode);
+        message.setPriority(priority);
 
         Payload payload = new Payload();
         payload.setId(20L);

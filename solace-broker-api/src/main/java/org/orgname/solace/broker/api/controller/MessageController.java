@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +33,7 @@ import java.util.logging.Logger;
 public class MessageController {
 
     private static final Logger logger = Logger.getLogger(MessageController.class.getName());
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("createdAt", "priority", "destination", "innerMessageId");
     private final Database database;
     private final DirectPublisherService directPublisherService;
 
@@ -52,7 +54,7 @@ public class MessageController {
                             schema = @Schema(implementation = PagedMessagesResponseDTO.class),
                             examples = @ExampleObject(
                                     name = "stored-messages-page",
-                                    summary = "Representative paginated message response",
+                                    summary = "Representative filtered and sorted message response",
                                     value = """
                                             {
                                               "items": [
@@ -100,8 +102,8 @@ public class MessageController {
                                                 }
                                               ],
                                               "page": 0,
-                                              "size": 20,
-                                              "totalElements": 2,
+                                              "size": 10,
+                                              "totalElements": 1,
                                               "totalPages": 1,
                                               "first": true,
                                               "last": true
@@ -116,14 +118,30 @@ public class MessageController {
             @Parameter(description = "Zero-based page index", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Number of messages per page", example = "20")
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Optional case-insensitive filter for destination", example = "solace/java/direct/system-01")
+            @RequestParam(required = false) String destination,
+            @Parameter(description = "Optional case-insensitive filter for delivery mode", example = "PERSISTENT")
+            @RequestParam(required = false) String deliveryMode,
+            @Parameter(description = "Optional case-insensitive filter for the inner message id", example = "001")
+            @RequestParam(required = false) String innerMessageId,
+            @Parameter(description = "Field to sort by. Allowed values: createdAt, priority, destination, innerMessageId", example = "createdAt")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction. Allowed values: asc, desc", example = "desc")
+            @RequestParam(defaultValue = "desc") String sortDirection) {
         if (page < 0) {
             throw new BadRequestException("page must be greater than or equal to 0");
         }
         if (size < 1) {
             throw new BadRequestException("size must be greater than or equal to 1");
         }
-        return database.getAllMessages(page, size);
+        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
+            throw new BadRequestException("sortBy must be one of createdAt, priority, destination, innerMessageId");
+        }
+        if (!"asc".equalsIgnoreCase(sortDirection) && !"desc".equalsIgnoreCase(sortDirection)) {
+            throw new BadRequestException("sortDirection must be asc or desc");
+        }
+        return database.getAllMessages(page, size, destination, deliveryMode, innerMessageId, sortBy, sortDirection);
     }
 
     @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}) // Allow React app origin
