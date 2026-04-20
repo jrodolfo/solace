@@ -9,16 +9,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
-import org.orgname.solace.broker.api.exception.ErrorMessage;
+import org.orgname.solace.broker.api.exception.BadRequestException;
+import org.orgname.solace.broker.api.exception.BrokerPublishException;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,36 +49,34 @@ public class Controller {
     @ApiResponses(value = {@ApiResponse(description = "successful operation", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = Message.class)), @Content(mediaType = "application/xml", schema = @Schema(implementation = Message.class))})})
     @PostMapping(value = "/message", consumes = {"application/json", "application/xml", "application/x-www-form-urlencoded"})
     public ResponseEntity<String> sendMessage(@RequestBody MessageWrapperDTO wrapper) {
+        if (wrapper == null || wrapper.getMessage() == null) {
+            logger.log(Level.INFO, "Message is null");
+            throw new BadRequestException("Message is null");
+        }
 
+        database.saveMessage(wrapper);
+
+        String topicName = wrapper.getMessage().getDestination();
+        String content = wrapper.getMessage().getPayload().getContent();
         String responseMessage;
 
-        if (wrapper == null || wrapper.getMessage() == null) {
-            responseMessage = "Message is null";
-            logger.log(Level.INFO, responseMessage);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseMessage);
-        } else {
-
-            // persist the message before sending the request to Solace
-            Message message = database.saveMessage(wrapper);
-
-            // now send the message
-            String topicName = wrapper.getMessage().getDestination();
-            String content = wrapper.getMessage().getPayload().getContent();
-            try {
-                if (wrapper.parametersAreValid()) {
-                    ParameterDTO parameterDTO = getParameterDTO(wrapper);
-                    responseMessage = directPublisherServiceImpl.sendMessage(topicName, content, Optional.of(parameterDTO));
-                } else {
-                    responseMessage = directPublisherServiceImpl.sendMessage(topicName, content, Optional.empty());
-                }
-            } catch (Exception e) {
-                logger.log(Level.INFO, e.getMessage());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).
-                        body(new ErrorMessage(new Date(), e.getMessage(),"/message").toString());
+        try {
+            if (wrapper.parametersAreValid()) {
+                ParameterDTO parameterDTO = getParameterDTO(wrapper);
+                responseMessage = directPublisherServiceImpl.sendMessage(topicName, content, Optional.of(parameterDTO));
+            } else {
+                responseMessage = directPublisherServiceImpl.sendMessage(topicName, content, Optional.empty());
             }
-            logger.log(Level.INFO, responseMessage);
-            return ResponseEntity.status(HttpStatus.CREATED).body(responseMessage);
+        } catch (IllegalArgumentException e) {
+            logger.log(Level.INFO, e.getMessage());
+            throw new BadRequestException(e.getMessage(), e);
+        } catch (Exception e) {
+            logger.log(Level.INFO, e.getMessage());
+            throw new BrokerPublishException(e.getMessage(), e);
         }
+
+        logger.log(Level.INFO, responseMessage);
+        return ResponseEntity.status(201).body(responseMessage);
     }
 
     private static ParameterDTO getParameterDTO(MessageWrapperDTO wrapper) {
