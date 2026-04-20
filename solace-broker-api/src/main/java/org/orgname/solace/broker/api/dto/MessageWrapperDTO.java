@@ -9,7 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 public class MessageWrapperDTO {
 
-    // These fields are used for the Parameter table.
+    // Optional connection settings used only for runtime publish requests.
     private String userName;
     private String password;
     private String host;

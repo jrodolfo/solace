@@ -46,9 +46,4 @@ public class Message extends Auditable {
     @JsonManagedReference
     @OneToOne(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
     private Payload payload;
-
-    // One-to-One relationship with Parameter (optional)
-    @JsonManagedReference
-    @OneToOne(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Parameter parameter;
 }

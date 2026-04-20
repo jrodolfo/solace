@@ -12,7 +12,6 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -42,7 +41,6 @@ class DatabaseImplTest {
         assertEquals("01001000 01100101 01101100", savedMessage.getPayload().getContent());
         assertNotNull(savedMessage.getProperties());
         assertEquals(1, savedMessage.getProperties().size());
-        assertNull(savedMessage.getParameter());
     }
 
     private static MessageWrapperDTO validWrapper() {
