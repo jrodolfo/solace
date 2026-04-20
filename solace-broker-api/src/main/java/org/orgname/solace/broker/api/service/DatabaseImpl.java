@@ -4,7 +4,6 @@ import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.jpa.Message;
-import org.orgname.solace.broker.api.jpa.Parameter;
 import org.orgname.solace.broker.api.jpa.Payload;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.repository.MessageRepository;
@@ -60,15 +59,6 @@ public class DatabaseImpl implements Database {
             });
             message.setProperties(properties);
         }
-
-        // Create and attach Parameter entity using top-level fields
-        Parameter parameter = new Parameter();
-        parameter.setUserName(wrapper.getUserName());
-        parameter.setPassword(wrapper.getPassword());
-        parameter.setHost(wrapper.getHost());
-        parameter.setVpnName(wrapper.getVpnName());
-        parameter.setMessage(message);
-        message.setParameter(parameter);
 
         // Save the entire structure (cascade persists related entities)
         messageRepository.save(message);
