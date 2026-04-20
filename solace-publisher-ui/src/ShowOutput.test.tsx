@@ -25,7 +25,7 @@ describe("ShowOutput Component", () => {
 
         render(<ShowOutput res={mockResponse}/>);
 
-        // check for statusq
+        // check for status
         expect(screen.getByText(/Status: 200/i)).toBeInTheDocument();
         // check for headers
         expect(screen.getByText(/content-type/i)).toBeInTheDocument();

@@ -6,7 +6,7 @@ import com.solace.messaging.config.SolaceProperties.AuthenticationProperties;
 import com.solace.messaging.config.SolaceProperties.TransportLayerProperties;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.Properties;
 import java.util.logging.Level;
@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  *
  * See: https://docs.solace.com/Solace-PubSub-Messaging-APIs/API-Developer-Guide/Configuring-Connection-T.htm
  */
-@Component
+@Service
 public class AccessPropertiesImpl implements AccessProperties {
 
     private static final Logger logger = Logger.getLogger(AccessPropertiesImpl.class.getName());

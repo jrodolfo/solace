@@ -11,6 +11,7 @@ spring:
     password: secret
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+
 #logging:
 #  level:
 #    org.springframework: DEBUG
@@ -26,6 +27,7 @@ springdoc:
     version: openapi_3_1
     path: /api-docs
   swagger-ui:
+    path: /docs
     display-request-duration: true
     groups-order: desc
     operations-sorter: method
@@ -39,4 +41,3 @@ management:
       base-path: /rest/actuator
       exposure:
         include: '*'
-

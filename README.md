@@ -211,15 +211,14 @@ You can test the **Solace Broker API** in 3 ways:
 
 Enjoy exploring the Solace Platform! 🚀
 
----
 ## Contact
 
-For issues or inquiries, feel free to contact the maintainer:
+- Software Developer: Rod Oliveira
+- GitHub: https://github.com/jrodolfo
+- Webpage: https://jrodolfo.net
 
-- **Name:** Rod Oliveira
-- **Role:** Software Developer
-- **Emails:** jrodolfo@gmail.com & roliveir@ca.ibm.com
-- **GitHub links:** https://github.com/jrodolfo & https://github.ibm.com/roliveir
-- **LinkedIn:** https://www.linkedin.com/in/rodoliveira
-- **Webpage:** https://jrodolfo.net
----
+## License
+
+- MIT License
+- Copyright (c) 2026 Rod Oliveira
+- See [LICENSE](./LICENSE)
