@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
+import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.exception.ApiExceptionHandler;
 import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
@@ -17,6 +18,8 @@ import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -54,18 +57,45 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldReturnStoredMessagesJsonContract() throws Exception {
-        when(database.getAllMessages()).thenReturn(List.of(storedMessage("001", "solace/java/direct/system-01")));
+        when(database.getAllMessages(0, 20)).thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01")), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].innerMessageId").value("001"))
-                .andExpect(jsonPath("$[0].destination").value("solace/java/direct/system-01"))
-                .andExpect(jsonPath("$[0].deliveryMode").value("PERSISTENT"))
-                .andExpect(jsonPath("$[0].priority").value(3))
-                .andExpect(jsonPath("$[0].payload.type").value("binary"))
-                .andExpect(jsonPath("$[0].payload.content").value("01001000 01100101 01101100"))
-                .andExpect(jsonPath("$[0].properties[0].propertyKey").value("property01"))
-                .andExpect(jsonPath("$[0].properties[0].propertyValue").value("value01"));
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("001"))
+                .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.items[0].deliveryMode").value("PERSISTENT"))
+                .andExpect(jsonPath("$.items[0].priority").value(3))
+                .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
+                .andExpect(jsonPath("$.items[0].payload.content").value("01001000 01100101 01101100"))
+                .andExpect(jsonPath("$.items[0].properties[0].propertyKey").value("property01"))
+                .andExpect(jsonPath("$.items[0].properties[0].propertyValue").value("value01"));
+    }
+
+    @Test
+    void shouldReturnExplicitPageOfStoredMessages() throws Exception {
+        when(database.getAllMessages(1, 1)).thenReturn(messagePageResponse(List.of(storedMessage("002", "solace/java/direct/system-02")), 1, 1, 2));
+
+        mockMvc.perform(get("/api/v1/messages/all?page=1&size=1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.first").value(false))
+                .andExpect(jsonPath("$.last").value(true))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("002"));
+    }
+
+    @Test
+    void shouldRejectInvalidPageRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/messages/all?page=-1&size=0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("page must be greater than or equal to 0"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
     }
 
     @Test
@@ -171,7 +201,7 @@ class MessageControllerWebMvcTest {
 
     private static Message storedMessage(String innerMessageId, String destination) {
         Message message = new Message();
-        message.setId(1L);
+        message.setId("001".equals(innerMessageId) ? 1L : 2L);
         message.setInnerMessageId(innerMessageId);
         message.setDestination(destination);
         message.setDeliveryMode("PERSISTENT");
@@ -191,5 +221,9 @@ class MessageControllerWebMvcTest {
         property.setMessage(message);
         message.setProperties(List.of(property));
         return message;
+    }
+
+    private static PagedMessagesResponseDTO messagePageResponse(List<Message> messages, int page, int size, long totalElements) {
+        return new PagedMessagesResponseDTO(new PageImpl<>(messages, PageRequest.of(page, size), totalElements));
     }
 }

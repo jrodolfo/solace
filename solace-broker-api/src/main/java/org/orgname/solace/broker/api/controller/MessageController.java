@@ -3,6 +3,7 @@ package org.orgname.solace.broker.api.controller;
 
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,9 +12,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
+import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.exception.BadRequestException;
 import org.orgname.solace.broker.api.exception.ErrorMessage;
-import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,53 +42,88 @@ public class MessageController {
         this.directPublisherService = directPublisherService;
     }
 
-    @Operation(summary = "List stored messages", description = "Return all messages currently stored by the API", tags = {"messages"})
+    @Operation(summary = "List stored messages", description = "Return stored messages using paginated reads", tags = {"messages"})
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
                     description = "Stored messages returned successfully",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = Message.class),
+                            schema = @Schema(implementation = PagedMessagesResponseDTO.class),
                             examples = @ExampleObject(
-                                    name = "stored-messages",
-                                    summary = "Representative message list",
+                                    name = "stored-messages-page",
+                                    summary = "Representative paginated message response",
                                     value = """
-                                            [
-                                              {
-                                                "id": 1,
-                                                "innerMessageId": "001",
-                                                "destination": "solace/java/direct/system-01",
-                                                "deliveryMode": "PERSISTENT",
-                                                "priority": 3,
-                                                "properties": [
-                                                  {
-                                                    "id": 10,
-                                                    "propertyKey": "property01",
-                                                    "propertyValue": "value01",
+                                            {
+                                              "items": [
+                                                {
+                                                  "id": 1,
+                                                  "innerMessageId": "001",
+                                                  "destination": "solace/java/direct/system-01",
+                                                  "deliveryMode": "PERSISTENT",
+                                                  "priority": 3,
+                                                  "properties": [
+                                                    {
+                                                      "id": 10,
+                                                      "propertyKey": "property01",
+                                                      "propertyValue": "value01",
+                                                      "createdAt": null,
+                                                      "updatedAt": null
+                                                    }
+                                                  ],
+                                                  "payload": {
+                                                    "id": 20,
+                                                    "type": "binary",
+                                                    "content": "01001000 01100101 01101100",
                                                     "createdAt": null,
                                                     "updatedAt": null
-                                                  }
-                                                ],
-                                                "payload": {
-                                                  "id": 20,
-                                                  "type": "binary",
-                                                  "content": "01001000 01100101 01101100",
+                                                  },
                                                   "createdAt": null,
                                                   "updatedAt": null
                                                 },
-                                                "createdAt": null,
-                                                "updatedAt": null
-                                              }
-                                            ]
+                                                {
+                                                  "id": 2,
+                                                  "innerMessageId": "002",
+                                                  "destination": "solace/java/direct/system-02",
+                                                  "deliveryMode": "PERSISTENT",
+                                                  "priority": 1,
+                                                  "properties": [],
+                                                  "payload": {
+                                                    "id": 21,
+                                                    "type": "binary",
+                                                    "content": "01010111 01101111 01110010 01101100 01100100",
+                                                    "createdAt": null,
+                                                    "updatedAt": null
+                                                  },
+                                                  "createdAt": null,
+                                                  "updatedAt": null
+                                                }
+                                              ],
+                                              "page": 0,
+                                              "size": 20,
+                                              "totalElements": 2,
+                                              "totalPages": 1,
+                                              "first": true,
+                                              "last": true
+                                            }
                                             """
                             )
                     )
             )
     })
     @GetMapping("/all")
-    public Iterable<Message> getAllMessages() {
-        return database.getAllMessages();
+    public PagedMessagesResponseDTO getAllMessages(
+            @Parameter(description = "Zero-based page index", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of messages per page", example = "20")
+            @RequestParam(defaultValue = "20") int size) {
+        if (page < 0) {
+            throw new BadRequestException("page must be greater than or equal to 0");
+        }
+        if (size < 1) {
+            throw new BadRequestException("size must be greater than or equal to 1");
+        }
+        return database.getAllMessages(page, size);
     }
 
     @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}) // Allow React app origin

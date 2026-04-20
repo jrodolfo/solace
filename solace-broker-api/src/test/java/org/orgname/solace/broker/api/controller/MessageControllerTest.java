@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
+import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.exception.ApiExceptionHandler;
 import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
@@ -14,6 +15,8 @@ import org.orgname.solace.broker.api.jpa.Payload;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -24,7 +27,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -63,17 +65,51 @@ class MessageControllerTest {
         database.storedMessages.add(first);
         database.storedMessages.add(second);
 
-        Iterable<Message> messages = controller.getAllMessages();
-        assertIterableEquals(List.of(first, second), messages);
+        PagedMessagesResponseDTO messages = controller.getAllMessages(0, 20);
+        assertEquals(2, messages.getItems().size());
+        assertEquals(2L, messages.getTotalElements());
+        assertEquals(1, messages.getTotalPages());
 
         mockMvc.perform(get("/api/v1/messages/all"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].innerMessageId").value("001"))
-                .andExpect(jsonPath("$[0].destination").value("solace/java/direct/system-01"))
-                .andExpect(jsonPath("$[0].payload.type").value("binary"))
-                .andExpect(jsonPath("$[0].properties[0].propertyKey").value("property01"))
-                .andExpect(jsonPath("$[1].innerMessageId").value("002"))
-                .andExpect(jsonPath("$[1].destination").value("solace/java/direct/system-02"));
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(true))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("001"))
+                .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
+                .andExpect(jsonPath("$.items[0].properties[0].propertyKey").value("property01"))
+                .andExpect(jsonPath("$.items[1].innerMessageId").value("002"))
+                .andExpect(jsonPath("$.items[1].destination").value("solace/java/direct/system-02"));
+    }
+
+    @Test
+    void shouldRespectExplicitPaginationParameters() throws Exception {
+        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01"));
+        database.storedMessages.add(storedMessage("002", "solace/java/direct/system-02"));
+
+        mockMvc.perform(get("/api/v1/messages/all?page=1&size=1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.first").value(false))
+                .andExpect(jsonPath("$.last").value(true))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("002"));
+    }
+
+    @Test
+    void shouldRejectInvalidPaginationParameters() throws Exception {
+        mockMvc.perform(get("/api/v1/messages/all?page=-1&size=0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("page must be greater than or equal to 0"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
     }
 
     @Test
@@ -242,8 +278,11 @@ class MessageControllerTest {
         }
 
         @Override
-        public Iterable<Message> getAllMessages() {
-            return List.copyOf(storedMessages);
+        public PagedMessagesResponseDTO getAllMessages(int page, int size) {
+            int start = Math.min(page * size, storedMessages.size());
+            int end = Math.min(start + size, storedMessages.size());
+            List<Message> content = storedMessages.subList(start, end);
+            return new PagedMessagesResponseDTO(new PageImpl<>(content, PageRequest.of(page, size), storedMessages.size()));
         }
     }
 }

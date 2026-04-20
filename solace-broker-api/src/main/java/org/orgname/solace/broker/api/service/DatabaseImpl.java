@@ -2,11 +2,13 @@ package org.orgname.solace.broker.api.service;
 
 import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
+import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.repository.MessageRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,8 +25,8 @@ public class DatabaseImpl implements Database {
     }
 
     @Override
-    public Iterable<Message> getAllMessages() {
-        return messageRepository.findAll();
+    public PagedMessagesResponseDTO getAllMessages(int page, int size) {
+        return new PagedMessagesResponseDTO(messageRepository.findAll(PageRequest.of(page, size)));
     }
 
     @Override
