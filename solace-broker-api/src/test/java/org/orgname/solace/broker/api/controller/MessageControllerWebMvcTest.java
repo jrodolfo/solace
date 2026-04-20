@@ -10,6 +10,8 @@ import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
 import org.orgname.solace.broker.api.exception.BrokerConnectionException;
 import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.orgname.solace.broker.api.jpa.Message;
+import org.orgname.solace.broker.api.jpa.Payload;
+import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,11 +22,13 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -47,6 +51,22 @@ class MessageControllerWebMvcTest {
 
     @MockBean
     private DirectPublisherService directPublisherService;
+
+    @Test
+    void shouldReturnStoredMessagesJsonContract() throws Exception {
+        when(database.getAllMessages()).thenReturn(List.of(storedMessage("001", "solace/java/direct/system-01")));
+
+        mockMvc.perform(get("/api/v1/messages/all"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].innerMessageId").value("001"))
+                .andExpect(jsonPath("$[0].destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$[0].deliveryMode").value("PERSISTENT"))
+                .andExpect(jsonPath("$[0].priority").value(3))
+                .andExpect(jsonPath("$[0].payload.type").value("binary"))
+                .andExpect(jsonPath("$[0].payload.content").value("01001000 01100101 01101100"))
+                .andExpect(jsonPath("$[0].properties[0].propertyKey").value("property01"))
+                .andExpect(jsonPath("$[0].properties[0].propertyValue").value("value01"));
+    }
 
     @Test
     void shouldReturnCreatedForSuccessfulMessagePublish() throws Exception {
@@ -147,5 +167,29 @@ class MessageControllerWebMvcTest {
         wrapper.setVpnName("my-solace-broker-on-aws");
         wrapper.setMessage(message);
         return wrapper;
+    }
+
+    private static Message storedMessage(String innerMessageId, String destination) {
+        Message message = new Message();
+        message.setId(1L);
+        message.setInnerMessageId(innerMessageId);
+        message.setDestination(destination);
+        message.setDeliveryMode("PERSISTENT");
+        message.setPriority(3);
+
+        Payload payload = new Payload();
+        payload.setId(20L);
+        payload.setType("binary");
+        payload.setContent("01001000 01100101 01101100");
+        payload.setMessage(message);
+        message.setPayload(payload);
+
+        Property property = new Property();
+        property.setId(10L);
+        property.setPropertyKey("property01");
+        property.setPropertyValue("value01");
+        property.setMessage(message);
+        message.setProperties(List.of(property));
+        return message;
     }
 }

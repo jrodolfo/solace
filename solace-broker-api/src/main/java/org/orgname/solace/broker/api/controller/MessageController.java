@@ -41,6 +41,50 @@ public class MessageController {
         this.directPublisherService = directPublisherService;
     }
 
+    @Operation(summary = "List stored messages", description = "Return all messages currently stored by the API", tags = {"messages"})
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Stored messages returned successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = Message.class),
+                            examples = @ExampleObject(
+                                    name = "stored-messages",
+                                    summary = "Representative message list",
+                                    value = """
+                                            [
+                                              {
+                                                "id": 1,
+                                                "innerMessageId": "001",
+                                                "destination": "solace/java/direct/system-01",
+                                                "deliveryMode": "PERSISTENT",
+                                                "priority": 3,
+                                                "properties": [
+                                                  {
+                                                    "id": 10,
+                                                    "propertyKey": "property01",
+                                                    "propertyValue": "value01",
+                                                    "createdAt": null,
+                                                    "updatedAt": null
+                                                  }
+                                                ],
+                                                "payload": {
+                                                  "id": 20,
+                                                  "type": "binary",
+                                                  "content": "01001000 01100101 01101100",
+                                                  "createdAt": null,
+                                                  "updatedAt": null
+                                                },
+                                                "createdAt": null,
+                                                "updatedAt": null
+                                              }
+                                            ]
+                                            """
+                            )
+                    )
+            )
+    })
     @GetMapping("/all")
     public Iterable<Message> getAllMessages() {
         return database.getAllMessages();

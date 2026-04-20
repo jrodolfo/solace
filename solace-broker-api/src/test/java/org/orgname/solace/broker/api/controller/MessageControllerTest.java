@@ -10,6 +10,8 @@ import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.exception.ApiExceptionHandler;
 import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.orgname.solace.broker.api.jpa.Message;
+import org.orgname.solace.broker.api.jpa.Payload;
+import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.springframework.http.MediaType;
@@ -56,10 +58,8 @@ class MessageControllerTest {
 
     @Test
     void shouldReturnAllMessagesFromRepository() throws Exception {
-        Message first = new Message();
-        first.setInnerMessageId("001");
-        Message second = new Message();
-        second.setInnerMessageId("002");
+        Message first = storedMessage("001", "solace/java/direct/system-01");
+        Message second = storedMessage("002", "solace/java/direct/system-02");
         database.storedMessages.add(first);
         database.storedMessages.add(second);
 
@@ -67,7 +67,13 @@ class MessageControllerTest {
         assertIterableEquals(List.of(first, second), messages);
 
         mockMvc.perform(get("/api/v1/messages/all"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].innerMessageId").value("001"))
+                .andExpect(jsonPath("$[0].destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$[0].payload.type").value("binary"))
+                .andExpect(jsonPath("$[0].properties[0].propertyKey").value("property01"))
+                .andExpect(jsonPath("$[1].innerMessageId").value("002"))
+                .andExpect(jsonPath("$[1].destination").value("solace/java/direct/system-02"));
     }
 
     @Test
@@ -180,6 +186,30 @@ class MessageControllerTest {
         wrapper.setVpnName("my-solace-broker-on-aws");
         wrapper.setMessage(message);
         return wrapper;
+    }
+
+    private static Message storedMessage(String innerMessageId, String destination) {
+        Message message = new Message();
+        message.setId("001".equals(innerMessageId) ? 1L : 2L);
+        message.setInnerMessageId(innerMessageId);
+        message.setDestination(destination);
+        message.setDeliveryMode("PERSISTENT");
+        message.setPriority(3);
+
+        Payload payload = new Payload();
+        payload.setId(20L);
+        payload.setType("binary");
+        payload.setContent("01001000 01100101 01101100");
+        payload.setMessage(message);
+        message.setPayload(payload);
+
+        Property property = new Property();
+        property.setId(10L);
+        property.setPropertyKey("property01");
+        property.setPropertyValue("value01");
+        property.setMessage(message);
+        message.setProperties(List.of(property));
+        return message;
     }
 
     private static final class StubDirectPublisherService implements DirectPublisherService {
