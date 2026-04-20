@@ -28,6 +28,11 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
 
     private static final Logger logger = Logger.getLogger(DirectPublisherServiceImpl.class.getName());
     private static final int APPROX_MSG_RATE_PER_SEC = 100;
+    private final AccessProperties accessProperties;
+
+    public DirectPublisherServiceImpl(AccessProperties accessProperties) {
+        this.accessProperties = accessProperties;
+    }
 
 
     @Override
@@ -42,9 +47,9 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
 
         ParameterDTO parameterDTO = solaceParametersOptional.orElse(null);
         if (parameterDTO == null) {
-            properties = AccessPropertiesImpl.getPropertiesPublisher();
+            properties = accessProperties.getPropertiesPublisher();
         } else {
-            properties = AccessPropertiesImpl.getPropertiesPublisher(parameterDTO);
+            properties = accessProperties.getPropertiesPublisher(parameterDTO);
         }
 
         final MessagingService messagingService = MessagingService.builder(ConfigurationProfile.V1)

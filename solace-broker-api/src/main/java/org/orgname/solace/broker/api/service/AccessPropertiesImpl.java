@@ -21,15 +21,14 @@ import java.util.logging.Logger;
 public class AccessPropertiesImpl implements AccessProperties {
 
     private static final Logger logger = Logger.getLogger(AccessPropertiesImpl.class.getName());
-
-    static public EnvironmentConfig environmentConfig;
+    private final EnvironmentConfig environmentConfig;
 
     @Autowired
-    public AccessPropertiesImpl(EnvironmentConfigImpl environmentConfigImpl) {
-        this.environmentConfig = environmentConfigImpl;
+    public AccessPropertiesImpl(EnvironmentConfig environmentConfig) {
+        this.environmentConfig = environmentConfig;
     }
 
-    private static Properties getPropertiesFromMethodParameters(ParameterDTO parameterDTO) throws Exception {
+    private Properties getPropertiesFromMethodParameters(ParameterDTO parameterDTO) {
 
         String host = parameterDTO.getHost();
         String vpnName = parameterDTO.getVpnName();
@@ -52,7 +51,7 @@ public class AccessPropertiesImpl implements AccessProperties {
     }
 
     @NotNull
-    private static Properties getProperties(String host, String vpnName, String userName, String password) {
+    private Properties getProperties(String host, String vpnName, String userName, String password) {
         final Properties properties = new Properties();
         properties.setProperty(TransportLayerProperties.HOST, host); // host:port
         properties.setProperty(SolaceProperties.ServiceProperties.VPN_NAME, vpnName); // message-vpn
@@ -64,7 +63,7 @@ public class AccessPropertiesImpl implements AccessProperties {
     }
 
 
-    private static Properties getPropertiesFromEnv() throws Exception {
+    private Properties getPropertiesFromEnv() throws Exception {
 
         // Retrieve environment variables
         String host = environmentConfig.getEnv("SOLACE_CLOUD_HOST");
@@ -88,15 +87,18 @@ public class AccessPropertiesImpl implements AccessProperties {
         return getProperties(host, vpnName, userName, password);
     }
 
-    public static Properties getPropertiesPublisher() throws Exception {
+    @Override
+    public Properties getPropertiesPublisher() throws Exception {
         return getPropertiesFromEnv();
     }
 
-    public static Properties getPropertiesPublisher(ParameterDTO parameterDTO) throws Exception {
+    @Override
+    public Properties getPropertiesPublisher(ParameterDTO parameterDTO) {
         return getPropertiesFromMethodParameters(parameterDTO);
     }
 
-    public static Properties getPropertiesReceiver() throws Exception {
+    @Override
+    public Properties getPropertiesReceiver() throws Exception {
         final Properties properties = getPropertiesFromEnv();
         properties.setProperty(SolaceProperties.ServiceProperties.RECEIVER_DIRECT_SUBSCRIPTION_REAPPLY, "true");  // subscribe Direct subs after reconnect
         return properties;

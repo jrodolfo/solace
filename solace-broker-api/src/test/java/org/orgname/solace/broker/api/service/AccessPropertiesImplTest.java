@@ -20,9 +20,11 @@ class AccessPropertiesImplTest {
     private static final String USER_NAME = "test-user";
     private static final String PASSWORD = "test-pass";
 
+    private AccessPropertiesImpl accessProperties;
+
     @BeforeEach
     void setUp() {
-        new AccessPropertiesImpl(new StubEnvironmentConfig(Map.of(
+        accessProperties = new AccessPropertiesImpl(new StubEnvironmentConfig(Map.of(
                 "SOLACE_CLOUD_HOST", HOST,
                 "SOLACE_CLOUD_VPN", VPN_NAME,
                 "SOLACE_CLOUD_USERNAME", USER_NAME,
@@ -32,7 +34,7 @@ class AccessPropertiesImplTest {
 
     @Test
     void testPropertiesFromEnvironmentVariables() throws Exception {
-        Properties props = AccessPropertiesImpl.getPropertiesPublisher();
+        Properties props = accessProperties.getPropertiesPublisher();
 
         assertProperties(props, HOST, VPN_NAME, USER_NAME, PASSWORD);
     }
@@ -41,7 +43,7 @@ class AccessPropertiesImplTest {
     void testPropertiesFromSolaceParameters() throws Exception {
         ParameterDTO mockParams = new ParameterDTO(HOST, VPN_NAME, USER_NAME, PASSWORD);
 
-        Properties props = AccessPropertiesImpl.getPropertiesPublisher(mockParams);
+        Properties props = accessProperties.getPropertiesPublisher(mockParams);
 
         assertProperties(props, HOST, VPN_NAME, USER_NAME, PASSWORD);
     }

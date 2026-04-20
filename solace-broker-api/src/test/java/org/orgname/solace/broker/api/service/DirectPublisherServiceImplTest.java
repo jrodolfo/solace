@@ -1,8 +1,10 @@
 package org.orgname.solace.broker.api.service;
 
 import org.junit.jupiter.api.Test;
+import org.orgname.solace.broker.api.dto.ParameterDTO;
 
 import java.util.Optional;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -10,7 +12,7 @@ import static org.orgname.solace.broker.api.constants.Constants.ERROR_EMPTY_MESS
 
 class DirectPublisherServiceImplTest {
 
-    private final DirectPublisherServiceImpl directPublisherService = new DirectPublisherServiceImpl();
+    private final DirectPublisherServiceImpl directPublisherService = new DirectPublisherServiceImpl(new StubAccessProperties());
 
     @Test
     void testSendMessageInvalidTopicName() {
@@ -30,5 +32,22 @@ class DirectPublisherServiceImplTest {
         );
 
         assertEquals(ERROR_EMPTY_MESSAGE_OR_TOPIC_NAME, exception.getMessage());
+    }
+
+    private static final class StubAccessProperties implements AccessProperties {
+        @Override
+        public Properties getPropertiesPublisher() {
+            return new Properties();
+        }
+
+        @Override
+        public Properties getPropertiesPublisher(ParameterDTO solaceParameters) {
+            return new Properties();
+        }
+
+        @Override
+        public Properties getPropertiesReceiver() {
+            return new Properties();
+        }
     }
 }

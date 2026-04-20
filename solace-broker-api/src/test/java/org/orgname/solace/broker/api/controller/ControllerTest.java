@@ -186,6 +186,10 @@ class ControllerTest {
         private IllegalArgumentException illegalArgumentException;
         private RuntimeException exception;
 
+        private StubDirectPublisherService() {
+            super(new StubAccessProperties());
+        }
+
         @Override
         public String sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) throws Exception {
             if (illegalArgumentException != null) {
@@ -195,6 +199,23 @@ class ControllerTest {
                 throw exception;
             }
             return response;
+        }
+    }
+
+    private static final class StubAccessProperties implements org.orgname.solace.broker.api.service.AccessProperties {
+        @Override
+        public java.util.Properties getPropertiesPublisher() {
+            return new java.util.Properties();
+        }
+
+        @Override
+        public java.util.Properties getPropertiesPublisher(ParameterDTO solaceParameters) {
+            return new java.util.Properties();
+        }
+
+        @Override
+        public java.util.Properties getPropertiesReceiver() {
+            return new java.util.Properties();
         }
     }
 

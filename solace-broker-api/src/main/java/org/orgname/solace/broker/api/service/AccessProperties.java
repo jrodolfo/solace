@@ -7,15 +7,9 @@ import java.util.Properties;
 
 public interface AccessProperties {
 
-    static Properties getPropertiesPublisher() throws Exception {
-        return null;
-    }
+    Properties getPropertiesPublisher() throws Exception;
 
-    static Properties getPropertiesPublisher(ParameterDTO solaceParameters) throws Exception {
-        return null;
-    }
+    Properties getPropertiesPublisher(ParameterDTO solaceParameters) throws Exception;
 
-    static Properties getPropertiesReceiver() throws Exception {
-        return null;
-    }
+    Properties getPropertiesReceiver() throws Exception;
 }
