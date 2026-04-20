@@ -40,108 +40,128 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
 
     @Override
     public String sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) {
+        validateInput(topicName, content);
+        Properties properties = resolveProperties(solaceParametersOptional);
+        MessagingService messagingService = createMessagingService(properties);
+        DirectMessagePublisher publisher = null;
 
-        // check mandatory parameters
+        try {
+            connectMessagingService(messagingService);
+            publisher = createAndStartPublisher(messagingService);
+            OutboundMessage message = buildOutboundMessage(messagingService, content);
+            publishMessage(publisher, topicName, message);
+            pauseAfterPublish();
+            String returnMessage = buildResponse(topicName, content);
+            logger.log(Level.INFO, "Published message to topic {0}", topicName);
+            logger.log(Level.INFO, "Publisher response {0}", returnMessage);
+            return returnMessage;
+        } finally {
+            cleanup(messagingService, publisher);
+        }
+    }
+
+    private void validateInput(String topicName, String content) {
         if (topicName == null || topicName.isEmpty() || content == null || content.isEmpty()) {
             throw new IllegalArgumentException(ERROR_EMPTY_MESSAGE_OR_TOPIC_NAME);
         }
+    }
 
-        final Properties properties;
-
-        ParameterDTO parameterDTO = solaceParametersOptional.orElse(null);
+    private Properties resolveProperties(Optional<ParameterDTO> solaceParametersOptional) {
         try {
+            ParameterDTO parameterDTO = solaceParametersOptional.orElse(null);
             if (parameterDTO == null) {
-                properties = accessProperties.getPropertiesPublisher();
-            } else {
-                properties = accessProperties.getPropertiesPublisher(parameterDTO);
+                return accessProperties.getPropertiesPublisher();
             }
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (BrokerConfigurationException e) {
+            return accessProperties.getPropertiesPublisher(parameterDTO);
+        } catch (IllegalArgumentException | BrokerConfigurationException e) {
             throw e;
         } catch (RuntimeException e) {
             throw new BrokerConfigurationException("Failed to prepare Solace connection properties", e);
         }
+    }
 
-        final MessagingService messagingService;
+    private MessagingService createMessagingService(Properties properties) {
         try {
-            messagingService = MessagingService.builder(ConfigurationProfile.V1)
+            return MessagingService.builder(ConfigurationProfile.V1)
                     .fromProperties(properties)
                     .build();
         } catch (RuntimeException e) {
             throw new BrokerConfigurationException("Failed to build Solace messaging service", e);
         }
+    }
 
+    private void connectMessagingService(MessagingService messagingService) {
         try {
-            messagingService.connect();  // blocking connection to the Solace Broker
+            messagingService.connect();
         } catch (RuntimeException e) {
             throw new BrokerConnectionException("Failed to connect to Solace broker", e);
         }
 
-        messagingService.addServiceInterruptionListener(serviceEvent -> {
-            logger.log(Level.SEVERE, "### SERVICE INTERRUPTION: " + serviceEvent.getCause());
-            // isShutdown = true;
-        });
-        messagingService.addReconnectionAttemptListener(serviceEvent -> {
-            logger.log(Level.SEVERE, "### RECONNECTING ATTEMPT: " + serviceEvent);
-        });
-        messagingService.addReconnectionListener(serviceEvent -> {
-            final String message = "### RECONNECTED: " + serviceEvent;
-            logger.log(Level.SEVERE, message);
-        });
-
-        // build the publisher object
-        final DirectMessagePublisher publisher;
-        try {
-            publisher = messagingService.createDirectMessagePublisherBuilder()
-                    .onBackPressureWait(1)
-                    .build();
-            publisher.start();
-        } catch (RuntimeException e) {
-            messagingService.disconnect();
-            throw new BrokerConnectionException("Failed to start Solace direct publisher", e);
-        }
-
-        // can be called for ACL violations,
-        publisher.setPublishFailureListener(e -> {
-            logger.log(Level.SEVERE, "### FAILED PUBLISH: " + e.getMessage());
-        });
-
-        // Transform String to byte[] since we need a binary payload message
-        byte[] payload = content.getBytes(StandardCharsets.UTF_8);
-
-        OutboundMessageBuilder messageBuilder = messagingService.messageBuilder();
-
-        try {
-            // as an example of a header
-            messageBuilder.withProperty(MessageProperties.APPLICATION_MESSAGE_ID, UUID.randomUUID().toString());
-            OutboundMessage message = messageBuilder.build(payload);  // binary payload message
-            logger.log(Level.INFO, "OutboundMessage: " + message);
-            publisher.publish(message, Topic.of(topicName));  // send the message
-
-        } catch (RuntimeException e) {  // threw from publish(), only thing that is throwing here
-            logger.log(Level.SEVERE, "### Caught while trying to publisher.publish(): %s%n" + e.getMessage());
-            throw new BrokerPublishFailureException("Failed to publish message to Solace broker", e);
-        } finally {
-            try {
-                Thread.sleep(1000 / APPROX_MSG_RATE_PER_SEC);  // do Thread.sleep(0) for max speed
-                // Note: STANDARD Edition Solace PubSub+ broker is limited to 10k msg/s max ingress
-            } catch (InterruptedException e) {
-                logger.log(Level.SEVERE, e.getMessage());
-                Thread.currentThread().interrupt();
-            }
-            publisher.terminate(500);
-            messagingService.disconnect();
-        }
-        String msg = "Message sent to topic: \"" + topicName + "\" with content: \"" + content + "\"";
-        System.out.println(msg);
-        logger.log(Level.INFO, msg);
-
-        String returnMessage = "{\"destination\":\"" + topicName + "\",\"content\":\"" + content + "\"}";
-        System.out.println("returnMessage" + returnMessage);
-        logger.log(Level.INFO, "returnMessage" + returnMessage);
-
-        return returnMessage;
+        messagingService.addServiceInterruptionListener(serviceEvent ->
+                logger.log(Level.SEVERE, "### SERVICE INTERRUPTION: {0}", serviceEvent.getCause()));
+        messagingService.addReconnectionAttemptListener(serviceEvent ->
+                logger.log(Level.SEVERE, "### RECONNECTING ATTEMPT: {0}", serviceEvent));
+        messagingService.addReconnectionListener(serviceEvent ->
+                logger.log(Level.SEVERE, "### RECONNECTED: {0}", serviceEvent));
     }
 
+    private DirectMessagePublisher createAndStartPublisher(MessagingService messagingService) {
+        try {
+            DirectMessagePublisher publisher = messagingService.createDirectMessagePublisherBuilder()
+                    .onBackPressureWait(1)
+                    .build();
+            publisher.setPublishFailureListener(e ->
+                    logger.log(Level.SEVERE, "### FAILED PUBLISH: {0}", e.getMessage()));
+            publisher.start();
+            return publisher;
+        } catch (RuntimeException e) {
+            throw new BrokerConnectionException("Failed to start Solace direct publisher", e);
+        }
+    }
+
+    private OutboundMessage buildOutboundMessage(MessagingService messagingService, String content) {
+        byte[] payload = content.getBytes(StandardCharsets.UTF_8);
+        OutboundMessageBuilder messageBuilder = messagingService.messageBuilder();
+        messageBuilder.withProperty(MessageProperties.APPLICATION_MESSAGE_ID, UUID.randomUUID().toString());
+        OutboundMessage message = messageBuilder.build(payload);
+        logger.log(Level.INFO, "OutboundMessage: {0}", message);
+        return message;
+    }
+
+    private void publishMessage(DirectMessagePublisher publisher, String topicName, OutboundMessage message) {
+        try {
+            publisher.publish(message, Topic.of(topicName));
+        } catch (RuntimeException e) {
+            logger.log(Level.SEVERE, "### Caught while trying to publisher.publish(): {0}", e.getMessage());
+            throw new BrokerPublishFailureException("Failed to publish message to Solace broker", e);
+        }
+    }
+
+    private void pauseAfterPublish() {
+        try {
+            Thread.sleep(1000 / APPROX_MSG_RATE_PER_SEC);
+        } catch (InterruptedException e) {
+            logger.log(Level.SEVERE, e.getMessage());
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void cleanup(MessagingService messagingService, DirectMessagePublisher publisher) {
+        if (publisher != null) {
+            try {
+                publisher.terminate(500);
+            } catch (RuntimeException e) {
+                logger.log(Level.WARNING, "Failed to terminate Solace publisher cleanly: {0}", e.getMessage());
+            }
+        }
+        try {
+            messagingService.disconnect();
+        } catch (RuntimeException e) {
+            logger.log(Level.WARNING, "Failed to disconnect Solace messaging service cleanly: {0}", e.getMessage());
+        }
+    }
+
+    private String buildResponse(String topicName, String content) {
+        return "{\"destination\":\"" + topicName + "\",\"content\":\"" + content + "\"}";
+    }
 }
