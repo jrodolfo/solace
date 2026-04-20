@@ -22,13 +22,13 @@ public class Message extends Auditable {
     @Column(name = "inner_message_id", nullable = false)
     private String innerMessageId;  // The ID that comes inside the message JSON
 
-    @Column(name = "destination")
+    @Column(name = "destination", nullable = false)
     private String destination;
 
-    @Column(name = "delivery_mode")
+    @Column(name = "delivery_mode", nullable = false)
     private String deliveryMode;
 
-    @Column(name = "priority")
+    @Column(name = "priority", nullable = false)
     private Integer priority;
 
     /**
@@ -44,6 +44,6 @@ public class Message extends Auditable {
 
     // One-to-One relationship with Payload
     @JsonManagedReference
-    @OneToOne(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true, optional = false)
     private Payload payload;
 }

@@ -36,11 +36,17 @@ class DatabaseImplTest {
 
         assertEquals("001", savedMessage.getInnerMessageId());
         assertEquals("solace/java/direct/system-01", savedMessage.getDestination());
+        assertEquals("PERSISTENT", savedMessage.getDeliveryMode());
+        assertEquals(3, savedMessage.getPriority());
         assertNotNull(savedMessage.getPayload());
         assertEquals("binary", savedMessage.getPayload().getType());
         assertEquals("01001000 01100101 01101100", savedMessage.getPayload().getContent());
+        assertEquals(savedMessage, savedMessage.getPayload().getMessage());
         assertNotNull(savedMessage.getProperties());
         assertEquals(1, savedMessage.getProperties().size());
+        assertEquals("property01", savedMessage.getProperties().getFirst().getPropertyKey());
+        assertEquals("value01", savedMessage.getProperties().getFirst().getPropertyValue());
+        assertEquals(savedMessage, savedMessage.getProperties().getFirst().getMessage());
     }
 
     private static MessageWrapperDTO validWrapper() {

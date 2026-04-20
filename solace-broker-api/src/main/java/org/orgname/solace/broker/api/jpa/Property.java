@@ -17,10 +17,10 @@ public class Property extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "property_key")
+    @Column(name = "property_key", nullable = false)
     private String propertyKey;
 
-    @Column(name = "property_value")
+    @Column(name = "property_value", nullable = false)
     private String propertyValue;
 
     /**
