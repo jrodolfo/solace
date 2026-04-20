@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 public class MessageController {
 
     private static final Logger logger = Logger.getLogger(MessageController.class.getName());
+    private static final int MAX_PAGE_SIZE = 100;
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("createdAt", "priority", "destination", "innerMessageId");
     private final Database database;
     private final DirectPublisherService directPublisherService;
@@ -117,7 +118,7 @@ public class MessageController {
     public PagedMessagesResponseDTO getAllMessages(
             @Parameter(description = "Zero-based page index", example = "0")
             @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Number of messages per page", example = "20")
+            @Parameter(description = "Number of messages per page. Maximum allowed value is 100", example = "20")
             @RequestParam(defaultValue = "20") int size,
             @Parameter(description = "Optional case-insensitive filter for destination", example = "solace/java/direct/system-01")
             @RequestParam(required = false) String destination,
@@ -134,6 +135,9 @@ public class MessageController {
         }
         if (size < 1) {
             throw new BadRequestException("size must be greater than or equal to 1");
+        }
+        if (size > MAX_PAGE_SIZE) {
+            throw new BadRequestException("size must be less than or equal to 100");
         }
         if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
             throw new BadRequestException("sortBy must be one of createdAt, priority, destination, innerMessageId");

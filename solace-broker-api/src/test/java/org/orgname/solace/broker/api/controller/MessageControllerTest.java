@@ -138,6 +138,16 @@ class MessageControllerTest {
     }
 
     @Test
+    void shouldRejectOversizedPageRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/messages/all?size=101"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("size must be less than or equal to 100"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
+    }
+
+    @Test
     void shouldRejectInvalidSortField() throws Exception {
         mockMvc.perform(get("/api/v1/messages/all?sortBy=updatedAt"))
                 .andExpect(status().isBadRequest())
