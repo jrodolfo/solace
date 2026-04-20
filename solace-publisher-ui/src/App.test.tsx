@@ -52,10 +52,12 @@ describe("Form Submission Tests", () => {
         await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
         await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
         await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
-        // we deal with the message text input in a different way because its
-        // content is a json string that is not properly handled by screen.getByLabelText
         const messageInput = screen.getByLabelText(/Message/i);
-        fireEvent.input(messageInput, {target: {value: '{"key":"value"}'}});
+        fireEvent.input(messageInput, {
+            target: {
+                value: '{"innerMessageId":"001","destination":"solace/java/direct/system-01","deliveryMode":"PERSISTENT","priority":3,"payload":{"type":"binary","content":"01001000 01100101 01101100"}}'
+            }
+        });
 
         fireEvent.submit(screen.getByRole("button", {name: /publish message/i}));
 
@@ -68,7 +70,16 @@ describe("Form Submission Tests", () => {
                 password: "testPass",
                 host: "localhost",
                 vpnName: "testVPN",
-                message: {key: "value"}, // JSON parsed message
+                message: {
+                    innerMessageId: "001",
+                    destination: "solace/java/direct/system-01",
+                    deliveryMode: "PERSISTENT",
+                    priority: 3,
+                    payload: {
+                        type: "binary",
+                        content: "01001000 01100101 01101100",
+                    },
+                },
             },
             {
                 headers: {"Content-Type": "application/json"},
@@ -77,10 +88,10 @@ describe("Form Submission Tests", () => {
 
         expect(await screen.findByRole("alert")).toHaveTextContent("Message published successfully.");
         expect(screen.getByText(/Status: 201/i)).toBeInTheDocument();
-        expect(screen.getByText(/solace\/java\/direct\/system-01/i)).toBeInTheDocument();
+        expect(screen.getByText(/"content": "01001000 01100101 01101100"/i)).toBeInTheDocument();
     });
 
-    test("Handles typed validation failure", async () => {
+    test("Handles typed validation failure returned by the backend", async () => {
         mockedAxios.post.mockRejectedValue({
             response: {
                 data: {
@@ -107,7 +118,7 @@ describe("Form Submission Tests", () => {
         await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
         await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
         const messageInput = screen.getByLabelText(/Message/i);
-        fireEvent.input(messageInput, {target: {value: '{"payload":{"content":"x"}}'}});
+        fireEvent.input(messageInput, {target: {value: '{"innerMessageId":"001","destination":"solace/java/direct/system-01","deliveryMode":"PERSISTENT","priority":3,"payload":{"type":"binary","content":"01001000 01100101 01101100"}}'}});
 
         await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
 
@@ -130,6 +141,30 @@ describe("Form Submission Tests", () => {
 
         expect(mockedAxios.post).not.toHaveBeenCalled();
         expect(await screen.findByRole("alert")).toHaveTextContent("Message must be valid JSON");
+        expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
+    });
+
+    test("Handles missing required message fields before calling the api", async () => {
+        render(<App/>);
+
+        await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
+        await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
+        await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
+        await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
+        fireEvent.input(screen.getByLabelText(/Message/i), {
+            target: {
+                value: '{"destination":"solace/java/direct/system-01","payload":{"content":"01001000 01100101 01101100"}}'
+            }
+        });
+
+        await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
+
+        expect(mockedAxios.post).not.toHaveBeenCalled();
+        expect(await screen.findByRole("alert")).toHaveTextContent("Request validation failed");
+        expect(screen.getByText(/message\.innermessageid is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/message\.deliverymode is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/message\.priority is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/payload\.type is required/i)).toBeInTheDocument();
         expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
     });
 });

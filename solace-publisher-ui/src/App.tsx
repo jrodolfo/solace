@@ -3,6 +3,7 @@ import axios, {AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig} from "ax
 import "bootstrap/dist/css/bootstrap.min.css";
 import ShowOutput from "./ShowOutput.tsx";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
+import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
 
 function App() {
@@ -45,6 +46,26 @@ function App() {
             setShowResponse(true);
             setSubmissionVariant("danger");
             setSubmissionMessage("Message must be valid JSON");
+            return;
+        }
+
+        const validationErrors = validateMessagePayload(parsedMessage);
+        if (Object.keys(validationErrors).length > 0) {
+            const validationErrorResponse = buildSyntheticErrorResponse(
+                400,
+                "Bad Request",
+                {
+                    status: 400,
+                    error: "Bad Request",
+                    message: "Request validation failed",
+                    path: "/api/v1/messages/message",
+                    validationErrors
+                }
+            );
+            setResponse(validationErrorResponse);
+            setShowResponse(true);
+            setSubmissionVariant("danger");
+            setSubmissionMessage("Request validation failed");
             return;
         }
 
@@ -223,6 +244,54 @@ function buildSyntheticErrorResponse(
             headers: new AxiosHeaders()
         } as InternalAxiosRequestConfig
     };
+}
+
+function validateMessagePayload(payload: unknown): MessagePayloadValidationErrorMap {
+    const validationErrors: MessagePayloadValidationErrorMap = {};
+
+    if (!isRecord(payload)) {
+        validationErrors["message"] = "message must be a JSON object";
+        return validationErrors;
+    }
+
+    if (!hasNonBlankString(payload.innerMessageId)) {
+        validationErrors["message.innerMessageId"] = "message.innerMessageId is required";
+    }
+    if (!hasNonBlankString(payload.destination)) {
+        validationErrors["message.destination"] = "message.destination is required";
+    }
+    if (!hasNonBlankString(payload.deliveryMode)) {
+        validationErrors["message.deliveryMode"] = "message.deliveryMode is required";
+    }
+    if (!isNonNegativeNumber(payload.priority)) {
+        validationErrors["message.priority"] = "message.priority is required";
+    }
+
+    if (!isRecord(payload.payload)) {
+        validationErrors["message.payload"] = "message.payload is required";
+        return validationErrors;
+    }
+
+    if (!hasNonBlankString(payload.payload.type)) {
+        validationErrors["message.payload.type"] = "payload.type is required";
+    }
+    if (!hasNonBlankString(payload.payload.content)) {
+        validationErrors["message.payload.content"] = "payload.content is required";
+    }
+
+    return validationErrors;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasNonBlankString(value: unknown): value is string {
+    return typeof value === "string" && value.trim().length > 0;
+}
+
+function isNonNegativeNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
 export default App;
