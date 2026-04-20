@@ -6,13 +6,12 @@ import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.jpa.Message;
-import org.orgname.solace.broker.api.repository.MessageRepository;
-import org.orgname.solace.broker.api.service.DatabaseImpl;
+import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,16 +23,15 @@ class ControllerTest {
 
     private static final String MESSAGE_SENT = "{\"destination\":\"solace/java/direct/system-01\",\"content\":\"01001000 01100101 01101100\"}";
 
+    private StubDatabase database;
     private StubDirectPublisherService directPublisherServiceImpl;
-    private List<Message> storedMessages;
     private Controller controller;
 
     @BeforeEach
     void setUp() {
+        database = new StubDatabase();
         directPublisherServiceImpl = new StubDirectPublisherService();
-        storedMessages = new java.util.ArrayList<>();
-        new DatabaseImpl(createMessageRepository());
-        controller = new Controller(directPublisherServiceImpl);
+        controller = new Controller(database, directPublisherServiceImpl);
     }
 
     @Test
@@ -42,8 +40,8 @@ class ControllerTest {
         first.setInnerMessageId("001");
         Message second = new Message();
         second.setInnerMessageId("002");
-        storedMessages.add(first);
-        storedMessages.add(second);
+        database.storedMessages.add(first);
+        database.storedMessages.add(second);
 
         Iterable<Message> messages = controller.getAllMessages();
 
@@ -83,25 +81,6 @@ class ControllerTest {
         assertTrue(response.getBody().contains("details=/message"));
     }
 
-    private MessageRepository createMessageRepository() {
-        return (MessageRepository) Proxy.newProxyInstance(
-                MessageRepository.class.getClassLoader(),
-                new Class[]{MessageRepository.class},
-                (proxy, method, args) -> switch (method.getName()) {
-                    case "findAll" -> List.copyOf(storedMessages);
-                    case "save" -> {
-                        Message message = (Message) args[0];
-                        storedMessages.add(message);
-                        yield message;
-                    }
-                    case "equals" -> proxy == args[0];
-                    case "hashCode" -> System.identityHashCode(proxy);
-                    case "toString" -> "StubMessageRepository";
-                    default -> throw new UnsupportedOperationException(method.getName());
-                }
-        );
-    }
-
     private static MessageWrapperDTO validWrapper() {
         PayloadDTO payload = new PayloadDTO();
         payload.setType("binary");
@@ -133,6 +112,24 @@ class ControllerTest {
                 throw exception;
             }
             return response;
+        }
+    }
+
+    private static final class StubDatabase implements Database {
+        private final List<Message> storedMessages = new ArrayList<>();
+
+        @Override
+        public Message saveMessage(MessageWrapperDTO wrapper) {
+            Message message = new Message();
+            message.setInnerMessageId(wrapper.getMessage().getInnerMessageId());
+            message.setDestination(wrapper.getMessage().getDestination());
+            storedMessages.add(message);
+            return message;
+        }
+
+        @Override
+        public Iterable<Message> getAllMessages() {
+            return List.copyOf(storedMessages);
         }
     }
 }

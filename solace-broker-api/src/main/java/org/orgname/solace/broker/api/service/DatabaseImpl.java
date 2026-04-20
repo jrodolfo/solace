@@ -17,17 +17,19 @@ import java.util.Map;
 @Service
 public class DatabaseImpl implements Database {
 
-    static private MessageRepository messageRepository;
+    private final MessageRepository messageRepository;
 
     public DatabaseImpl(MessageRepository messageRepository) {
-        DatabaseImpl.messageRepository = messageRepository;
+        this.messageRepository = messageRepository;
     }
 
-    static public Iterable<Message> getAllMessages() {
+    @Override
+    public Iterable<Message> getAllMessages() {
         return messageRepository.findAll();
     }
 
-    static public Message saveMessage(MessageWrapperDTO wrapper) {
+    @Override
+    public Message saveMessage(MessageWrapperDTO wrapper) {
 
         // Create the main Message entity
         Message message = new Message();

@@ -11,7 +11,7 @@ import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.exception.ErrorMessage;
 import org.orgname.solace.broker.api.jpa.Message;
-import org.orgname.solace.broker.api.service.DatabaseImpl;
+import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,17 +30,19 @@ import java.util.logging.Logger;
 public class Controller {
 
     private static final Logger logger = Logger.getLogger(Controller.class.getName());
+    private final Database database;
     private final DirectPublisherServiceImpl directPublisherServiceImpl;
 
     // The final field is initialized via this constructor
     @Autowired
-    public Controller(DirectPublisherServiceImpl directPublisherServiceImpl) {
+    public Controller(Database database, DirectPublisherServiceImpl directPublisherServiceImpl) {
+        this.database = database;
         this.directPublisherServiceImpl = directPublisherServiceImpl;
     }
 
     @GetMapping("/all")
     public Iterable<Message> getAllMessages() {
-        return DatabaseImpl.getAllMessages();
+        return database.getAllMessages();
     }
 
     @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}) // Allow React app origin
@@ -58,7 +60,7 @@ public class Controller {
         } else {
 
             // persist the message before sending the request to Solace
-            Message message = DatabaseImpl.saveMessage(wrapper);
+            Message message = database.saveMessage(wrapper);
 
             // now send the message
             String topicName = wrapper.getMessage().getDestination();

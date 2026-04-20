@@ -5,12 +5,8 @@ import org.orgname.solace.broker.api.jpa.Message;
 
 public interface Database {
 
-    static Message saveMessage(MessageWrapperDTO wrapper) {
-        return null;
-    }
+    Message saveMessage(MessageWrapperDTO wrapper);
 
-    static Iterable<Message> getAllMessages() {
-        return null;
-    }
+    Iterable<Message> getAllMessages();
 
 }
