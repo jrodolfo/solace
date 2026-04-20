@@ -173,7 +173,7 @@ public class MessageController {
     @PostMapping(value = "/message", consumes = {"application/json", "application/xml", "application/x-www-form-urlencoded"})
     public ResponseEntity<String> sendMessage(@Valid @RequestBody MessageWrapperDTO wrapper) {
         if (wrapper == null || wrapper.getMessage() == null) {
-            logger.log(Level.INFO, "Message is null");
+            logger.log(Level.WARNING, "Rejected publish request with missing message payload");
             throw new BadRequestException("Message is null");
         }
 
@@ -191,11 +191,11 @@ public class MessageController {
                 responseMessage = directPublisherService.sendMessage(topicName, content, Optional.empty());
             }
         } catch (IllegalArgumentException e) {
-            logger.log(Level.INFO, e.getMessage());
+            logger.log(Level.WARNING, "Rejected publish request for topic {0}: {1}", new Object[]{topicName, e.getMessage()});
             throw new BadRequestException(e.getMessage(), e);
         }
 
-        logger.log(Level.INFO, responseMessage);
+        logger.log(Level.INFO, "Accepted publish request for topic {0}", topicName);
         return ResponseEntity.status(201).body(responseMessage);
     }
 

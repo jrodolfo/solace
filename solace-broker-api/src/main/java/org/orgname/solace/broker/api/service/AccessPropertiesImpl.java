@@ -43,7 +43,7 @@ public class AccessPropertiesImpl implements AccessProperties {
                 password == null || password.trim().isEmpty()
         ) {
             String errorMessage = "The set of parameters (host, vpnName, userName and password) passed to this method is problematic.";
-            logger.log(Level.SEVERE, errorMessage);
+            logger.log(Level.WARNING, errorMessage);
             throw new IllegalArgumentException(errorMessage); // instead of System.exit(-1);
         }
 

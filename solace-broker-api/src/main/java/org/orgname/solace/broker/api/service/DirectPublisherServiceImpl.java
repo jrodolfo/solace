@@ -53,7 +53,6 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
             pauseAfterPublish();
             String returnMessage = buildResponse(topicName, content);
             logger.log(Level.INFO, "Published message to topic {0}", topicName);
-            logger.log(Level.INFO, "Publisher response {0}", returnMessage);
             return returnMessage;
         } finally {
             cleanup(messagingService, publisher);
@@ -98,11 +97,11 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         }
 
         messagingService.addServiceInterruptionListener(serviceEvent ->
-                logger.log(Level.SEVERE, "### SERVICE INTERRUPTION: {0}", serviceEvent.getCause()));
+                logger.log(Level.SEVERE, "Solace service interruption: {0}", serviceEvent.getCause()));
         messagingService.addReconnectionAttemptListener(serviceEvent ->
-                logger.log(Level.SEVERE, "### RECONNECTING ATTEMPT: {0}", serviceEvent));
+                logger.log(Level.WARNING, "Attempting Solace reconnection: {0}", serviceEvent));
         messagingService.addReconnectionListener(serviceEvent ->
-                logger.log(Level.SEVERE, "### RECONNECTED: {0}", serviceEvent));
+                logger.log(Level.INFO, "Reconnected to Solace broker: {0}", serviceEvent));
     }
 
     private DirectMessagePublisher createAndStartPublisher(MessagingService messagingService) {
@@ -111,7 +110,7 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
                     .onBackPressureWait(1)
                     .build();
             publisher.setPublishFailureListener(e ->
-                    logger.log(Level.SEVERE, "### FAILED PUBLISH: {0}", e.getMessage()));
+                    logger.log(Level.SEVERE, "Solace publish failure reported by broker: {0}", e.getMessage()));
             publisher.start();
             return publisher;
         } catch (RuntimeException e) {
@@ -123,16 +122,14 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         byte[] payload = content.getBytes(StandardCharsets.UTF_8);
         OutboundMessageBuilder messageBuilder = messagingService.messageBuilder();
         messageBuilder.withProperty(MessageProperties.APPLICATION_MESSAGE_ID, UUID.randomUUID().toString());
-        OutboundMessage message = messageBuilder.build(payload);
-        logger.log(Level.INFO, "OutboundMessage: {0}", message);
-        return message;
+        return messageBuilder.build(payload);
     }
 
     private void publishMessage(DirectMessagePublisher publisher, String topicName, OutboundMessage message) {
         try {
             publisher.publish(message, Topic.of(topicName));
         } catch (RuntimeException e) {
-            logger.log(Level.SEVERE, "### Caught while trying to publisher.publish(): {0}", e.getMessage());
+            logger.log(Level.SEVERE, "Failed to publish message to topic {0}: {1}", new Object[]{topicName, e.getMessage()});
             throw new BrokerPublishFailureException("Failed to publish message to Solace broker", e);
         }
     }
@@ -141,7 +138,7 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         try {
             Thread.sleep(1000 / APPROX_MSG_RATE_PER_SEC);
         } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, e.getMessage());
+            logger.log(Level.WARNING, "Interrupted while pacing Solace publish rate");
             Thread.currentThread().interrupt();
         }
     }
