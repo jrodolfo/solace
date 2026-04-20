@@ -1,9 +1,12 @@
 import {useState} from "react";
-import axios, {AxiosRequestHeaders, AxiosResponse} from "axios";
+import axios, {AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig} from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import ShowOutput from "./ShowOutput.tsx";
+import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
+import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
 
 function App() {
+    const apiUrl = "http://localhost:8081/api/v1/messages/message";
 
     // State hooks for input fields
     const [userName, setUserName] = useState("");
@@ -11,50 +14,87 @@ function App() {
     const [vpnName, setVpnName] = useState("");
     const [host, setHost] = useState("");
     const [message, setMessage] = useState("");
-    const [response, setResponse] = useState<AxiosResponse<any, any> | null>(null);
+    const [response, setResponse] = useState<AxiosResponse<SolaceBrokerAPIResponse | SolaceBrokerAPIError> | null>(null);
     const [showResponse, setShowResponse] = useState(false);
+    const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
+    const [submissionVariant, setSubmissionVariant] = useState<"success" | "danger" | null>(null);
 
     // Submit handler
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault(); // Stop browser refresh
-        console.log("Submitting form...");
+        setShowResponse(false);
+        setSubmissionMessage(null);
+        setSubmissionVariant(null);
+
+        let parsedMessage;
         try {
-            // Send POST request using Axios
-            const response = await axios.post(
-                "http://localhost:8081/api/v1/messages/message",
+            parsedMessage = JSON.parse(message);
+        } catch {
+            const parseErrorResponse = buildSyntheticErrorResponse(
+                400,
+                "Bad Request",
                 {
-                    userName,   // Sent as a plain string
-                    password,   // Sent as a plain string
-                    host,       // Sent as a plain string
-                    vpnName,    // Sent as a plain string
-                    message: JSON.parse(message) // preserve the json object structure of the message
+                    status: 400,
+                    error: "Bad Request",
+                    message: "Message must be valid JSON",
+                    path: "/api/v1/messages/message",
+                    validationErrors: null
+                }
+            );
+            setResponse(parseErrorResponse);
+            setShowResponse(true);
+            setSubmissionVariant("danger");
+            setSubmissionMessage("Message must be valid JSON");
+            return;
+        }
+
+        try {
+            const response = await axios.post(
+                apiUrl,
+                {
+                    userName,
+                    password,
+                    host,
+                    vpnName,
+                    message: parsedMessage
                 },
                 {
                     headers: {
-                        "Content-Type": "application/json", // Explicitly set Content-Type
+                        "Content-Type": "application/json",
                     },
                 }
             );
-            console.log("Response:", response);
-            alert("Message Published Successfully!");
             setShowResponse(true);
             setResponse(response);
+            setSubmissionVariant("success");
+            setSubmissionMessage("Message published successfully.");
         } catch (error) {
-            const errorMessage = "Failed to publish the message. See console for details.";
-            console.error(errorMessage, error);
-            alert(errorMessage);
-            const DEFAULT_EMPTY_HEADERS = {} as AxiosRequestHeaders;
-            const DEFAULT_ERROR_MESSAGE = errorMessage;
+            if (axios.isAxiosError<SolaceBrokerAPIError>(error) && error.response) {
+                const backendMessage = error.response.data?.message ?? "Failed to publish the message.";
+                setResponse(error.response);
+                setSubmissionVariant("danger");
+                setSubmissionMessage(backendMessage);
+                setShowResponse(true);
+                return;
+            }
+
+            const fallbackMessage = "Failed to publish the message.";
+            console.error(fallbackMessage, error);
+            const networkErrorResponse = buildSyntheticErrorResponse(
+                500,
+                "Internal Server Error",
+                {
+                    status: 500,
+                    error: "Internal Server Error",
+                    message: fallbackMessage,
+                    path: "/api/v1/messages/message",
+                    validationErrors: null
+                }
+            );
+            setResponse(networkErrorResponse);
             setShowResponse(true);
-            setResponse({
-                data: DEFAULT_ERROR_MESSAGE,
-                status: 500,
-                statusText: "Internal Server Error",
-                headers: DEFAULT_EMPTY_HEADERS,
-                config: {
-                    headers: DEFAULT_EMPTY_HEADERS
-                },
-            });
+            setSubmissionVariant("danger");
+            setSubmissionMessage(fallbackMessage);
         }
     };
 
@@ -64,6 +104,12 @@ function App() {
             <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
             <h2 className="mb-4 align-content-lg-center">Solace Publisher</h2>
+
+            {submissionMessage && submissionVariant && (
+                <div className={`alert alert-${submissionVariant}`} role="alert">
+                    {submissionMessage}
+                </div>
+            )}
 
             <form onSubmit={handleSubmit}>
 
@@ -161,6 +207,22 @@ function App() {
 
         </div>
     );
+}
+
+function buildSyntheticErrorResponse(
+    status: number,
+    statusText: string,
+    data: SolaceBrokerAPIError
+): AxiosResponse<SolaceBrokerAPIError> {
+    return {
+        data,
+        status,
+        statusText,
+        headers: new AxiosHeaders(),
+        config: {
+            headers: new AxiosHeaders()
+        } as InternalAxiosRequestConfig
+    };
 }
 
 export default App;

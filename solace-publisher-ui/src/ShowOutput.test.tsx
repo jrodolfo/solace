@@ -32,4 +32,26 @@ describe("ShowOutput Component", () => {
         // check for data
         expect(screen.getByText(/Hello World/i)).toBeInTheDocument();
     });
+
+    test("renders validation errors when present in the response body", () => {
+        const DEFAULT_EMPTY_HEADERS = {} as InternalAxiosRequestConfig<never>;
+        const mockResponse: AxiosResponse = {
+            status: 400,
+            data: {
+                message: "Request validation failed",
+                validationErrors: {
+                    "message.innerMessageId": "message.innerMessageId is required",
+                },
+            },
+            headers: {"content-type": "application/json"},
+            config: DEFAULT_EMPTY_HEADERS,
+            statusText: "Bad Request",
+            request: {},
+        };
+
+        render(<ShowOutput res={mockResponse}/>);
+
+        expect(screen.getByText(/Request validation failed/i)).toBeInTheDocument();
+        expect(screen.getByText(/message\.innerMessageId/i)).toBeInTheDocument();
+    });
 });

@@ -4,7 +4,8 @@ import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import axios from "axios";
-import {Mock, vi} from "vitest";
+import {beforeEach, Mock, vi} from "vitest";
+import {AxiosHeaders} from "axios";
 
 
 test('it shows 5 inputs and 1 button', () => {
@@ -23,25 +24,30 @@ vi.mock("axios");
 
 const mockedAxios = axios as unknown as {
     post: Mock;
+    isAxiosError: Mock;
 };
 
-// Mock window.alert to prevent test crashes
-vi.spyOn(window, "alert").mockImplementation(() => {
+beforeEach(() => {
+    mockedAxios.post.mockReset();
+    mockedAxios.isAxiosError.mockImplementation((error: unknown) => Boolean((error as { isAxiosError?: boolean })?.isAxiosError));
 });
 
 describe("Form Submission Tests", () => {
 
     test("Submits form and handles API response", async () => {
-        // Mock API response
         mockedAxios.post.mockResolvedValue({
-            data: {message: "Success"},
-            status: 200,
-            statusText: "OK",
+            data: {
+                destination: "solace/java/direct/system-01",
+                content: "01001000 01100101 01101100",
+            },
+            status: 201,
+            statusText: "Created",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
         });
 
         render(<App/>);
 
-        // Fill in form fields (modify IDs according to your JSX)
         await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
         await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
         await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
@@ -51,13 +57,10 @@ describe("Form Submission Tests", () => {
         const messageInput = screen.getByLabelText(/Message/i);
         fireEvent.input(messageInput, {target: {value: '{"key":"value"}'}});
 
-        // Click submit button
         fireEvent.submit(screen.getByRole("button", {name: /publish message/i}));
 
-        // Wait for async API response
         await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(1));
 
-        // Ensure correct API request was made
         expect(mockedAxios.post).toHaveBeenCalledWith(
             "http://localhost:8081/api/v1/messages/message",
             {
@@ -72,78 +75,61 @@ describe("Form Submission Tests", () => {
             }
         );
 
-        // Check if success alert was triggered
-        await waitFor(() => expect(window.alert).toHaveBeenCalledWith("Message Published Successfully!"));
+        expect(await screen.findByRole("alert")).toHaveTextContent("Message published successfully.");
+        expect(screen.getByText(/Status: 201/i)).toBeInTheDocument();
+        expect(screen.getByText(/solace\/java\/direct\/system-01/i)).toBeInTheDocument();
     });
 
-    test("Handles API failure", async () => {
-        // Mock API failure response
-        mockedAxios.post.mockRejectedValue(new Error("Network Error"));
+    test("Handles typed validation failure", async () => {
+        mockedAxios.post.mockRejectedValue({
+            response: {
+                data: {
+                    status: 400,
+                    error: "Bad Request",
+                    message: "Request validation failed",
+                    path: "/api/v1/messages/message",
+                    validationErrors: {
+                        "message.innerMessageId": "message.innerMessageId is required",
+                    },
+                },
+                status: 400,
+                statusText: "Bad Request",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            },
+            isAxiosError: true,
+        });
 
         render(<App/>);
 
-        // Fill form fields
         await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
         await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
         await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
         await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
-        // we deal with the message text input in a different way because its
-        // content is a json string that is not properly handled by screen.getByLabelText
         const messageInput = screen.getByLabelText(/Message/i);
-        fireEvent.input(messageInput, {target: {value: '{"key":"value"}'}});
+        fireEvent.input(messageInput, {target: {value: '{"payload":{"content":"x"}}'}});
 
-        // Submit form
-        // fireEvent.submit(screen.getByRole("button", {name: /publish message/i}));
         await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
 
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(1));
+        expect(await screen.findByRole("alert")).toHaveTextContent("Request validation failed");
+        expect(screen.getByText(/message\.innermessageid is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
+    });
 
-        // Wait for API rejection handling
-        // TODO: find out why mockedAxios.post is being called twice when handling an API failure. This
-        //  suggests that the form submission might be triggering multiple API calls unexpectedly.
-        //  When the App component is wrapped in <React.StrictMode> in main.tsx or index.tsx, React will
-        //  render components twice in development mode to detect side effects, and this can cause
-        //  unexpected double API calls. I have removed StrictMode from main.tsx to see if that changes
-        //  the behavior, and it did not.
-        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(2));
+    test("Handles invalid message json before calling the api", async () => {
+        render(<App/>);
 
-        // Ensure error handling logic executed (alert or console.error)
-        await waitFor(() => expect(window.alert).toHaveBeenCalledWith("Failed to publish the message. See console for details."));
+        await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
+        await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
+        await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
+        await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
+        fireEvent.input(screen.getByLabelText(/Message/i), {target: {value: '{"invalidJson"'}});
+
+        await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
+
+        expect(mockedAxios.post).not.toHaveBeenCalled();
+        expect(await screen.findByRole("alert")).toHaveTextContent("Message must be valid JSON");
+        expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
     });
 });
-
-// test('it calls handleSubmit when the form is submitted', () => {
-//
-//     // render the component
-//     render(<App />);
-//
-//     // Find the function
-//     const submittFunction = screen.
-//
-//     // Find the inputs
-//     const [userNameInput, passwordInput, hostInput, vpnNameInput, topicNameInput, messageInput] = screen.getAllByRole('textbox');
-//
-//     // simulate user typing in the values of the inputs
-//     user.click(userNameInput);
-//     user.type(userNameInput, 'test');
-//     user.click(passwordInput);
-//     user.type(passwordInput, '<PASSWORD>');
-//     user.click(hostInput);
-//     user.type(hostInput, 'test');
-//     user.click(vpnNameInput);
-//     user.type(vpnNameInput, 'test');
-//     user.click(topicNameInput);
-//     user.type(topicNameInput, 'test');
-//     user.click(messageInput);
-//     user.type(messageInput, 'test');
-//
-//     // Find the button
-//     const button = screen.getByRole('button');
-//
-//     // Simulate clicking the button
-//     user.click(button);
-//
-//     // Assertion to make sure handleSubmit get called with all values
-//     // expect(arguments).toHaveLength(1);
-//     // expect(arguments[0][0]).toEqual('test');
-//
-// })
