@@ -28,13 +28,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-class ControllerTest {
+class MessageControllerTest {
 
     private static final String MESSAGE_SENT = "{\"destination\":\"solace/java/direct/system-01\",\"content\":\"01001000 01100101 01101100\"}";
 
     private StubDatabase database;
     private StubDirectPublisherService directPublisherService;
-    private Controller controller;
+    private MessageController controller;
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
     private LocalValidatorFactoryBean validator;
@@ -43,7 +43,7 @@ class ControllerTest {
     void setUp() {
         database = new StubDatabase();
         directPublisherService = new StubDirectPublisherService();
-        controller = new Controller(database, directPublisherService);
+        controller = new MessageController(database, directPublisherService);
         validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
         mockMvc = MockMvcBuilders.standaloneSetup(controller)

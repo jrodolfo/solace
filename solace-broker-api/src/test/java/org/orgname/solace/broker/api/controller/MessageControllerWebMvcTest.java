@@ -28,9 +28,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = Controller.class)
+@WebMvcTest(controllers = MessageController.class)
 @Import(ApiExceptionHandler.class)
-class ControllerWebMvcTest {
+class MessageControllerWebMvcTest {
 
     private static final String MESSAGE_SENT = "{\"destination\":\"solace/java/direct/system-01\",\"content\":\"01001000 01100101 01101100\"}";
 

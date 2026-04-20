@@ -12,6 +12,7 @@ import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.exception.BadRequestException;
 import org.orgname.solace.broker.api.exception.BrokerPublishException;
+import org.orgname.solace.broker.api.exception.ErrorMessage;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
@@ -27,15 +28,15 @@ import java.util.logging.Logger;
 @RestController
 @RequestMapping("/api/v1/messages")
 @Tag(name = "messages", description = "the Solace Broker API")
-public class Controller {
+public class MessageController {
 
-    private static final Logger logger = Logger.getLogger(Controller.class.getName());
+    private static final Logger logger = Logger.getLogger(MessageController.class.getName());
     private final Database database;
     private final DirectPublisherService directPublisherService;
 
     // The final field is initialized via this constructor
     @Autowired
-    public Controller(Database database, DirectPublisherService directPublisherService) {
+    public MessageController(Database database, DirectPublisherService directPublisherService) {
         this.database = database;
         this.directPublisherService = directPublisherService;
     }
@@ -47,7 +48,23 @@ public class Controller {
 
     @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}) // Allow React app origin
     @Operation(summary = "Send a message", description = "Send a message to the Solace Broker", tags = {"messages"})
-    @ApiResponses(value = {@ApiResponse(description = "successful operation", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = Message.class)), @Content(mediaType = "application/xml", schema = @Schema(implementation = Message.class))})})
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Message published successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Request validation failed or publisher input was invalid",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))
+            ),
+            @ApiResponse(
+                    responseCode = "502",
+                    description = "Downstream publish request failed",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorMessage.class))
+            )
+    })
     @PostMapping(value = "/message", consumes = {"application/json", "application/xml", "application/x-www-form-urlencoded"})
     public ResponseEntity<String> sendMessage(@Valid @RequestBody MessageWrapperDTO wrapper) {
         if (wrapper == null || wrapper.getMessage() == null) {
