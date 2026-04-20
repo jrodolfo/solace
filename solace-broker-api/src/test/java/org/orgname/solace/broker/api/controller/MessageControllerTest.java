@@ -8,6 +8,7 @@ import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.exception.ApiExceptionHandler;
+import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
@@ -99,7 +100,7 @@ class MessageControllerTest {
     @Test
     void shouldReturnErrorMessageWhenPublisherFails() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        directPublisherService.exception = new RuntimeException("Client error");
+        directPublisherService.exception = new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error"));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,7 +108,7 @@ class MessageControllerTest {
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.status").value(502))
                 .andExpect(jsonPath("$.error").value("Bad Gateway"))
-                .andExpect(jsonPath("$.message").value("Client error"))
+                .andExpect(jsonPath("$.message").value("Failed to publish message to Solace broker"))
                 .andExpect(jsonPath("$.path").value("/api/v1/messages/message"));
     }
 
@@ -187,7 +188,7 @@ class MessageControllerTest {
         private RuntimeException exception;
 
         @Override
-        public String sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) throws Exception {
+        public String sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) {
             if (illegalArgumentException != null) {
                 throw illegalArgumentException;
             }

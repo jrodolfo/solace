@@ -8,6 +8,9 @@ import com.solace.messaging.publisher.OutboundMessage;
 import com.solace.messaging.publisher.OutboundMessageBuilder;
 import com.solace.messaging.resources.Topic;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
+import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
+import org.orgname.solace.broker.api.exception.BrokerConnectionException;
+import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -36,7 +39,7 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
 
 
     @Override
-    public String sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) throws Exception {
+    public String sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) {
 
         // check mandatory parameters
         if (topicName == null || topicName.isEmpty() || content == null || content.isEmpty()) {
@@ -46,17 +49,34 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         final Properties properties;
 
         ParameterDTO parameterDTO = solaceParametersOptional.orElse(null);
-        if (parameterDTO == null) {
-            properties = accessProperties.getPropertiesPublisher();
-        } else {
-            properties = accessProperties.getPropertiesPublisher(parameterDTO);
+        try {
+            if (parameterDTO == null) {
+                properties = accessProperties.getPropertiesPublisher();
+            } else {
+                properties = accessProperties.getPropertiesPublisher(parameterDTO);
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (BrokerConfigurationException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new BrokerConfigurationException("Failed to prepare Solace connection properties", e);
         }
 
-        final MessagingService messagingService = MessagingService.builder(ConfigurationProfile.V1)
-                .fromProperties(properties)
-                .build();
+        final MessagingService messagingService;
+        try {
+            messagingService = MessagingService.builder(ConfigurationProfile.V1)
+                    .fromProperties(properties)
+                    .build();
+        } catch (RuntimeException e) {
+            throw new BrokerConfigurationException("Failed to build Solace messaging service", e);
+        }
 
-        messagingService.connect();  // blocking connection to the Solace Broker
+        try {
+            messagingService.connect();  // blocking connection to the Solace Broker
+        } catch (RuntimeException e) {
+            throw new BrokerConnectionException("Failed to connect to Solace broker", e);
+        }
 
         messagingService.addServiceInterruptionListener(serviceEvent -> {
             logger.log(Level.SEVERE, "### SERVICE INTERRUPTION: " + serviceEvent.getCause());
@@ -71,10 +91,16 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         });
 
         // build the publisher object
-        final DirectMessagePublisher publisher = messagingService.createDirectMessagePublisherBuilder()
-                .onBackPressureWait(1)
-                .build();
-        publisher.start();
+        final DirectMessagePublisher publisher;
+        try {
+            publisher = messagingService.createDirectMessagePublisherBuilder()
+                    .onBackPressureWait(1)
+                    .build();
+            publisher.start();
+        } catch (RuntimeException e) {
+            messagingService.disconnect();
+            throw new BrokerConnectionException("Failed to start Solace direct publisher", e);
+        }
 
         // can be called for ACL violations,
         publisher.setPublishFailureListener(e -> {
@@ -95,17 +121,18 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
 
         } catch (RuntimeException e) {  // threw from publish(), only thing that is throwing here
             logger.log(Level.SEVERE, "### Caught while trying to publisher.publish(): %s%n" + e.getMessage());
+            throw new BrokerPublishFailureException("Failed to publish message to Solace broker", e);
         } finally {
             try {
                 Thread.sleep(1000 / APPROX_MSG_RATE_PER_SEC);  // do Thread.sleep(0) for max speed
                 // Note: STANDARD Edition Solace PubSub+ broker is limited to 10k msg/s max ingress
             } catch (InterruptedException e) {
                 logger.log(Level.SEVERE, e.getMessage());
+                Thread.currentThread().interrupt();
             }
+            publisher.terminate(500);
+            messagingService.disconnect();
         }
-
-        publisher.terminate(500);
-        messagingService.disconnect();
         String msg = "Message sent to topic: \"" + topicName + "\" with content: \"" + content + "\"";
         System.out.println(msg);
         logger.log(Level.INFO, msg);

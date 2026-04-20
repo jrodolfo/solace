@@ -1,6 +1,7 @@
 package org.orgname.solace.broker.api.service;
 
 import org.orgname.solace.broker.api.dto.ParameterDTO;
+import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
 import com.solace.messaging.config.SolaceProperties;
 import com.solace.messaging.config.SolaceProperties.AuthenticationProperties;
 import com.solace.messaging.config.SolaceProperties.TransportLayerProperties;
@@ -63,7 +64,7 @@ public class AccessPropertiesImpl implements AccessProperties {
     }
 
 
-    private Properties getPropertiesFromEnv() throws Exception {
+    private Properties getPropertiesFromEnv() {
 
         // Retrieve environment variables
         String host = environmentConfig.getEnv("SOLACE_CLOUD_HOST");
@@ -80,7 +81,7 @@ public class AccessPropertiesImpl implements AccessProperties {
             String errorMessage = "System environment variables SOLACE_CLOUD_HOST, " +
                     "SOLACE_CLOUD_VPN, SOLACE_CLOUD_USERNAME, SOLACE_CLOUD_PASSWORD are not set.";
             logger.log(Level.SEVERE, errorMessage);
-            throw new Exception(errorMessage); // instead of System.exit(-1);
+            throw missingEnvironmentConfiguration(errorMessage);
         }
 
         // Set the properties using the values from the environment variables
@@ -88,7 +89,7 @@ public class AccessPropertiesImpl implements AccessProperties {
     }
 
     @Override
-    public Properties getPropertiesPublisher() throws Exception {
+    public Properties getPropertiesPublisher() {
         return getPropertiesFromEnv();
     }
 
@@ -98,9 +99,13 @@ public class AccessPropertiesImpl implements AccessProperties {
     }
 
     @Override
-    public Properties getPropertiesReceiver() throws Exception {
+    public Properties getPropertiesReceiver() {
         final Properties properties = getPropertiesFromEnv();
         properties.setProperty(SolaceProperties.ServiceProperties.RECEIVER_DIRECT_SUBSCRIPTION_REAPPLY, "true");  // subscribe Direct subs after reconnect
         return properties;
+    }
+
+    private BrokerConfigurationException missingEnvironmentConfiguration(String errorMessage) {
+        return new BrokerConfigurationException(errorMessage);
     }
 }

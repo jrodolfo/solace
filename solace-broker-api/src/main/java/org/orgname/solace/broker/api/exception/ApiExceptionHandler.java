@@ -34,8 +34,18 @@ public class ApiExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI(), null);
     }
 
-    @ExceptionHandler(BrokerPublishException.class)
-    public ResponseEntity<ErrorMessage> handleBrokerPublish(BrokerPublishException exception, HttpServletRequest request) {
+    @ExceptionHandler(BrokerConfigurationException.class)
+    public ResponseEntity<ErrorMessage> handleBrokerConfiguration(BrokerConfigurationException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(BrokerConnectionException.class)
+    public ResponseEntity<ErrorMessage> handleBrokerConnection(BrokerConnectionException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler({BrokerPublishFailureException.class, BrokerPublishException.class})
+    public ResponseEntity<ErrorMessage> handleBrokerPublish(RuntimeException exception, HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_GATEWAY, exception.getMessage(), request.getRequestURI(), null);
     }
 

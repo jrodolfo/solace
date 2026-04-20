@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
-import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.exception.ApiExceptionHandler;
+import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
+import org.orgname.solace.broker.api.exception.BrokerConnectionException;
+import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
@@ -79,7 +81,7 @@ class MessageControllerWebMvcTest {
     void shouldReturnTypedDownstreamFailureResponse() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
         when(database.saveMessage(any(MessageWrapperDTO.class))).thenReturn(new Message());
-        doThrow(new RuntimeException("Client error"))
+        doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
                 .when(directPublisherService)
                 .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any());
 
@@ -89,8 +91,41 @@ class MessageControllerWebMvcTest {
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.status").value(502))
                 .andExpect(jsonPath("$.error").value("Bad Gateway"))
-                .andExpect(jsonPath("$.message").value("Client error"))
+                .andExpect(jsonPath("$.message").value("Failed to publish message to Solace broker"))
                 .andExpect(jsonPath("$.path").value("/api/v1/messages/message"));
+    }
+
+    @Test
+    void shouldReturnInternalServerErrorForMissingBrokerConfiguration() throws Exception {
+        MessageWrapperDTO wrapper = validWrapper();
+        when(database.saveMessage(any(MessageWrapperDTO.class))).thenReturn(new Message());
+        doThrow(new BrokerConfigurationException("System environment variables SOLACE_CLOUD_HOST, SOLACE_CLOUD_VPN, SOLACE_CLOUD_USERNAME, SOLACE_CLOUD_PASSWORD are not set."))
+                .when(directPublisherService)
+                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any());
+
+        mockMvc.perform(post("/api/v1/messages/message")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrapper)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.error").value("Internal Server Error"));
+    }
+
+    @Test
+    void shouldReturnServiceUnavailableForBrokerConnectionFailure() throws Exception {
+        MessageWrapperDTO wrapper = validWrapper();
+        when(database.saveMessage(any(MessageWrapperDTO.class))).thenReturn(new Message());
+        doThrow(new BrokerConnectionException("Failed to connect to Solace broker", new RuntimeException("connect failed")))
+                .when(directPublisherService)
+                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any());
+
+        mockMvc.perform(post("/api/v1/messages/message")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrapper)))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.status").value(503))
+                .andExpect(jsonPath("$.error").value("Service Unavailable"))
+                .andExpect(jsonPath("$.message").value("Failed to connect to Solace broker"));
     }
 
     private static MessageWrapperDTO validWrapper() {

@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.exception.BadRequestException;
-import org.orgname.solace.broker.api.exception.BrokerPublishException;
 import org.orgname.solace.broker.api.exception.ErrorMessage;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.service.Database;
@@ -88,9 +87,6 @@ public class MessageController {
         } catch (IllegalArgumentException e) {
             logger.log(Level.INFO, e.getMessage());
             throw new BadRequestException(e.getMessage(), e);
-        } catch (Exception e) {
-            logger.log(Level.INFO, e.getMessage());
-            throw new BrokerPublishException(e.getMessage(), e);
         }
 
         logger.log(Level.INFO, responseMessage);
