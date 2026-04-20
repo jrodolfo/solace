@@ -12,7 +12,14 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true) // explicitly indicated that I want the call to the superclass’s equals and hashCode implementations
 @NoArgsConstructor
 @Entity
-@Table(name = "Message")
+@Table(
+        name = "Message",
+        indexes = {
+                @Index(name = "idx_message_inner_message_id", columnList = "inner_message_id"),
+                @Index(name = "idx_message_destination", columnList = "destination"),
+                @Index(name = "idx_message_delivery_mode", columnList = "delivery_mode"),
+                @Index(name = "idx_message_created_at", columnList = "created_at")
+        })
 public class Message extends Auditable {
 
     @Id
