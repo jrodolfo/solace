@@ -14,7 +14,7 @@ import org.orgname.solace.broker.api.exception.BadRequestException;
 import org.orgname.solace.broker.api.exception.BrokerPublishException;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.service.Database;
-import org.orgname.solace.broker.api.service.DirectPublisherServiceImpl;
+import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,13 +31,13 @@ public class Controller {
 
     private static final Logger logger = Logger.getLogger(Controller.class.getName());
     private final Database database;
-    private final DirectPublisherServiceImpl directPublisherServiceImpl;
+    private final DirectPublisherService directPublisherService;
 
     // The final field is initialized via this constructor
     @Autowired
-    public Controller(Database database, DirectPublisherServiceImpl directPublisherServiceImpl) {
+    public Controller(Database database, DirectPublisherService directPublisherService) {
         this.database = database;
-        this.directPublisherServiceImpl = directPublisherServiceImpl;
+        this.directPublisherService = directPublisherService;
     }
 
     @GetMapping("/all")
@@ -64,9 +64,9 @@ public class Controller {
         try {
             if (wrapper.parametersAreValid()) {
                 ParameterDTO parameterDTO = getParameterDTO(wrapper);
-                responseMessage = directPublisherServiceImpl.sendMessage(topicName, content, Optional.of(parameterDTO));
+                responseMessage = directPublisherService.sendMessage(topicName, content, Optional.of(parameterDTO));
             } else {
-                responseMessage = directPublisherServiceImpl.sendMessage(topicName, content, Optional.empty());
+                responseMessage = directPublisherService.sendMessage(topicName, content, Optional.empty());
             }
         } catch (IllegalArgumentException e) {
             logger.log(Level.INFO, e.getMessage());

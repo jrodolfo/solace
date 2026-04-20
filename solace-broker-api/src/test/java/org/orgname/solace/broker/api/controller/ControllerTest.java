@@ -10,7 +10,7 @@ import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.exception.ApiExceptionHandler;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.service.Database;
-import org.orgname.solace.broker.api.service.DirectPublisherServiceImpl;
+import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -33,7 +33,7 @@ class ControllerTest {
     private static final String MESSAGE_SENT = "{\"destination\":\"solace/java/direct/system-01\",\"content\":\"01001000 01100101 01101100\"}";
 
     private StubDatabase database;
-    private StubDirectPublisherService directPublisherServiceImpl;
+    private StubDirectPublisherService directPublisherService;
     private Controller controller;
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
@@ -42,8 +42,8 @@ class ControllerTest {
     @BeforeEach
     void setUp() {
         database = new StubDatabase();
-        directPublisherServiceImpl = new StubDirectPublisherService();
-        controller = new Controller(database, directPublisherServiceImpl);
+        directPublisherService = new StubDirectPublisherService();
+        controller = new Controller(database, directPublisherService);
         validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
@@ -72,7 +72,7 @@ class ControllerTest {
     @Test
     void shouldSendMessageSuccessfully() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        directPublisherServiceImpl.response = MESSAGE_SENT;
+        directPublisherService.response = MESSAGE_SENT;
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -99,7 +99,7 @@ class ControllerTest {
     @Test
     void shouldReturnErrorMessageWhenPublisherFails() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        directPublisherServiceImpl.exception = new RuntimeException("Client error");
+        directPublisherService.exception = new RuntimeException("Client error");
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -114,7 +114,7 @@ class ControllerTest {
     @Test
     void shouldReturnBadRequestWhenPublisherRejectsInput() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        directPublisherServiceImpl.illegalArgumentException = new IllegalArgumentException("Topic name cannot be empty");
+        directPublisherService.illegalArgumentException = new IllegalArgumentException("Topic name cannot be empty");
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -181,14 +181,10 @@ class ControllerTest {
         return wrapper;
     }
 
-    private static final class StubDirectPublisherService extends DirectPublisherServiceImpl {
+    private static final class StubDirectPublisherService implements DirectPublisherService {
         private String response;
         private IllegalArgumentException illegalArgumentException;
         private RuntimeException exception;
-
-        private StubDirectPublisherService() {
-            super(new StubAccessProperties());
-        }
 
         @Override
         public String sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) throws Exception {
@@ -199,23 +195,6 @@ class ControllerTest {
                 throw exception;
             }
             return response;
-        }
-    }
-
-    private static final class StubAccessProperties implements org.orgname.solace.broker.api.service.AccessProperties {
-        @Override
-        public java.util.Properties getPropertiesPublisher() {
-            return new java.util.Properties();
-        }
-
-        @Override
-        public java.util.Properties getPropertiesPublisher(ParameterDTO solaceParameters) {
-            return new java.util.Properties();
-        }
-
-        @Override
-        public java.util.Properties getPropertiesReceiver() {
-            return new java.util.Properties();
         }
     }
 
