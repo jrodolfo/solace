@@ -1,6 +1,7 @@
 
 package org.orgname.solace.broker.api.controller;
 
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -48,7 +49,7 @@ public class Controller {
     @Operation(summary = "Send a message", description = "Send a message to the Solace Broker", tags = {"messages"})
     @ApiResponses(value = {@ApiResponse(description = "successful operation", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = Message.class)), @Content(mediaType = "application/xml", schema = @Schema(implementation = Message.class))})})
     @PostMapping(value = "/message", consumes = {"application/json", "application/xml", "application/x-www-form-urlencoded"})
-    public ResponseEntity<String> sendMessage(@RequestBody MessageWrapperDTO wrapper) {
+    public ResponseEntity<String> sendMessage(@Valid @RequestBody MessageWrapperDTO wrapper) {
         if (wrapper == null || wrapper.getMessage() == null) {
             logger.log(Level.INFO, "Message is null");
             throw new BadRequestException("Message is null");

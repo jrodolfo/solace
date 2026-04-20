@@ -1,5 +1,7 @@
 package org.orgname.solace.broker.api.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
@@ -14,6 +16,8 @@ public class MessageWrapperDTO {
     private String vpnName;
 
     // The nested message part.
+    @NotNull(message = "message is required")
+    @Valid
     private InnerMessageDTO message;
 
     public boolean parametersAreValid() {

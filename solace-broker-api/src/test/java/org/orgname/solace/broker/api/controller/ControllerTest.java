@@ -14,6 +14,7 @@ import org.orgname.solace.broker.api.service.DirectPublisherServiceImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,14 +37,18 @@ class ControllerTest {
     private Controller controller;
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
+    private LocalValidatorFactoryBean validator;
 
     @BeforeEach
     void setUp() {
         database = new StubDatabase();
         directPublisherServiceImpl = new StubDirectPublisherService();
         controller = new Controller(database, directPublisherServiceImpl);
+        validator = new LocalValidatorFactoryBean();
+        validator.afterPropertiesSet();
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new ApiExceptionHandler())
+                .setValidator(validator)
                 .build();
         objectMapper = new ObjectMapper();
     }
@@ -86,8 +91,9 @@ class ControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.error").value("Bad Request"))
-                .andExpect(jsonPath("$.message").value("Message is null"))
-                .andExpect(jsonPath("$.path").value("/api/v1/messages/message"));
+                .andExpect(jsonPath("$.message").value("Request validation failed"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/message"))
+                .andExpect(jsonPath("$.validationErrors.message").value("message is required"));
     }
 
     @Test
@@ -118,6 +124,40 @@ class ControllerTest {
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value("Topic name cannot be empty"))
                 .andExpect(jsonPath("$.path").value("/api/v1/messages/message"));
+    }
+
+    @Test
+    void shouldRejectMissingNestedMessageFields() throws Exception {
+        MessageWrapperDTO wrapper = new MessageWrapperDTO();
+        wrapper.setMessage(new InnerMessageDTO());
+
+        mockMvc.perform(post("/api/v1/messages/message")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrapper)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Request validation failed"))
+                .andExpect(jsonPath("$.validationErrors['message.innerMessageId']").value("message.innerMessageId is required"))
+                .andExpect(jsonPath("$.validationErrors['message.destination']").value("message.destination is required"))
+                .andExpect(jsonPath("$.validationErrors['message.deliveryMode']").value("message.deliveryMode is required"))
+                .andExpect(jsonPath("$.validationErrors['message.priority']").value("message.priority is required"))
+                .andExpect(jsonPath("$.validationErrors['message.payload']").value("message.payload is required"));
+    }
+
+    @Test
+    void shouldRejectBlankPayloadFields() throws Exception {
+        MessageWrapperDTO wrapper = validWrapper();
+        wrapper.getMessage().getPayload().setType(" ");
+        wrapper.getMessage().getPayload().setContent(" ");
+
+        mockMvc.perform(post("/api/v1/messages/message")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrapper)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Request validation failed"))
+                .andExpect(jsonPath("$.validationErrors['message.payload.type']").value("payload.type is required"))
+                .andExpect(jsonPath("$.validationErrors['message.payload.content']").value("payload.content is required"));
     }
 
     private static MessageWrapperDTO validWrapper() {
