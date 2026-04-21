@@ -40,6 +40,7 @@ public class MessageController {
     private static final Logger logger = Logger.getLogger(MessageController.class.getName());
     private static final int MAX_PAGE_SIZE = 100;
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("createdAt", "priority", "destination", "innerMessageId");
+    private static final String RETRY_BLOCKED_MESSAGE = "Only messages published with server-side broker configuration can be retried";
     private final Database database;
     private final DirectPublisherService directPublisherService;
 
@@ -336,6 +337,9 @@ public class MessageController {
         Message storedMessage = database.findMessageById(messageId);
         if (storedMessage.getPublishStatus() != PublishStatus.FAILED) {
             throw new BadRequestException("Only FAILED messages can be retried");
+        }
+        if (!storedMessage.isRetrySupported()) {
+            throw new BadRequestException(RETRY_BLOCKED_MESSAGE);
         }
 
         String topicName = storedMessage.getDestination();

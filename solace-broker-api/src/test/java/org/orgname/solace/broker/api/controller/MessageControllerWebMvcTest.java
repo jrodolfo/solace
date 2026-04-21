@@ -69,6 +69,7 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.items[0].deliveryMode").value("PERSISTENT"))
                 .andExpect(jsonPath("$.items[0].priority").value(3))
                 .andExpect(jsonPath("$.items[0].publishStatus").value("PUBLISHED"))
+                .andExpect(jsonPath("$.items[0].retrySupported").value(true))
                 .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
                 .andExpect(jsonPath("$.items[0].payload.content").value("01001000 01100101 01101100"))
                 .andExpect(jsonPath("$.items[0].properties.property01").value("value01"));
@@ -302,6 +303,18 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.message").value("Only FAILED messages can be retried"));
     }
 
+    @Test
+    void shouldRejectRetryForNonRetryableFailedMessage() throws Exception {
+        Message failedMessage = failedStoredMessage("002", "solace/java/direct/system-02", "DIRECT", 1);
+        failedMessage.setRetrySupported(false);
+        failedMessage.setRetryBlockedReason("Retries are supported only for messages published with server-side broker configuration.");
+        when(database.findMessageById(2L)).thenReturn(failedMessage);
+
+        mockMvc.perform(post("/api/v1/messages/2/retry"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Only messages published with server-side broker configuration can be retried"));
+    }
+
     private static MessageWrapperDTO validWrapper() {
         PayloadDTO payload = new PayloadDTO();
         payload.setType("binary");
@@ -331,6 +344,8 @@ class MessageControllerWebMvcTest {
         message.setDeliveryMode(deliveryMode);
         message.setPriority(priority);
         message.setPublishStatus(PublishStatus.PUBLISHED);
+        message.setRetrySupported(true);
+        message.setRetryBlockedReason(null);
 
         Payload payload = new Payload();
         payload.setId(20L);

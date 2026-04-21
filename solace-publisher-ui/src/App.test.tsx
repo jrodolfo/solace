@@ -84,6 +84,8 @@ function buildStoredMessage(overrides?: Partial<StoredMessage>): StoredMessage {
         publishStatus: "PUBLISHED",
         failureReason: null,
         publishedAt: "2026-04-21T08:00:00Z",
+        retrySupported: true,
+        retryBlockedReason: null,
         payload: {
             type: "binary",
             content: "01001000 01100101 01101100",
@@ -662,6 +664,39 @@ describe("Stored Messages Browser", () => {
         await userEvent.click(screen.getByRole("button", {name: /show details/i}));
         expect(screen.getByText(/Failed to publish message to Solace broker/i)).toBeInTheDocument();
         expect(screen.getByText(/^publish status$/i, {selector: ".meta-label"})).toBeInTheDocument();
+    });
+
+    test("Hides retry actions for failed messages that are not retryable under the current policy", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+                items: [
+                    buildStoredMessage({
+                        publishStatus: "FAILED",
+                        failureReason: "Failed to publish message to Solace broker",
+                        publishedAt: null,
+                        retrySupported: false,
+                        retryBlockedReason: "Retries are supported only for messages published with server-side broker configuration.",
+                    }),
+                ],
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+        expect(screen.queryByRole("button", {name: /retry failed message/i})).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", {name: /retry visible failed messages/i})).not.toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole("button", {name: /show details/i}));
+        expect(screen.getByText(/Retries are supported only for messages published with server-side broker configuration\./i)).toBeInTheDocument();
     });
 
     test("Retries a failed stored message and refreshes the browser results", async () => {

@@ -294,11 +294,11 @@ function App() {
 
     const retryVisibleFailedMessages = async () => {
         const failedMessages = (messagesResponse?.items ?? []).filter(
-            (message) => message.publishStatus === "FAILED" && message.id
+            (message) => message.publishStatus === "FAILED" && message.retrySupported
         );
 
         if (failedMessages.length === 0) {
-            setBrowserMessage("No visible failed messages are available to retry.");
+            setBrowserMessage("No visible retryable failed messages are available to retry.");
             setBrowserVariant("danger");
             setBrowserStatusCode(400);
             return;
@@ -903,7 +903,7 @@ function App() {
                                     </div>
 
                                     <div className="d-flex gap-2 mt-3 flex-wrap">
-                                        {messagesResponse && messagesResponse.items.some((message) => message.publishStatus === "FAILED" && message.id) && (
+                                        {messagesResponse && messagesResponse.items.some((message) => message.publishStatus === "FAILED" && message.retrySupported) && (
                                             <button
                                                 type="button"
                                                 className="btn btn-outline-danger"
@@ -1072,7 +1072,7 @@ function App() {
                                                             </div>
                                                         </div>
                                                         <div className="message-browser-actions">
-                                                            {message.publishStatus === "FAILED" && (
+                                                            {message.publishStatus === "FAILED" && message.retrySupported && (
                                                                 <button
                                                                     type="button"
                                                                     className="btn btn-sm btn-outline-danger"
@@ -1119,6 +1119,12 @@ function App() {
                                                                     <div className="message-browser-content">
                                                                         <span className="meta-label">failure reason</span>
                                                                         <p className="mb-0">{message.failureReason}</p>
+                                                                    </div>
+                                                                )}
+                                                                {!message.retrySupported && message.retryBlockedReason && (
+                                                                    <div className="message-browser-content">
+                                                                        <span className="meta-label">retry unavailable</span>
+                                                                        <p className="mb-0">{message.retryBlockedReason}</p>
                                                                     </div>
                                                                 )}
                                                                 <div className="message-browser-content">

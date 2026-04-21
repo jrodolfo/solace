@@ -75,6 +75,8 @@ class DatabaseImplTest {
         assertEquals(PublishStatus.PENDING, savedMessage.getPublishStatus());
         assertNull(savedMessage.getFailureReason());
         assertNull(savedMessage.getPublishedAt());
+        org.junit.jupiter.api.Assertions.assertFalse(savedMessage.isRetrySupported());
+        assertEquals("Retries are supported only for messages published with server-side broker configuration.", savedMessage.getRetryBlockedReason());
         assertNotNull(savedMessage.getPayload());
         assertEquals("binary", savedMessage.getPayload().getType());
         assertEquals("01001000 01100101 01101100", savedMessage.getPayload().getContent());
@@ -91,6 +93,7 @@ class DatabaseImplTest {
         Message savedMessage = new Message();
         savedMessage.setId(1L);
         savedMessage.setPublishStatus(PublishStatus.PENDING);
+        savedMessage.setRetrySupported(true);
         savedMessageReference = savedMessage;
 
         Message updatedMessage = database.markMessagePublished(1L);
@@ -107,6 +110,7 @@ class DatabaseImplTest {
         savedMessage.setPublishStatus(PublishStatus.FAILED);
         savedMessage.setFailureReason("Failed to publish message to Solace broker");
         savedMessage.setPublishedAt(LocalDateTime.now());
+        savedMessage.setRetrySupported(true);
         savedMessageReference = savedMessage;
 
         Message updatedMessage = database.markMessagePending(1L);
@@ -122,6 +126,7 @@ class DatabaseImplTest {
         savedMessage.setId(1L);
         savedMessage.setPublishStatus(PublishStatus.PENDING);
         savedMessage.setPublishedAt(LocalDateTime.now());
+        savedMessage.setRetrySupported(true);
         savedMessageReference = savedMessage;
 
         Message updatedMessage = database.markMessageFailed(1L, "Failed to publish message to Solace broker");

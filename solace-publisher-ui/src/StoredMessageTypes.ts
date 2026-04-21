@@ -6,7 +6,7 @@ export interface StoredMessagePayload {
 }
 
 export interface StoredMessage {
-    id?: number;
+    id: number;
     innerMessageId: string;
     destination: string;
     deliveryMode: string;
@@ -14,6 +14,8 @@ export interface StoredMessage {
     publishStatus: "PENDING" | "PUBLISHED" | "FAILED";
     failureReason?: string | null;
     publishedAt?: string | null;
+    retrySupported: boolean;
+    retryBlockedReason?: string | null;
     properties: Record<string, string>;
     payload: StoredMessagePayload;
     createdAt?: string | null;

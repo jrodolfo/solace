@@ -157,6 +157,8 @@ class MessageRepositoryDataJpaTest {
         message.setPublishStatus(publishStatus);
         message.setFailureReason(publishStatus == PublishStatus.FAILED ? "Failed to publish message to Solace broker" : null);
         message.setPublishedAt(publishStatus == PublishStatus.PUBLISHED ? createdAt : null);
+        message.setRetrySupported(true);
+        message.setRetryBlockedReason(null);
         message.setCreatedAt(createdAt);
         message.setUpdatedAt(createdAt);
 

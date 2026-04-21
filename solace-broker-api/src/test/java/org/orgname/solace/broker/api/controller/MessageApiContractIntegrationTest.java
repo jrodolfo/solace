@@ -85,6 +85,7 @@ class MessageApiContractIntegrationTest {
                 .andExpect(jsonPath("$.items[0].deliveryMode").value("PERSISTENT"))
                 .andExpect(jsonPath("$.items[0].priority").value(3))
                 .andExpect(jsonPath("$.items[0].publishStatus").value("PUBLISHED"))
+                .andExpect(jsonPath("$.items[0].retrySupported").value(true))
                 .andExpect(jsonPath("$.items[0].publishedAt").isNotEmpty())
                 .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
                 .andExpect(jsonPath("$.items[0].payload.content").value("01001000 01100101 01101100"))
@@ -157,10 +158,6 @@ class MessageApiContractIntegrationTest {
         message.setPayload(payload);
 
         MessageWrapperDTO wrapper = new MessageWrapperDTO();
-        wrapper.setUserName("solace-cloud-client");
-        wrapper.setPassword("super-difficult");
-        wrapper.setHost("wss://example.messaging.solace.cloud:443");
-        wrapper.setVpnName("my-solace-broker-on-aws");
         wrapper.setMessage(message);
         return wrapper;
     }

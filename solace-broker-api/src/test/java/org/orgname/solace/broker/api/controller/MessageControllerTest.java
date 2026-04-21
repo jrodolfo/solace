@@ -83,6 +83,7 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.last").value(true))
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("001"))
                 .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.items[0].retrySupported").value(true))
                 .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
                 .andExpect(jsonPath("$.items[0].properties.property01").value("value01"))
                 .andExpect(jsonPath("$.items[1].innerMessageId").value("002"))
@@ -300,6 +301,21 @@ class MessageControllerTest {
     }
 
     @Test
+    void shouldRejectRetryForNonRetryableFailedMessage() throws Exception {
+        Message failedMessage = storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1, "2026-04-19T10:00:00");
+        failedMessage.setPublishStatus(PublishStatus.FAILED);
+        failedMessage.setFailureReason("Failed to publish message to Solace broker");
+        failedMessage.setPublishedAt(null);
+        failedMessage.setRetrySupported(false);
+        failedMessage.setRetryBlockedReason("Retries are supported only for messages published with server-side broker configuration.");
+        database.storedMessages.add(failedMessage);
+
+        mockMvc.perform(post("/api/v1/messages/2/retry"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Only messages published with server-side broker configuration can be retried"));
+    }
+
+    @Test
     void shouldRejectMissingNestedMessageFields() throws Exception {
         MessageWrapperDTO wrapper = new MessageWrapperDTO();
         wrapper.setMessage(new InnerMessageDTO());
@@ -364,6 +380,8 @@ class MessageControllerTest {
         message.setPublishStatus(PublishStatus.PUBLISHED);
         message.setFailureReason(null);
         message.setPublishedAt(java.time.LocalDateTime.parse(createdAt));
+        message.setRetrySupported(true);
+        message.setRetryBlockedReason(null);
         message.setCreatedAt(java.time.LocalDateTime.parse(createdAt));
         message.setUpdatedAt(java.time.LocalDateTime.parse(createdAt));
 
@@ -414,6 +432,10 @@ class MessageControllerTest {
             message.setPriority(wrapper.getMessage().getPriority());
             message.setPublishStatus(PublishStatus.PENDING);
             storedMessages.add(message);
+            message.setRetrySupported(!wrapper.parametersAreValid());
+            message.setRetryBlockedReason(wrapper.parametersAreValid()
+                    ? "Retries are supported only for messages published with server-side broker configuration."
+                    : null);
             lastSavedMessage = message;
             return message;
         }

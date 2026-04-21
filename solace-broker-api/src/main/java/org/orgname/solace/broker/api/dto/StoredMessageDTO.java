@@ -19,6 +19,8 @@ public class StoredMessageDTO {
     private final PublishStatus publishStatus;
     private final String failureReason;
     private final LocalDateTime publishedAt;
+    private final boolean retrySupported;
+    private final String retryBlockedReason;
     private final Map<String, String> properties;
     private final StoredMessagePayloadDTO payload;
     private final LocalDateTime createdAt;
@@ -33,6 +35,8 @@ public class StoredMessageDTO {
         this.publishStatus = message.getPublishStatus();
         this.failureReason = message.getFailureReason();
         this.publishedAt = message.getPublishedAt();
+        this.retrySupported = message.isRetrySupported();
+        this.retryBlockedReason = message.getRetryBlockedReason();
         this.properties = toPropertyMap(message.getProperties());
         this.payload = new StoredMessagePayloadDTO(message.getPayload());
         this.createdAt = message.getCreatedAt();
@@ -81,6 +85,14 @@ public class StoredMessageDTO {
 
     public LocalDateTime getPublishedAt() {
         return publishedAt;
+    }
+
+    public boolean isRetrySupported() {
+        return retrySupported;
+    }
+
+    public String getRetryBlockedReason() {
+        return retryBlockedReason;
     }
 
     public Map<String, String> getProperties() {

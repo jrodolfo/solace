@@ -24,6 +24,7 @@ import java.util.NoSuchElementException;
 @Service
 public class DatabaseImpl implements Database {
 
+    private static final String RETRY_BLOCKED_REASON = "Retries are supported only for messages published with server-side broker configuration.";
     private final MessageRepository messageRepository;
 
     public DatabaseImpl(MessageRepository messageRepository) {
@@ -89,6 +90,8 @@ public class DatabaseImpl implements Database {
         message.setPublishStatus(PublishStatus.PENDING);
         message.setFailureReason(null);
         message.setPublishedAt(null);
+        message.setRetrySupported(!wrapper.parametersAreValid());
+        message.setRetryBlockedReason(wrapper.parametersAreValid() ? RETRY_BLOCKED_REASON : null);
 
         // Create and attach Payload entity
         Payload payload = new Payload();

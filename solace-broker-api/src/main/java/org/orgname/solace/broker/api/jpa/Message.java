@@ -51,6 +51,12 @@ public class Message extends Auditable {
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
 
+    @Column(name = "retry_supported", nullable = false)
+    private boolean retrySupported;
+
+    @Column(name = "retry_blocked_reason", columnDefinition = "TEXT")
+    private String retryBlockedReason;
+
     /**
      * The Message entity has a list of Property objects, and each Property holds a reference back to the Message.
      * When Jackson (the JSON serializer used by Spring Boot) tries to serialize the User, it recursively serializes
