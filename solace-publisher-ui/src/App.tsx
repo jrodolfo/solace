@@ -5,6 +5,7 @@ import ShowOutput from "./ShowOutput.tsx";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
 import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
+import type {PagedStoredMessagesResponse} from "./StoredMessageTypes.ts";
 
 type MessagePropertyFormRow = {
     key: string;
@@ -13,6 +14,7 @@ type MessagePropertyFormRow = {
 
 function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
+    const messagesApiUrl = "http://localhost:8081/api/v1/messages/all";
 
     // State hooks for input fields
     const [userName, setUserName] = useState("");
@@ -30,6 +32,18 @@ function App() {
     const [showResponse, setShowResponse] = useState(false);
     const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
     const [submissionVariant, setSubmissionVariant] = useState<"success" | "danger" | null>(null);
+    const [filterDestination, setFilterDestination] = useState("");
+    const [filterDeliveryMode, setFilterDeliveryMode] = useState("");
+    const [filterInnerMessageId, setFilterInnerMessageId] = useState("");
+    const [browserSortBy, setBrowserSortBy] = useState("createdAt");
+    const [browserSortDirection, setBrowserSortDirection] = useState("desc");
+    const [browserPage, setBrowserPage] = useState("0");
+    const [browserSize, setBrowserSize] = useState("20");
+    const [messagesResponse, setMessagesResponse] = useState<PagedStoredMessagesResponse | null>(null);
+    const [browserMessage, setBrowserMessage] = useState<string | null>(null);
+    const [browserVariant, setBrowserVariant] = useState<"success" | "danger" | "info" | null>(null);
+    const [browserStatusCode, setBrowserStatusCode] = useState<number | null>(null);
+    const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 
     const updateProperty = (index: number, field: keyof MessagePropertyFormRow, value: string) => {
         setProperties((currentProperties) =>
@@ -51,6 +65,86 @@ function App() {
 
             return currentProperties.filter((_, propertyIndex) => propertyIndex !== index);
         });
+    };
+
+    const fetchMessages = async (overrides?: { page?: number; size?: number }) => {
+        const nextPage = overrides?.page ?? Number(browserPage);
+        const nextSize = overrides?.size ?? Number(browserSize);
+
+        if (!Number.isInteger(nextPage) || nextPage < 0) {
+            setBrowserMessage("Page must be greater than or equal to 0.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+            return;
+        }
+
+        if (!Number.isInteger(nextSize) || nextSize < 1 || nextSize > 100) {
+            setBrowserMessage("Size must be between 1 and 100.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+            return;
+        }
+
+        setIsLoadingMessages(true);
+        setBrowserMessage(null);
+        setBrowserVariant(null);
+        setBrowserStatusCode(null);
+
+        try {
+            const response = await axios.get<PagedStoredMessagesResponse>(messagesApiUrl, {
+                params: {
+                    page: nextPage,
+                    size: nextSize,
+                    ...(filterDestination.trim() ? {destination: filterDestination.trim()} : {}),
+                    ...(filterDeliveryMode.trim() ? {deliveryMode: filterDeliveryMode.trim()} : {}),
+                    ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
+                    sortBy: browserSortBy,
+                    sortDirection: browserSortDirection
+                }
+            });
+
+            setMessagesResponse(response.data);
+            setBrowserPage(String(response.data.page));
+            setBrowserSize(String(response.data.size));
+            setBrowserMessage(`Loaded ${response.data.items.length} messages.`);
+            setBrowserVariant("info");
+            setBrowserStatusCode(response.status);
+        } catch (error) {
+            if (axios.isAxiosError<SolaceBrokerAPIError>(error) && error.response) {
+                setBrowserMessage(error.response.data?.message ?? "Failed to load stored messages.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(error.response.status);
+                return;
+            }
+
+            console.error("Failed to load stored messages.", error);
+            setBrowserMessage("Failed to load stored messages.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(500);
+        } finally {
+            setIsLoadingMessages(false);
+        }
+    };
+
+    const handleBrowseMessages = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        await fetchMessages();
+    };
+
+    const loadPreviousPage = async () => {
+        if (!messagesResponse || messagesResponse.first) {
+            return;
+        }
+
+        await fetchMessages({page: messagesResponse.page - 1});
+    };
+
+    const loadNextPage = async () => {
+        if (!messagesResponse || messagesResponse.last) {
+            return;
+        }
+
+        await fetchMessages({page: messagesResponse.page + 1});
     };
 
     // Submit handler
@@ -381,6 +475,188 @@ function App() {
             <div className="col-lg-12 mt-6 mb-6">
                 {showResponse && <ShowOutput res={response}></ShowOutput>}
             </div>
+
+            <section className="mt-5">
+                <h2 className="mb-4 align-content-lg-center">Stored Messages</h2>
+
+                {browserMessage && browserVariant && (
+                    <div className={`alert alert-${browserVariant}`} role="alert">
+                        {browserMessage}
+                        {browserStatusCode !== null && ` (status: ${browserStatusCode})`}
+                    </div>
+                )}
+
+                <form onSubmit={handleBrowseMessages}>
+                    <div className="row g-3">
+                        <div className="col-md-4">
+                            <label htmlFor="filterDestination" className="form-label">
+                                Filter Destination
+                            </label>
+                            <input
+                                id="filterDestination"
+                                type="text"
+                                className="form-control"
+                                value={filterDestination}
+                                onChange={(e) => setFilterDestination(e.target.value)}
+                                placeholder="Filter by destination"
+                            />
+                        </div>
+                        <div className="col-md-4">
+                            <label htmlFor="filterDeliveryMode" className="form-label">
+                                Filter Delivery Mode
+                            </label>
+                            <input
+                                id="filterDeliveryMode"
+                                type="text"
+                                className="form-control"
+                                value={filterDeliveryMode}
+                                onChange={(e) => setFilterDeliveryMode(e.target.value)}
+                                placeholder="Filter by delivery mode"
+                            />
+                        </div>
+                        <div className="col-md-4">
+                            <label htmlFor="filterInnerMessageId" className="form-label">
+                                Filter Inner Message Id
+                            </label>
+                            <input
+                                id="filterInnerMessageId"
+                                type="text"
+                                className="form-control"
+                                value={filterInnerMessageId}
+                                onChange={(e) => setFilterInnerMessageId(e.target.value)}
+                                placeholder="Filter by inner message id"
+                            />
+                        </div>
+                        <div className="col-md-3">
+                            <label htmlFor="browserSortBy" className="form-label">
+                                Sort By
+                            </label>
+                            <select
+                                id="browserSortBy"
+                                className="form-select"
+                                value={browserSortBy}
+                                onChange={(e) => setBrowserSortBy(e.target.value)}
+                            >
+                                <option value="createdAt">createdAt</option>
+                                <option value="priority">priority</option>
+                                <option value="destination">destination</option>
+                                <option value="innerMessageId">innerMessageId</option>
+                            </select>
+                        </div>
+                        <div className="col-md-3">
+                            <label htmlFor="browserSortDirection" className="form-label">
+                                Sort Direction
+                            </label>
+                            <select
+                                id="browserSortDirection"
+                                className="form-select"
+                                value={browserSortDirection}
+                                onChange={(e) => setBrowserSortDirection(e.target.value)}
+                            >
+                                <option value="desc">desc</option>
+                                <option value="asc">asc</option>
+                            </select>
+                        </div>
+                        <div className="col-md-3">
+                            <label htmlFor="browserPage" className="form-label">
+                                Page
+                            </label>
+                            <input
+                                id="browserPage"
+                                type="number"
+                                min="0"
+                                className="form-control"
+                                value={browserPage}
+                                onChange={(e) => setBrowserPage(e.target.value)}
+                            />
+                        </div>
+                        <div className="col-md-3">
+                            <label htmlFor="browserSize" className="form-label">
+                                Size
+                            </label>
+                            <input
+                                id="browserSize"
+                                type="number"
+                                min="1"
+                                max="100"
+                                className="form-control"
+                                value={browserSize}
+                                onChange={(e) => setBrowserSize(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="d-flex gap-2 mt-3">
+                        <button type="submit" className="btn btn-secondary" disabled={isLoadingMessages}>
+                            {isLoadingMessages ? "Loading..." : "Load Messages"}
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={loadPreviousPage}
+                            disabled={!messagesResponse || messagesResponse.first || isLoadingMessages}
+                        >
+                            Previous Page
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={loadNextPage}
+                            disabled={!messagesResponse || messagesResponse.last || isLoadingMessages}
+                        >
+                            Next Page
+                        </button>
+                    </div>
+                </form>
+
+                {messagesResponse && (
+                    <div className="mt-4">
+                        <div className="card card-body mb-3">
+                            <strong>
+                                Page {messagesResponse.page + 1} of {messagesResponse.totalPages || 1}
+                            </strong>
+                            <span>
+                                {messagesResponse.totalElements} stored messages total, page size {messagesResponse.size}
+                            </span>
+                        </div>
+
+                        {messagesResponse.items.length === 0 ? (
+                            <div className="card card-body">No stored messages found.</div>
+                        ) : (
+                            <div className="row g-3">
+                                {messagesResponse.items.map((message) => (
+                                    <div className="col-12" key={`${message.id ?? "message"}-${message.innerMessageId}`}>
+                                        <div className="card card-body">
+                                            <div className="d-flex justify-content-between flex-wrap gap-2">
+                                                <h5 className="mb-0">{message.innerMessageId}</h5>
+                                                <span className="badge text-bg-secondary">{message.deliveryMode}</span>
+                                            </div>
+                                            <p className="mb-1"><strong>Destination:</strong> {message.destination}</p>
+                                            <p className="mb-1"><strong>Priority:</strong> {message.priority}</p>
+                                            <p className="mb-1"><strong>Payload Type:</strong> {message.payload?.type}</p>
+                                            <p className="mb-3"><strong>Payload Content:</strong> {message.payload?.content}</p>
+                                            <div>
+                                                <strong>Properties:</strong>
+                                                {message.properties.length === 0 ? (
+                                                    <span> none</span>
+                                                ) : (
+                                                    <ul className="mb-0 mt-2">
+                                                        {message.properties.map((property) => (
+                                                            <li key={`${property.id ?? property.propertyKey}-${property.propertyValue}`}>
+                                                                {property.propertyKey}: {property.propertyValue}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </section>
 
         </div>
     );
