@@ -42,13 +42,13 @@ assert_contains "${make_help_output}" "make test-scripts"
 
 echo "checking broker api env var validation"
 assert_command_fails_with \
-  "missing required environment variable: SOLACE_CLOUD_HOST" \
+  "start-broker-api.sh cannot continue because a required Solace environment variable is missing: SOLACE_CLOUD_HOST" \
   env -u SOLACE_CLOUD_HOST -u SOLACE_CLOUD_VPN -u SOLACE_CLOUD_USERNAME -u SOLACE_CLOUD_PASSWORD \
   "${REPO_ROOT}/scripts/start-broker-api.sh"
 
 echo "checking subscriber env var validation"
 assert_command_fails_with \
-  "missing required environment variable: SOLACE_CLOUD_HOST" \
+  "start-subscriber.sh cannot continue because a required Solace environment variable is missing: SOLACE_CLOUD_HOST" \
   env -u SOLACE_CLOUD_HOST -u SOLACE_CLOUD_VPN -u SOLACE_CLOUD_USERNAME -u SOLACE_CLOUD_PASSWORD \
   "${REPO_ROOT}/scripts/start-subscriber.sh"
 

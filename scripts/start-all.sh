@@ -9,10 +9,7 @@ PIDS=()
 PROCESS_NAMES=()
 SHUTTING_DOWN=0
 
-require_env_var SOLACE_CLOUD_HOST
-require_env_var SOLACE_CLOUD_VPN
-require_env_var SOLACE_CLOUD_USERNAME
-require_env_var SOLACE_CLOUD_PASSWORD
+require_solace_env_vars "start-all.sh"
 
 start_process() {
   local name="$1"

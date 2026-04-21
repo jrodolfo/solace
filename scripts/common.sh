@@ -20,6 +20,29 @@ require_env_var() {
   fi
 }
 
+require_solace_env_vars() {
+  local caller_name="${1:-this script}"
+  local required_vars=(
+    "SOLACE_CLOUD_HOST"
+    "SOLACE_CLOUD_VPN"
+    "SOLACE_CLOUD_USERNAME"
+    "SOLACE_CLOUD_PASSWORD"
+  )
+
+  for variable_name in "${required_vars[@]}"; do
+    if [[ -z "${!variable_name:-}" ]]; then
+      {
+        echo "${caller_name} cannot continue because a required Solace environment variable is missing: ${variable_name}"
+        echo "required variables:"
+        for required_var in "${required_vars[@]}"; do
+          echo "- ${required_var}"
+        done
+      } >&2
+      exit 1
+    fi
+  done
+}
+
 enter_module() {
   local module_path="$1"
   if [[ "${module_path}" = /* ]]; then
