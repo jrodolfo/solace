@@ -45,10 +45,11 @@ public class DirectReceiver {
     }
 
     void run() {
-        logger.log(Level.INFO, "Initializing...");
+        logger.log(Level.INFO, "Initializing subscriber.");
 
         final MessagingService messagingService = buildMessagingService(accessProperties.getPropertiesReceiver());
         messagingService.connect();  // blocking connection to the Solace Broker
+        logger.log(Level.INFO, "Connected to Solace broker.");
         configureMessagingServiceListeners(messagingService);
 
         final DirectMessageReceiver receiver = createAndStartReceiver(messagingService);
@@ -66,11 +67,11 @@ public class DirectReceiver {
 
     void configureMessagingServiceListeners(MessagingService messagingService) {
         messagingService.addServiceInterruptionListener(serviceEvent ->
-                logger.log(Level.SEVERE, "### SERVICE INTERRUPTION: " + serviceEvent.getCause()));
+                logger.log(Level.SEVERE, "Messaging service interrupted.", serviceEvent.getCause()));
         messagingService.addReconnectionAttemptListener(serviceEvent ->
-                logger.log(Level.SEVERE, "### RECONNECTING ATTEMPT: " + serviceEvent));
+                logger.log(Level.WARNING, "Attempting to reconnect messaging service: {0}", serviceEvent));
         messagingService.addReconnectionListener(serviceEvent ->
-                logger.log(Level.SEVERE, "### RECONNECTED: " + serviceEvent));
+                logger.log(Level.INFO, "Messaging service reconnected: {0}", serviceEvent));
     }
 
     DirectMessageReceiver createAndStartReceiver(MessagingService messagingService) {
@@ -78,8 +79,9 @@ public class DirectReceiver {
                 .withSubscriptions(TopicSubscription.of(TOPIC_NAME))
                 .build();
         receiver.start();
+        logger.log(Level.INFO, "Direct receiver started for topic subscription {0}.", TOPIC_NAME);
         receiver.setReceiveFailureListener(failedReceiveEvent ->
-                logger.log(Level.SEVERE, "### FAILED RECEIVE EVENT: " + failedReceiveEvent));
+                logger.log(Level.SEVERE, "Direct receiver failed to process an inbound message: {0}", failedReceiveEvent));
         return receiver;
     }
 
@@ -101,7 +103,7 @@ public class DirectReceiver {
     }
 
     void waitForShutdownSignal() {
-        logger.log(Level.INFO, "Connected and running. Press [ENTER] to quit.");
+        logger.log(Level.INFO, "Subscriber is running. Press [ENTER] to quit.");
 
         try {
             while (System.in.available() == 0 && !isShutdown) {
@@ -109,15 +111,15 @@ public class DirectReceiver {
                 logThroughputAndReset();
             }
         } catch (InterruptedException | IOException e) {
-            // Thread.sleep() interrupted... probably getting shut down
+            logger.log(Level.WARNING, "Subscriber shutdown wait interrupted.");
         }
     }
 
     void logThroughputAndReset() {
-        logger.log(Level.INFO, "Received msg/s: " + msgRecvCounter);
+        logger.log(Level.INFO, "Received messages in the last second: {0}", msgRecvCounter);
         msgRecvCounter = 0;
         if (hasDetectedDiscard) {
-            logger.log(Level.INFO, "*** Egress discard detected *** : unable to keep up with full message rate");
+            logger.log(Level.WARNING, "Egress discard detected; subscriber could not keep up with the full message rate.");
             hasDetectedDiscard = false;
         }
     }
@@ -126,7 +128,7 @@ public class DirectReceiver {
         isShutdown = true;
         receiver.terminate(500);
         messagingService.disconnect();
-        logger.log(Level.INFO, "Main thread quitting.");
+        logger.log(Level.INFO, "Subscriber shutdown complete.");
     }
 
     int getMsgRecvCounter() {
