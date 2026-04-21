@@ -6,6 +6,9 @@ import "@testing-library/jest-dom";
 import axios from "axios";
 import {beforeEach, Mock, vi} from "vitest";
 import {AxiosHeaders} from "axios";
+import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse";
+import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError";
+import type {PagedStoredMessagesResponse, StoredMessage} from "./StoredMessageTypes";
 
 const writeTextMock = vi.fn();
 
@@ -45,31 +48,55 @@ Object.defineProperty(navigator, "clipboard", {
     configurable: true,
 });
 
+function buildPublishSuccessResponse(overrides?: Partial<SolaceBrokerAPIResponse>): SolaceBrokerAPIResponse {
+    return {
+        destination: "solace/java/direct/system-01",
+        content: "01001000 01100101 01101100",
+        ...overrides,
+    };
+}
+
+function buildValidationErrorResponse(overrides?: Partial<SolaceBrokerAPIError>): SolaceBrokerAPIError {
+    return {
+        status: 400,
+        error: "Bad Request",
+        message: "Request validation failed",
+        path: "/api/v1/messages/message",
+        validationErrors: {
+            "message.innerMessageId": "message.innerMessageId is required",
+        },
+        ...overrides,
+    };
+}
+
+function buildStoredMessage(overrides?: Partial<StoredMessage>): StoredMessage {
+    return {
+        id: 1,
+        innerMessageId: "001",
+        destination: "solace/java/direct/system-01",
+        deliveryMode: "PERSISTENT",
+        priority: 3,
+        payload: {
+            type: "binary",
+            content: "01001000 01100101 01101100",
+        },
+        properties: {
+            region: "ca-east",
+        },
+        ...overrides,
+    };
+}
+
 function buildMessagesPage(page: number, overrides?: Partial<{
     size: number;
     totalElements: number;
     totalPages: number;
     first: boolean;
     last: boolean;
-    items: Array<Record<string, unknown>>;
-}>) {
+    items: StoredMessage[];
+}>): PagedStoredMessagesResponse {
     return {
-        items: overrides?.items ?? [
-            {
-                id: 1,
-                innerMessageId: "001",
-                destination: "solace/java/direct/system-01",
-                deliveryMode: "PERSISTENT",
-                priority: 3,
-                payload: {
-                    type: "binary",
-                    content: "01001000 01100101 01101100",
-                },
-                properties: {
-                    region: "ca-east",
-                },
-            },
-        ],
+        items: overrides?.items ?? [buildStoredMessage()],
         page,
         size: overrides?.size ?? 20,
         totalElements: overrides?.totalElements ?? 2,
@@ -89,28 +116,25 @@ function formatExpectedTimestamp(value: string): string {
     }).format(new Date(value));
 }
 
-describe("Form Submission Tests", () => {
+async function fillRequiredFormFields() {
+    await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
+    await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
+    await userEvent.type(screen.getByLabelText(/^Host$/i), "localhost");
+    await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
+    await userEvent.type(screen.getByLabelText(/^Inner Message Id$/i), "001");
+    await userEvent.type(screen.getByLabelText(/^Destination$/i), "solace/java/direct/system-01");
+    await userEvent.type(screen.getByLabelText(/^Delivery Mode$/i), "PERSISTENT");
+    await userEvent.clear(screen.getByLabelText(/^Priority$/i));
+    await userEvent.type(screen.getByLabelText(/^Priority$/i), "3");
+    await userEvent.type(screen.getByLabelText(/^Payload Type$/i), "binary");
+    await userEvent.type(screen.getByLabelText(/^Payload Content$/i), "01001000 01100101 01101100");
+}
 
-    async function fillRequiredFormFields() {
-        await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
-        await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
-        await userEvent.type(screen.getByLabelText(/^Host$/i), "localhost");
-        await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
-        await userEvent.type(screen.getByLabelText(/^Inner Message Id$/i), "001");
-        await userEvent.type(screen.getByLabelText(/^Destination$/i), "solace/java/direct/system-01");
-        await userEvent.type(screen.getByLabelText(/^Delivery Mode$/i), "PERSISTENT");
-        await userEvent.clear(screen.getByLabelText(/^Priority$/i));
-        await userEvent.type(screen.getByLabelText(/^Priority$/i), "3");
-        await userEvent.type(screen.getByLabelText(/^Payload Type$/i), "binary");
-        await userEvent.type(screen.getByLabelText(/^Payload Content$/i), "01001000 01100101 01101100");
-    }
+describe("Form Submission Tests", () => {
 
     test("Submits form and handles API response", async () => {
         mockedAxios.post.mockResolvedValue({
-            data: {
-                destination: "solace/java/direct/system-01",
-                content: "01001000 01100101 01101100",
-            },
+            data: buildPublishSuccessResponse(),
             status: 201,
             statusText: "Created",
             headers: new AxiosHeaders(),
@@ -155,10 +179,7 @@ describe("Form Submission Tests", () => {
 
     test("Submits form with message properties", async () => {
         mockedAxios.post.mockResolvedValue({
-            data: {
-                destination: "solace/java/direct/system-01",
-                content: "01001000 01100101 01101100",
-            },
+            data: buildPublishSuccessResponse(),
             status: 201,
             statusText: "Created",
             headers: new AxiosHeaders(),
@@ -209,15 +230,7 @@ describe("Form Submission Tests", () => {
     test("Handles typed validation failure returned by the backend", async () => {
         mockedAxios.post.mockRejectedValue({
             response: {
-                data: {
-                    status: 400,
-                    error: "Bad Request",
-                    message: "Request validation failed",
-                    path: "/api/v1/messages/message",
-                    validationErrors: {
-                        "message.innerMessageId": "message.innerMessageId is required",
-                    },
-                },
+                data: buildValidationErrorResponse(),
                 status: 400,
                 statusText: "Bad Request",
                 headers: new AxiosHeaders(),
@@ -275,6 +288,90 @@ describe("Form Submission Tests", () => {
         expect(await screen.findByRole("alert")).toHaveTextContent("Request validation failed");
         expect(screen.getByText(/message\.properties\[0\]\.value is required/i)).toBeInTheDocument();
         expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
+    });
+});
+
+describe("Broker API Contract Tests", () => {
+    test("renders the typed publish success dto returned by the broker api", async () => {
+        mockedAxios.post.mockResolvedValue({
+            data: buildPublishSuccessResponse({
+                destination: "solace/java/direct/system-42",
+                content: "payload from typed dto",
+            }),
+            status: 201,
+            statusText: "Created",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await fillRequiredFormFields();
+        await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
+
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(1));
+        expect(await screen.findByRole("alert")).toHaveTextContent("Message published successfully.");
+        expect(screen.getByText(/"destination": "solace\/java\/direct\/system-42"/i)).toBeInTheDocument();
+        expect(screen.getByText(/"content": "payload from typed dto"/i)).toBeInTheDocument();
+    });
+
+    test("renders the typed validation error dto returned by the broker api", async () => {
+        mockedAxios.post.mockRejectedValue({
+            response: {
+                data: buildValidationErrorResponse({
+                    validationErrors: {
+                        "message.destination": "message.destination is required",
+                        "message.payload.content": "payload.content is required",
+                    },
+                }),
+                status: 400,
+                statusText: "Bad Request",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            },
+            isAxiosError: true,
+        });
+
+        render(<App/>);
+
+        await fillRequiredFormFields();
+        await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
+
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(1));
+        expect(await screen.findByRole("alert")).toHaveTextContent("Request validation failed");
+        expect(screen.getByText(/message\.destination is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/payload\.content is required/i)).toBeInTheDocument();
+    });
+
+    test("renders the normalized stored message read dto from the broker api", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+                items: [
+                    buildStoredMessage({
+                        properties: {
+                            region: "ca-east",
+                            source: "broker-api-contract",
+                        },
+                    }),
+                ],
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+        await userEvent.click(screen.getByRole("button", {name: /show details/i}));
+
+        expect(screen.getByText(/region: ca-east/i)).toBeInTheDocument();
+        expect(screen.getByText(/source: broker-api-contract/i)).toBeInTheDocument();
     });
 });
 
