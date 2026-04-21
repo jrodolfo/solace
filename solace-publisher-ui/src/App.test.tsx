@@ -22,6 +22,10 @@ test('it shows 5 inputs and 1 button', () => {
     expect(screen.getByRole('button', {name: /load messages/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /refresh results/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /reset filters/i})).toBeInTheDocument();
+    expect(screen.getByLabelText(/Created At From/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Created At To/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Published At From/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Published At To/i)).toBeInTheDocument();
     expect(screen.getByText(/No results loaded yet\./i)).toBeInTheDocument();
 });
 
@@ -464,6 +468,10 @@ describe("Stored Messages Browser", () => {
         await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "002");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
+        await userEvent.type(screen.getByLabelText(/Created At From/i), "2026-04-20T09:30");
+        await userEvent.type(screen.getByLabelText(/Created At To/i), "2026-04-20T18:45");
+        await userEvent.type(screen.getByLabelText(/Published At From/i), "2026-04-21T07:00");
+        await userEvent.type(screen.getByLabelText(/Published At To/i), "2026-04-21T08:15");
         await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
         await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
         await userEvent.clear(screen.getByLabelText(/^Page$/i));
@@ -484,6 +492,10 @@ describe("Stored Messages Browser", () => {
                     deliveryMode: "DIRECT",
                     innerMessageId: "002",
                     publishStatus: "FAILED",
+                    createdAtFrom: "2026-04-20T09:30:00",
+                    createdAtTo: "2026-04-20T18:45:00",
+                    publishedAtFrom: "2026-04-21T07:00:00",
+                    publishedAtTo: "2026-04-21T08:15:00",
                     sortBy: "priority",
                     sortDirection: "asc",
                 },
@@ -832,6 +844,10 @@ describe("Stored Messages Browser", () => {
         await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "003");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
+        await userEvent.type(screen.getByLabelText(/Created At From/i), "2026-04-20T09:30");
+        await userEvent.type(screen.getByLabelText(/Created At To/i), "2026-04-20T18:45");
+        await userEvent.type(screen.getByLabelText(/Published At From/i), "2026-04-21T07:00");
+        await userEvent.type(screen.getByLabelText(/Published At To/i), "2026-04-21T08:15");
         await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
         await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
         await userEvent.clear(screen.getByLabelText(/^Page$/i));
@@ -855,6 +871,10 @@ describe("Stored Messages Browser", () => {
                     deliveryMode: "PERSISTENT",
                     innerMessageId: "003",
                     publishStatus: "FAILED",
+                    createdAtFrom: "2026-04-20T09:30:00",
+                    createdAtTo: "2026-04-20T18:45:00",
+                    publishedAtFrom: "2026-04-21T07:00:00",
+                    publishedAtTo: "2026-04-21T08:15:00",
                     sortBy: "priority",
                     sortDirection: "asc",
                 },
@@ -881,6 +901,10 @@ describe("Stored Messages Browser", () => {
         await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "003");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "PUBLISHED");
+        await userEvent.type(screen.getByLabelText(/Created At From/i), "2026-04-20T09:30");
+        await userEvent.type(screen.getByLabelText(/Created At To/i), "2026-04-20T18:45");
+        await userEvent.type(screen.getByLabelText(/Published At From/i), "2026-04-21T07:00");
+        await userEvent.type(screen.getByLabelText(/Published At To/i), "2026-04-21T08:15");
         await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
         await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
         await userEvent.clear(screen.getByLabelText(/^Page$/i));
@@ -899,6 +923,10 @@ describe("Stored Messages Browser", () => {
         expect(screen.getByLabelText(/Filter Delivery Mode/i)).toHaveValue("");
         expect(screen.getByLabelText(/Filter Inner Message Id/i)).toHaveValue("");
         expect(screen.getByLabelText(/Filter Publish Status/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Created At From/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Created At To/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Published At From/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Published At To/i)).toHaveValue("");
         expect(screen.getByLabelText(/Sort By/i)).toHaveValue("createdAt");
         expect(screen.getByLabelText(/Sort Direction/i)).toHaveValue("desc");
         expect(screen.getByLabelText(/^Page$/i)).toHaveValue(0);

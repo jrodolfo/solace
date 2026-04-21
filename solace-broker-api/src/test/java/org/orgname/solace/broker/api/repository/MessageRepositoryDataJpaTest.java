@@ -6,6 +6,7 @@ import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.service.DatabaseImpl;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
@@ -26,6 +27,9 @@ class MessageRepositoryDataJpaTest {
     @Autowired
     private MessageRepository messageRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     @Test
     void shouldFilterMessagesCaseInsensitivelyByStoredFields() {
         DatabaseImpl database = new DatabaseImpl(messageRepository);
@@ -33,7 +37,9 @@ class MessageRepositoryDataJpaTest {
         persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("abc-003", "solace/java/direct/system-03", "PERSISTENT", 2, LocalDateTime.of(2026, 4, 18, 10, 0));
 
-        PagedMessagesResponseDTO response = database.getAllMessages(0, 20, "SYSTEM-03", "persistent", "ABC", PublishStatus.PUBLISHED, "createdAt", "desc");
+        PagedMessagesResponseDTO response = database.getAllMessages(
+                0, 20, "SYSTEM-03", "persistent", "ABC", PublishStatus.PUBLISHED,
+                null, null, null, null, "createdAt", "desc");
 
         assertEquals(1L, response.getTotalElements());
         assertEquals("abc-003", response.getItems().getFirst().getInnerMessageId());
@@ -47,7 +53,9 @@ class MessageRepositoryDataJpaTest {
         persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, LocalDateTime.of(2026, 4, 18, 10, 0));
 
-        PagedMessagesResponseDTO response = database.getAllMessages(0, 20, null, null, null, null, "priority", "asc");
+        PagedMessagesResponseDTO response = database.getAllMessages(
+                0, 20, null, null, null, null,
+                null, null, null, null, "priority", "asc");
 
         assertEquals(List.of("002", "003", "001"),
                 response.getItems().stream().map(item -> item.getInnerMessageId()).toList());
@@ -60,7 +68,9 @@ class MessageRepositoryDataJpaTest {
         persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, LocalDateTime.of(2026, 4, 20, 10, 0));
 
-        PagedMessagesResponseDTO response = database.getAllMessages(1, 1, null, null, null, null, "createdAt", "desc");
+        PagedMessagesResponseDTO response = database.getAllMessages(
+                1, 1, null, null, null, null,
+                null, null, null, null, "createdAt", "desc");
 
         assertEquals(3L, response.getTotalElements());
         assertEquals(3, response.getTotalPages());
@@ -76,11 +86,51 @@ class MessageRepositoryDataJpaTest {
         persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
 
-        PagedMessagesResponseDTO response = database.getAllMessages(0, 20, null, null, null, PublishStatus.FAILED, "createdAt", "desc");
+        PagedMessagesResponseDTO response = database.getAllMessages(
+                0, 20, null, null, null, PublishStatus.FAILED,
+                null, null, null, null, "createdAt", "desc");
 
         assertEquals(1L, response.getTotalElements());
         assertEquals("002", response.getItems().getFirst().getInnerMessageId());
         assertEquals(PublishStatus.FAILED, response.getItems().getFirst().getPublishStatus());
+    }
+
+    @Test
+    void shouldFilterMessagesByCreatedAtRange() {
+        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        persistMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, LocalDateTime.of(2026, 4, 20, 10, 0));
+
+        PagedMessagesResponseDTO response = database.getAllMessages(
+                0, 20, null, null, null, null,
+                LocalDateTime.of(2026, 4, 19, 0, 0),
+                LocalDateTime.of(2026, 4, 19, 23, 59, 59),
+                null,
+                null,
+                "createdAt",
+                "asc");
+
+        assertEquals(List.of("002"), response.getItems().stream().map(item -> item.getInnerMessageId()).toList());
+    }
+
+    @Test
+    void shouldFilterMessagesByPublishedAtRangeAndPublishStatus() {
+        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        persistMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
+
+        PagedMessagesResponseDTO response = database.getAllMessages(
+                0, 20, null, null, null, PublishStatus.PUBLISHED,
+                null,
+                null,
+                LocalDateTime.of(2026, 4, 19, 0, 0),
+                LocalDateTime.of(2026, 4, 21, 0, 0),
+                "createdAt",
+                "asc");
+
+        assertEquals(List.of("003"), response.getItems().stream().map(item -> item.getInnerMessageId()).toList());
     }
 
     private void persistMessage(
@@ -119,6 +169,19 @@ class MessageRepositoryDataJpaTest {
         message.setPayload(payload);
         message.setProperties(List.of());
 
-        messageRepository.saveAndFlush(message);
+        Message savedMessage = messageRepository.saveAndFlush(message);
+        entityManager.createNativeQuery("""
+                update message
+                   set created_at = ?,
+                       updated_at = ?,
+                       published_at = ?
+                 where id = ?
+                """)
+                .setParameter(1, createdAt)
+                .setParameter(2, createdAt)
+                .setParameter(3, publishStatus == PublishStatus.PUBLISHED ? createdAt : null)
+                .setParameter(4, savedMessage.getId())
+                .executeUpdate();
+        entityManager.clear();
     }
 }

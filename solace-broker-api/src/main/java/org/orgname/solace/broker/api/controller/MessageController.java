@@ -24,6 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -129,6 +131,14 @@ public class MessageController {
             @RequestParam(required = false) String innerMessageId,
             @Parameter(description = "Optional exact filter for publish status. Allowed values: PENDING, PUBLISHED, FAILED", example = "FAILED")
             @RequestParam(required = false) String publishStatus,
+            @Parameter(description = "Optional lower bound for createdAt using ISO-8601 local date-time", example = "2026-04-21T00:00:00")
+            @RequestParam(required = false) String createdAtFrom,
+            @Parameter(description = "Optional upper bound for createdAt using ISO-8601 local date-time", example = "2026-04-21T23:59:59")
+            @RequestParam(required = false) String createdAtTo,
+            @Parameter(description = "Optional lower bound for publishedAt using ISO-8601 local date-time", example = "2026-04-21T00:00:00")
+            @RequestParam(required = false) String publishedAtFrom,
+            @Parameter(description = "Optional upper bound for publishedAt using ISO-8601 local date-time", example = "2026-04-21T23:59:59")
+            @RequestParam(required = false) String publishedAtTo,
             @Parameter(description = "Field to sort by. Allowed values: createdAt, priority, destination, innerMessageId", example = "createdAt")
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @Parameter(description = "Sort direction. Allowed values: asc, desc", example = "desc")
@@ -155,6 +165,10 @@ public class MessageController {
                 deliveryMode,
                 innerMessageId,
                 parsePublishStatus(publishStatus),
+                parseDateTime("createdAtFrom", createdAtFrom),
+                parseDateTime("createdAtTo", createdAtTo),
+                parseDateTime("publishedAtFrom", publishedAtFrom),
+                parseDateTime("publishedAtTo", publishedAtTo),
                 sortBy,
                 sortDirection);
     }
@@ -364,6 +378,18 @@ public class MessageController {
             return PublishStatus.valueOf(publishStatus.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("publishStatus must be one of PENDING, PUBLISHED, FAILED", e);
+        }
+    }
+
+    private static LocalDateTime parseDateTime(String fieldName, String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return LocalDateTime.parse(value.trim());
+        } catch (DateTimeParseException e) {
+            throw new BadRequestException(fieldName + " must be a valid ISO-8601 date-time", e);
         }
     }
 }

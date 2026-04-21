@@ -38,6 +38,10 @@ public class DatabaseImpl implements Database {
             String deliveryMode,
             String innerMessageId,
             PublishStatus publishStatus,
+            LocalDateTime createdAtFrom,
+            LocalDateTime createdAtTo,
+            LocalDateTime publishedAtFrom,
+            LocalDateTime publishedAtTo,
             String sortBy,
             String sortDirection) {
         Specification<Message> specification = Specification.where(null);
@@ -53,6 +57,18 @@ public class DatabaseImpl implements Database {
         }
         if (publishStatus != null) {
             specification = specification.and(enumEquals("publishStatus", publishStatus));
+        }
+        if (createdAtFrom != null) {
+            specification = specification.and(dateTimeOnOrAfter("createdAt", createdAtFrom));
+        }
+        if (createdAtTo != null) {
+            specification = specification.and(dateTimeOnOrBefore("createdAt", createdAtTo));
+        }
+        if (publishedAtFrom != null) {
+            specification = specification.and(dateTimeOnOrAfter("publishedAt", publishedAtFrom));
+        }
+        if (publishedAtTo != null) {
+            specification = specification.and(dateTimeOnOrBefore("publishedAt", publishedAtTo));
         }
 
         Sort.Direction direction = Sort.Direction.fromString(sortDirection);
@@ -144,6 +160,14 @@ public class DatabaseImpl implements Database {
 
     private static <T extends Enum<T>> Specification<Message> enumEquals(String fieldName, T value) {
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get(fieldName), value);
+    }
+
+    private static Specification<Message> dateTimeOnOrAfter(String fieldName, LocalDateTime value) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.greaterThanOrEqualTo(root.get(fieldName), value);
+    }
+
+    private static Specification<Message> dateTimeOnOrBefore(String fieldName, LocalDateTime value) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.lessThanOrEqualTo(root.get(fieldName), value);
     }
 
 }

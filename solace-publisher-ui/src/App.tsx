@@ -18,6 +18,10 @@ const DEFAULT_BROWSER_SORT_DIRECTION = "desc";
 const DEFAULT_BROWSER_PAGE = "0";
 const DEFAULT_BROWSER_SIZE = "20";
 const DEFAULT_BROWSER_PUBLISH_STATUS = "";
+const DEFAULT_BROWSER_CREATED_AT_FROM = "";
+const DEFAULT_BROWSER_CREATED_AT_TO = "";
+const DEFAULT_BROWSER_PUBLISHED_AT_FROM = "";
+const DEFAULT_BROWSER_PUBLISHED_AT_TO = "";
 
 function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
@@ -43,6 +47,10 @@ function App() {
     const [filterDeliveryMode, setFilterDeliveryMode] = useState("");
     const [filterInnerMessageId, setFilterInnerMessageId] = useState("");
     const [filterPublishStatus, setFilterPublishStatus] = useState(DEFAULT_BROWSER_PUBLISH_STATUS);
+    const [filterCreatedAtFrom, setFilterCreatedAtFrom] = useState(DEFAULT_BROWSER_CREATED_AT_FROM);
+    const [filterCreatedAtTo, setFilterCreatedAtTo] = useState(DEFAULT_BROWSER_CREATED_AT_TO);
+    const [filterPublishedAtFrom, setFilterPublishedAtFrom] = useState(DEFAULT_BROWSER_PUBLISHED_AT_FROM);
+    const [filterPublishedAtTo, setFilterPublishedAtTo] = useState(DEFAULT_BROWSER_PUBLISHED_AT_TO);
     const [browserSortBy, setBrowserSortBy] = useState(DEFAULT_BROWSER_SORT_BY);
     const [browserSortDirection, setBrowserSortDirection] = useState(DEFAULT_BROWSER_SORT_DIRECTION);
     const [browserPage, setBrowserPage] = useState(DEFAULT_BROWSER_PAGE);
@@ -111,6 +119,10 @@ function App() {
                     ...(filterDeliveryMode.trim() ? {deliveryMode: filterDeliveryMode.trim()} : {}),
                     ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
                     ...(filterPublishStatus ? {publishStatus: filterPublishStatus} : {}),
+                    ...(filterCreatedAtFrom ? {createdAtFrom: toIsoLocalDateTime(filterCreatedAtFrom)} : {}),
+                    ...(filterCreatedAtTo ? {createdAtTo: toIsoLocalDateTime(filterCreatedAtTo)} : {}),
+                    ...(filterPublishedAtFrom ? {publishedAtFrom: toIsoLocalDateTime(filterPublishedAtFrom)} : {}),
+                    ...(filterPublishedAtTo ? {publishedAtTo: toIsoLocalDateTime(filterPublishedAtTo)} : {}),
                     sortBy: browserSortBy,
                     sortDirection: browserSortDirection
                 }
@@ -168,6 +180,10 @@ function App() {
         setFilterDeliveryMode("");
         setFilterInnerMessageId("");
         setFilterPublishStatus(DEFAULT_BROWSER_PUBLISH_STATUS);
+        setFilterCreatedAtFrom(DEFAULT_BROWSER_CREATED_AT_FROM);
+        setFilterCreatedAtTo(DEFAULT_BROWSER_CREATED_AT_TO);
+        setFilterPublishedAtFrom(DEFAULT_BROWSER_PUBLISHED_AT_FROM);
+        setFilterPublishedAtTo(DEFAULT_BROWSER_PUBLISHED_AT_TO);
         setBrowserSortBy(DEFAULT_BROWSER_SORT_BY);
         setBrowserSortDirection(DEFAULT_BROWSER_SORT_DIRECTION);
         setBrowserPage(DEFAULT_BROWSER_PAGE);
@@ -674,6 +690,54 @@ function App() {
                                                 <option value="FAILED">FAILED</option>
                                             </select>
                                         </div>
+                                        <div className="col-md-3">
+                                            <label htmlFor="filterCreatedAtFrom" className="form-label">
+                                                Created At From
+                                            </label>
+                                            <input
+                                                id="filterCreatedAtFrom"
+                                                type="datetime-local"
+                                                className="form-control"
+                                                value={filterCreatedAtFrom}
+                                                onChange={(e) => setFilterCreatedAtFrom(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label htmlFor="filterCreatedAtTo" className="form-label">
+                                                Created At To
+                                            </label>
+                                            <input
+                                                id="filterCreatedAtTo"
+                                                type="datetime-local"
+                                                className="form-control"
+                                                value={filterCreatedAtTo}
+                                                onChange={(e) => setFilterCreatedAtTo(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label htmlFor="filterPublishedAtFrom" className="form-label">
+                                                Published At From
+                                            </label>
+                                            <input
+                                                id="filterPublishedAtFrom"
+                                                type="datetime-local"
+                                                className="form-control"
+                                                value={filterPublishedAtFrom}
+                                                onChange={(e) => setFilterPublishedAtFrom(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label htmlFor="filterPublishedAtTo" className="form-label">
+                                                Published At To
+                                            </label>
+                                            <input
+                                                id="filterPublishedAtTo"
+                                                type="datetime-local"
+                                                className="form-control"
+                                                value={filterPublishedAtTo}
+                                                onChange={(e) => setFilterPublishedAtTo(e.target.value)}
+                                            />
+                                        </div>
                                         <div className="col-md-2">
                                             <label htmlFor="browserSortBy" className="form-label">
                                                 Sort By
@@ -1058,6 +1122,10 @@ function publishStatusVariant(status: "PENDING" | "PUBLISHED" | "FAILED"): strin
         return "danger";
     }
     return "warning";
+}
+
+function toIsoLocalDateTime(value: string): string {
+    return value.length === 16 ? `${value}:00` : value;
 }
 
 function formatTimestamp(value?: string | null): string {

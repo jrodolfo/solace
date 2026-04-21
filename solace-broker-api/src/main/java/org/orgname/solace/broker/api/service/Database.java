@@ -5,6 +5,8 @@ import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 
+import java.time.LocalDateTime;
+
 public interface Database {
 
     Message savePendingMessage(MessageWrapperDTO wrapper);
@@ -24,6 +26,10 @@ public interface Database {
             String deliveryMode,
             String innerMessageId,
             PublishStatus publishStatus,
+            LocalDateTime createdAtFrom,
+            LocalDateTime createdAtTo,
+            LocalDateTime publishedAtFrom,
+            LocalDateTime publishedAtTo,
             String sortBy,
             String sortDirection);
 

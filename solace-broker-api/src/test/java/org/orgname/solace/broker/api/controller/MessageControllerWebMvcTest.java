@@ -26,6 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -55,7 +56,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldReturnStoredMessagesJsonContract() throws Exception {
-        when(database.getAllMessages(0, 20, null, null, null, null, "createdAt", "desc"))
+        when(database.getAllMessages(0, 20, null, null, null, null, null, null, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all"))
@@ -75,7 +76,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldReturnExplicitPageOfStoredMessages() throws Exception {
-        when(database.getAllMessages(1, 1, null, null, null, null, "createdAt", "desc"))
+        when(database.getAllMessages(1, 1, null, null, null, null, null, null, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1)), 1, 1, 2));
 
         mockMvc.perform(get("/api/v1/messages/all?page=1&size=1"))
@@ -91,7 +92,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldFilterStoredMessagesByDeliveryMode() throws Exception {
-        when(database.getAllMessages(0, 20, null, "PERSISTENT", null, null, "createdAt", "desc"))
+        when(database.getAllMessages(0, 20, null, "PERSISTENT", null, null, null, null, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?deliveryMode=PERSISTENT"))
@@ -102,7 +103,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldFilterStoredMessagesByPublishStatus() throws Exception {
-        when(database.getAllMessages(0, 20, null, null, null, PublishStatus.FAILED, "createdAt", "desc"))
+        when(database.getAllMessages(0, 20, null, null, null, PublishStatus.FAILED, null, null, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(failedStoredMessage("002", "solace/java/direct/system-02", "DIRECT", 1)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?publishStatus=FAILED"))
@@ -114,7 +115,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldRespectExplicitSortFieldAndDirection() throws Exception {
-        when(database.getAllMessages(0, 20, null, null, null, null, "priority", "asc"))
+        when(database.getAllMessages(0, 20, null, null, null, null, null, null, null, null, "priority", "asc"))
                 .thenReturn(messagePageResponse(List.of(
                         storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1),
                         storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 2));
@@ -123,6 +124,29 @@ class MessageControllerWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("002"))
                 .andExpect(jsonPath("$.items[1].innerMessageId").value("001"));
+    }
+
+    @Test
+    void shouldFilterStoredMessagesByCreatedAtRange() throws Exception {
+        LocalDateTime createdAtFrom = LocalDateTime.parse("2026-04-20T00:00:00");
+        LocalDateTime createdAtTo = LocalDateTime.parse("2026-04-20T23:59:59");
+
+        when(database.getAllMessages(0, 20, null, null, null, null, createdAtFrom, createdAtTo, null, null, "createdAt", "desc"))
+                .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 1));
+
+        mockMvc.perform(get("/api/v1/messages/all?createdAtFrom=2026-04-20T00:00:00&createdAtTo=2026-04-20T23:59:59"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("001"));
+    }
+
+    @Test
+    void shouldRejectInvalidCreatedAtFromDateTime() throws Exception {
+        mockMvc.perform(get("/api/v1/messages/all?createdAtFrom=not-a-date"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("createdAtFrom must be a valid ISO-8601 date-time"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
     }
 
     @Test

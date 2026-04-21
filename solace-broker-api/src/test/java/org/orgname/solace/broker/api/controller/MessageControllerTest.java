@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -67,7 +68,7 @@ class MessageControllerTest {
         database.storedMessages.add(first);
         database.storedMessages.add(second);
 
-        PagedMessagesResponseDTO messages = controller.getAllMessages(0, 20, null, null, null, null, "createdAt", "desc");
+        PagedMessagesResponseDTO messages = controller.getAllMessages(0, 20, null, null, null, null, null, null, null, null, "createdAt", "desc");
         assertEquals(2, messages.getItems().size());
         assertEquals(2L, messages.getTotalElements());
         assertEquals(1, messages.getTotalPages());
@@ -130,6 +131,26 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("002"))
                 .andExpect(jsonPath("$.items[0].publishStatus").value("FAILED"));
+    }
+
+    @Test
+    void shouldFilterMessagesByCreatedAtRange() throws Exception {
+        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, "2026-04-20T10:00:00"));
+        database.storedMessages.add(storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1, "2026-04-19T10:00:00"));
+
+        mockMvc.perform(get("/api/v1/messages/all?createdAtFrom=2026-04-20T00:00:00&createdAtTo=2026-04-20T23:59:59"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("001"));
+    }
+
+    @Test
+    void shouldRejectInvalidCreatedAtFromDateTime() throws Exception {
+        mockMvc.perform(get("/api/v1/messages/all?createdAtFrom=not-a-date"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("createdAtFrom must be a valid ISO-8601 date-time"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
     }
 
     @Test
@@ -437,6 +458,10 @@ class MessageControllerTest {
                 String deliveryMode,
                 String innerMessageId,
                 PublishStatus publishStatus,
+                LocalDateTime createdAtFrom,
+                LocalDateTime createdAtTo,
+                LocalDateTime publishedAtFrom,
+                LocalDateTime publishedAtTo,
                 String sortBy,
                 String sortDirection) {
             List<Message> filteredMessages = storedMessages.stream()
@@ -444,6 +469,10 @@ class MessageControllerTest {
                     .filter(message -> matches(message.getDeliveryMode(), deliveryMode))
                     .filter(message -> matches(message.getInnerMessageId(), innerMessageId))
                     .filter(message -> publishStatus == null || publishStatus == message.getPublishStatus())
+                    .filter(message -> matchesOnOrAfter(message.getCreatedAt(), createdAtFrom))
+                    .filter(message -> matchesOnOrBefore(message.getCreatedAt(), createdAtTo))
+                    .filter(message -> matchesOnOrAfter(message.getPublishedAt(), publishedAtFrom))
+                    .filter(message -> matchesOnOrBefore(message.getPublishedAt(), publishedAtTo))
                     .sorted(comparatorFor(sortBy, sortDirection))
                     .collect(Collectors.toList());
 
@@ -462,6 +491,14 @@ class MessageControllerTest {
 
         private static boolean matches(String actualValue, String filterValue) {
             return filterValue == null || actualValue.toLowerCase().contains(filterValue.toLowerCase());
+        }
+
+        private static boolean matchesOnOrAfter(LocalDateTime actualValue, LocalDateTime lowerBound) {
+            return lowerBound == null || (actualValue != null && !actualValue.isBefore(lowerBound));
+        }
+
+        private static boolean matchesOnOrBefore(LocalDateTime actualValue, LocalDateTime upperBound) {
+            return upperBound == null || (actualValue != null && !actualValue.isAfter(upperBound));
         }
 
         private static Comparator<Message> comparatorFor(String sortBy, String sortDirection) {
