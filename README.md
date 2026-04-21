@@ -140,7 +140,7 @@ The workflow currently covers:
 
 ## Notes
 
-- Broker setup/how-to material lives under `solace-broker-api/doc/how-to/`.
-- Postman, curl, JMeter, and sample-message artifacts still live under `solace-broker-api/doc/`.
+- Broker setup/how-to material lives under `doc/how-to/`.
+- Postman, curl, JMeter, MySQL schema, and sample-message artifacts live under `doc/`.
 - The architecture overview lives in [doc/architecture.md](doc/architecture.md).
 - If you want details for one module, use that module’s README rather than relying on this root summary.

@@ -71,7 +71,7 @@ Press `ENTER` to shut the subscriber down cleanly.
 
 - The subscribed topic pattern is defined in [Constants.java](src/main/java/org/orgname/solace/subscriber/Constants.java).
 - The receiver is currently a single-process command-line tool, not a Spring service.
-- If you need help obtaining broker credentials, see [../solace-broker-api/doc/how-to/09-pubsub-plus-on-cloud.txt](../solace-broker-api/doc/how-to/09-pubsub-plus-on-cloud.txt).
+- If you need help obtaining broker credentials or local broker setup guidance, see [../doc/how-to/](../doc/how-to/).
 
 ## References
 
