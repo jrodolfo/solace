@@ -9,6 +9,8 @@ import org.orgname.solace.broker.api.jpa.Payload;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.repository.MessageRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,6 +27,8 @@ import java.util.NoSuchElementException;
 public class DatabaseImpl implements Database {
 
     private static final String RETRY_BLOCKED_REASON = "Retries are supported only for messages published with server-side broker configuration.";
+    @PersistenceContext
+    private EntityManager entityManager;
     private final MessageRepository messageRepository;
 
     public DatabaseImpl(MessageRepository messageRepository) {
@@ -129,6 +133,7 @@ public class DatabaseImpl implements Database {
     @Transactional
     public Message markMessagePending(Long messageId) {
         messageRepository.markPending(messageId, PublishStatus.PENDING);
+        clearPersistenceContext();
         return getRequiredMessage(messageId);
     }
 
@@ -136,6 +141,7 @@ public class DatabaseImpl implements Database {
     @Transactional
     public Message markMessagePublished(Long messageId) {
         messageRepository.markPublished(messageId, PublishStatus.PUBLISHED, LocalDateTime.now());
+        clearPersistenceContext();
         return getRequiredMessage(messageId);
     }
 
@@ -143,6 +149,7 @@ public class DatabaseImpl implements Database {
     @Transactional
     public Message markMessageFailed(Long messageId, String failureReason) {
         messageRepository.markFailed(messageId, PublishStatus.FAILED, failureReason);
+        clearPersistenceContext();
         return getRequiredMessage(messageId);
     }
 
@@ -171,6 +178,12 @@ public class DatabaseImpl implements Database {
 
     private static Specification<Message> dateTimeOnOrBefore(String fieldName, LocalDateTime value) {
         return (root, query, criteriaBuilder) -> criteriaBuilder.lessThanOrEqualTo(root.get(fieldName), value);
+    }
+
+    private void clearPersistenceContext() {
+        if (entityManager != null) {
+            entityManager.clear();
+        }
     }
 
 }

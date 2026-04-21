@@ -3,16 +3,14 @@ package org.orgname.solace.broker.api.dto;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
+import org.orgname.solace.broker.api.service.MessageLifecycleSupport;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class StoredMessageDTO {
-
-    private static final Duration STALE_PENDING_THRESHOLD = Duration.ofMinutes(5);
 
     private final Long id;
     private final String innerMessageId;
@@ -121,10 +119,6 @@ public class StoredMessageDTO {
     }
 
     private static boolean isStalePending(Message message) {
-        if (message.getPublishStatus() != PublishStatus.PENDING || message.getCreatedAt() == null) {
-            return false;
-        }
-
-        return message.getCreatedAt().isBefore(LocalDateTime.now().minus(STALE_PENDING_THRESHOLD));
+        return MessageLifecycleSupport.isStalePending(message.getPublishStatus(), message.getCreatedAt());
     }
 }

@@ -16,10 +16,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 import java.util.Optional;
+import java.time.LocalDateTime;
+import java.sql.Timestamp;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -50,6 +53,9 @@ class MessageApiContractIntegrationTest {
 
     @Autowired
     private MessageRepository messageRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @MockBean
     private DirectPublisherService directPublisherService;
@@ -140,6 +146,41 @@ class MessageApiContractIntegrationTest {
         org.junit.jupiter.api.Assertions.assertEquals(PublishStatus.PUBLISHED, retriedMessage.getPublishStatus());
         org.junit.jupiter.api.Assertions.assertNull(retriedMessage.getFailureReason());
         org.junit.jupiter.api.Assertions.assertNotNull(retriedMessage.getPublishedAt());
+    }
+
+    @Test
+    void shouldReconcileStalePendingMessageAndPersistFailureReason() throws Exception {
+        MessageWrapperDTO wrapper = validWrapper();
+        when(directPublisherService.sendMessage(
+                eq("solace/java/direct/system-01"),
+                eq("01001000 01100101 01101100"),
+                any(Optional.class)))
+                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"));
+
+        mockMvc.perform(post("/api/v1/messages/message")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrapper)))
+                .andExpect(status().isCreated());
+
+        org.orgname.solace.broker.api.jpa.Message pendingMessage = messageRepository.findAll().getFirst();
+        LocalDateTime staleTimestamp = LocalDateTime.now().minusMinutes(10);
+        jdbcTemplate.update(
+                "update message set publish_status = ?, published_at = null, failure_reason = null, created_at = ?, updated_at = ? where id = ?",
+                PublishStatus.PENDING.name(),
+                Timestamp.valueOf(staleTimestamp),
+                Timestamp.valueOf(staleTimestamp),
+                pendingMessage.getId()
+        );
+
+        mockMvc.perform(post("/api/v1/messages/{messageId}/reconcile-stale-pending", pendingMessage.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.publishStatus").value("FAILED"))
+                .andExpect(jsonPath("$.failureReason").value("Marked as FAILED after manual reconciliation of a stale PENDING message"));
+
+        org.orgname.solace.broker.api.jpa.Message reconciledMessage = messageRepository.findById(pendingMessage.getId()).orElseThrow();
+        org.junit.jupiter.api.Assertions.assertEquals(PublishStatus.FAILED, reconciledMessage.getPublishStatus());
+        org.junit.jupiter.api.Assertions.assertEquals("Marked as FAILED after manual reconciliation of a stale PENDING message", reconciledMessage.getFailureReason());
+        org.junit.jupiter.api.Assertions.assertNull(reconciledMessage.getPublishedAt());
     }
 
     private static MessageWrapperDTO validWrapper() {

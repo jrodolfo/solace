@@ -31,6 +31,7 @@ const DEFAULT_BROWSER_PUBLISHED_AT_TO = "";
 
 function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
+    const messagesBaseUrl = "http://localhost:8081/api/v1/messages";
     const messagesApiUrl = "http://localhost:8081/api/v1/messages/all";
 
     // State hooks for input fields
@@ -67,6 +68,7 @@ function App() {
     const [browserStatusCode, setBrowserStatusCode] = useState<number | null>(null);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [retryingMessageId, setRetryingMessageId] = useState<string | null>(null);
+    const [reconcilingMessageId, setReconcilingMessageId] = useState<string | null>(null);
     const [isBulkRetrying, setIsBulkRetrying] = useState(false);
     const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
     const [hasLoadedMessages, setHasLoadedMessages] = useState(false);
@@ -271,7 +273,7 @@ function App() {
         setBrowserStatusCode(null);
 
         try {
-            const response = await axios.post<SolaceBrokerAPIResponse>(`${messagesApiUrl}/${message.id}/retry`);
+            const response = await axios.post<SolaceBrokerAPIResponse>(`${messagesBaseUrl}/${message.id}/retry`);
             await fetchMessages(messagesResponse ? {page: messagesResponse.page, size: messagesResponse.size} : undefined);
             setBrowserMessage(`Retried message ${message.innerMessageId} successfully.`);
             setBrowserVariant("success");
@@ -314,7 +316,7 @@ function App() {
 
         for (const message of failedMessages) {
             try {
-                await axios.post<SolaceBrokerAPIResponse>(`${messagesApiUrl}/${message.id}/retry`);
+                await axios.post<SolaceBrokerAPIResponse>(`${messagesBaseUrl}/${message.id}/retry`);
                 successfulRetries += 1;
             } catch (error) {
                 failedRetries += 1;
@@ -339,6 +341,35 @@ function App() {
         }
 
         setIsBulkRetrying(false);
+    };
+
+    const reconcileStalePendingMessage = async (message: PagedStoredMessagesResponse["items"][number]) => {
+        const messageKey = String(message.id ?? message.innerMessageId);
+        setReconcilingMessageId(messageKey);
+        setBrowserMessage(null);
+        setBrowserVariant(null);
+        setBrowserStatusCode(null);
+
+        try {
+            const response = await axios.post(`${messagesBaseUrl}/${message.id}/reconcile-stale-pending`);
+            await fetchMessages(messagesResponse ? {page: messagesResponse.page, size: messagesResponse.size} : undefined);
+            setBrowserMessage(`Reconciled stale pending message ${message.innerMessageId} successfully.`);
+            setBrowserVariant("success");
+            setBrowserStatusCode(response.status);
+        } catch (error) {
+            if (axios.isAxiosError<SolaceBrokerAPIError>(error) && error.response) {
+                setBrowserMessage(error.response.data?.message ?? "Failed to reconcile the stale pending message.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(error.response.status);
+            } else {
+                console.error("Failed to reconcile the stale pending message.", error);
+                setBrowserMessage("Failed to reconcile the stale pending message.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(500);
+            }
+        } finally {
+            setReconcilingMessageId(null);
+        }
     };
 
     const copyToClipboard = async (label: string, value: string) => {
@@ -1080,9 +1111,19 @@ function App() {
                                                                     type="button"
                                                                     className="btn btn-sm btn-outline-danger"
                                                                     onClick={() => retryFailedMessage(message)}
-                                                                    disabled={isLoadingMessages || isBulkRetrying || retryingMessageId === messageKey}
+                                                                    disabled={isLoadingMessages || isBulkRetrying || retryingMessageId === messageKey || reconcilingMessageId === messageKey}
                                                                 >
                                                                     {retryingMessageId === messageKey ? "Retrying..." : "Retry Failed Message"}
+                                                                </button>
+                                                            )}
+                                                            {message.publishStatus === "PENDING" && message.stalePending && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-sm btn-outline-warning"
+                                                                    onClick={() => reconcileStalePendingMessage(message)}
+                                                                    disabled={isLoadingMessages || isBulkRetrying || retryingMessageId === messageKey || reconcilingMessageId === messageKey}
+                                                                >
+                                                                    {reconcilingMessageId === messageKey ? "Reconciling..." : "Mark Stale Pending As Failed"}
                                                                 </button>
                                                             )}
                                                             <button

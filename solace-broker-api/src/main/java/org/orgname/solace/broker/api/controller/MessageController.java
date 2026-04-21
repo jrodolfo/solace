@@ -14,12 +14,14 @@ import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
+import org.orgname.solace.broker.api.dto.StoredMessageDTO;
 import org.orgname.solace.broker.api.exception.BadRequestException;
 import org.orgname.solace.broker.api.exception.ErrorMessage;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
+import org.orgname.solace.broker.api.service.MessageLifecycleSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,6 +45,8 @@ public class MessageController {
     private static final String RETRY_BLOCKED_MESSAGE = "Only messages published with server-side broker configuration can be retried";
     private static final String PUBLISH_STATE_UPDATE_FAILURE_MESSAGE =
             "Message was published to the broker but the database state could not be updated";
+    private static final String STALE_PENDING_RECONCILIATION_REASON =
+            "Marked as FAILED after manual reconciliation of a stale PENDING message";
     private final Database database;
     private final DirectPublisherService directPublisherService;
 
@@ -366,6 +370,21 @@ public class MessageController {
 
         logger.log(Level.INFO, "Retried stored message {0} for topic {1}", new Object[]{messageId, topicName});
         return ResponseEntity.ok(responseMessage);
+    }
+
+    @PostMapping("/{messageId}/reconcile-stale-pending")
+    public ResponseEntity<StoredMessageDTO> reconcileStalePendingMessage(@PathVariable Long messageId) {
+        Message storedMessage = database.findMessageById(messageId);
+        if (storedMessage.getPublishStatus() != PublishStatus.PENDING) {
+            throw new BadRequestException("Only PENDING messages can be reconciled");
+        }
+        if (!MessageLifecycleSupport.isStalePending(storedMessage.getPublishStatus(), storedMessage.getCreatedAt())) {
+            throw new BadRequestException("Only stale PENDING messages can be reconciled");
+        }
+
+        Message reconciledMessage = database.markMessageFailed(messageId, STALE_PENDING_RECONCILIATION_REASON);
+        logger.log(Level.INFO, "Reconciled stale pending message {0} as FAILED", messageId);
+        return ResponseEntity.ok(new StoredMessageDTO(reconciledMessage));
     }
 
     private static ParameterDTO getParameterDTO(MessageWrapperDTO wrapper) {

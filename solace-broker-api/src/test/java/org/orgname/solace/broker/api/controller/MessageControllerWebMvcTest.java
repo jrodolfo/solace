@@ -352,6 +352,51 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.message").value("Only messages published with server-side broker configuration can be retried"));
     }
 
+    @Test
+    void shouldReconcileStalePendingMessage() throws Exception {
+        Message pendingMessage = stalePendingStoredMessage("003", "solace/java/direct/system-03", "DIRECT", 2);
+        pendingMessage.setId(3L);
+        Message reconciledMessage = stalePendingStoredMessage("003", "solace/java/direct/system-03", "DIRECT", 2);
+        reconciledMessage.setId(3L);
+        reconciledMessage.setPublishStatus(PublishStatus.FAILED);
+        reconciledMessage.setFailureReason("Marked as FAILED after manual reconciliation of a stale PENDING message");
+
+        when(database.findMessageById(3L)).thenReturn(pendingMessage);
+        when(database.markMessageFailed(3L, "Marked as FAILED after manual reconciliation of a stale PENDING message")).thenReturn(reconciledMessage);
+
+        mockMvc.perform(post("/api/v1/messages/3/reconcile-stale-pending"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(3))
+                .andExpect(jsonPath("$.publishStatus").value("FAILED"))
+                .andExpect(jsonPath("$.failureReason").value("Marked as FAILED after manual reconciliation of a stale PENDING message"));
+    }
+
+    @Test
+    void shouldRejectReconciliationForFreshPendingMessage() throws Exception {
+        Message freshPendingMessage = storedMessage("003", "solace/java/direct/system-03", "DIRECT", 2);
+        freshPendingMessage.setId(3L);
+        freshPendingMessage.setPublishStatus(PublishStatus.PENDING);
+        freshPendingMessage.setPublishedAt(null);
+        freshPendingMessage.setCreatedAt(LocalDateTime.now());
+        freshPendingMessage.setUpdatedAt(LocalDateTime.now());
+        when(database.findMessageById(3L)).thenReturn(freshPendingMessage);
+
+        mockMvc.perform(post("/api/v1/messages/3/reconcile-stale-pending"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Only stale PENDING messages can be reconciled"));
+    }
+
+    @Test
+    void shouldRejectReconciliationForNonPendingMessage() throws Exception {
+        Message publishedMessage = storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3);
+        publishedMessage.setId(1L);
+        when(database.findMessageById(1L)).thenReturn(publishedMessage);
+
+        mockMvc.perform(post("/api/v1/messages/1/reconcile-stale-pending"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Only PENDING messages can be reconciled"));
+    }
+
     private static MessageWrapperDTO validWrapper() {
         PayloadDTO payload = new PayloadDTO();
         payload.setType("binary");

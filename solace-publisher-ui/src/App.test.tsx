@@ -725,10 +725,83 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
-        expect(screen.getByText(/stale pending/i)).toBeInTheDocument();
+        expect(screen.getByText(/^stale pending$/i, {selector: ".badge"})).toBeInTheDocument();
 
         await userEvent.click(screen.getByRole("button", {name: /show details/i}));
         expect(screen.getByText("This pending message is older than the stale threshold and may need review.")).toBeInTheDocument();
+    });
+
+    test("Reconciles a stale pending message and refreshes the browser results", async () => {
+        mockedAxios.get
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    totalElements: 1,
+                    totalPages: 1,
+                    last: true,
+                    items: [
+                        buildStoredMessage({
+                            id: 3,
+                            innerMessageId: "003",
+                            publishStatus: "PENDING",
+                            stalePending: true,
+                            publishedAt: null,
+                            createdAt: "2026-04-21T07:30:00Z",
+                        }),
+                    ],
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            })
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    totalElements: 1,
+                    totalPages: 1,
+                    last: true,
+                    items: [
+                        buildStoredMessage({
+                            id: 3,
+                            innerMessageId: "003",
+                            publishStatus: "FAILED",
+                            stalePending: false,
+                            failureReason: "Marked as FAILED after manual reconciliation of a stale PENDING message",
+                            publishedAt: null,
+                            createdAt: "2026-04-21T07:30:00Z",
+                        }),
+                    ],
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            });
+        mockedAxios.post.mockResolvedValue({
+            data: buildStoredMessage({
+                id: 3,
+                innerMessageId: "003",
+                publishStatus: "FAILED",
+                stalePending: false,
+                failureReason: "Marked as FAILED after manual reconciliation of a stale PENDING message",
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        await userEvent.click(screen.getByRole("button", {name: /mark stale pending as failed/i}));
+
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledWith(
+            "http://localhost:8081/api/v1/messages/3/reconcile-stale-pending"
+        ));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
+        expect(screen.getByText(/Reconciled stale pending message 003 successfully\./i)).toBeInTheDocument();
     });
 
     test("Retries a failed stored message and refreshes the browser results", async () => {
@@ -779,7 +852,7 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /retry failed message/i}));
 
-        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledWith("http://localhost:8081/api/v1/messages/all/7/retry"));
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledWith("http://localhost:8081/api/v1/messages/7/retry"));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
         expect(await screen.findByRole("alert")).toHaveTextContent("Retried message 001 successfully.");
     });
@@ -842,8 +915,8 @@ describe("Stored Messages Browser", () => {
         await userEvent.click(screen.getByRole("button", {name: /retry visible failed messages/i}));
 
         await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(2));
-        expect(mockedAxios.post).toHaveBeenNthCalledWith(1, "http://localhost:8081/api/v1/messages/all/7/retry");
-        expect(mockedAxios.post).toHaveBeenNthCalledWith(2, "http://localhost:8081/api/v1/messages/all/8/retry");
+        expect(mockedAxios.post).toHaveBeenNthCalledWith(1, "http://localhost:8081/api/v1/messages/7/retry");
+        expect(mockedAxios.post).toHaveBeenNthCalledWith(2, "http://localhost:8081/api/v1/messages/8/retry");
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
         expect(await screen.findByRole("alert")).toHaveTextContent("Retried 2 failed messages successfully.");
     });
@@ -979,7 +1052,7 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /retry failed message/i}));
 
-        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledWith("http://localhost:8081/api/v1/messages/all/7/retry"));
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledWith("http://localhost:8081/api/v1/messages/7/retry"));
         expect(await screen.findByRole("alert")).toHaveTextContent("Failed to publish message to Solace broker");
     });
 
