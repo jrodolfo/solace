@@ -21,6 +21,11 @@ require_env_var() {
 }
 
 enter_module() {
-  local module_name="$1"
-  cd "${REPO_ROOT}/${module_name}"
+  local module_path="$1"
+  if [[ "${module_path}" = /* ]]; then
+    cd "${module_path}"
+    return
+  fi
+
+  cd "${REPO_ROOT}/${module_path}"
 }

@@ -49,6 +49,7 @@ Available `make` targets:
 - `make start-ui`
 - `make start-subscriber`
 - `make start-all`
+- `make test-scripts`
 - `make test`
 
 Notes:
@@ -115,6 +116,7 @@ java -jar target/solace-subscriber-1.0-SNAPSHOT.jar
 - Backend: `cd solace-broker-api && mvn test`
 - UI: `cd solace-publisher-ui && npm test -- --run`
 - Subscriber: `cd solace-subscriber && mvn test`
+- Root script smoke tests: `make test-scripts`
 - Whole workspace: `make test`
 
 ## Notes

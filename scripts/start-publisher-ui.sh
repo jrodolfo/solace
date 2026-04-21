@@ -7,10 +7,12 @@ source "$(cd "$(dirname "$0")" && pwd)/common.sh"
 require_command node
 require_command npm
 
-enter_module "solace-publisher-ui"
+PUBLISHER_UI_DIR="${PUBLISHER_UI_DIR:-solace-publisher-ui}"
+
+enter_module "${PUBLISHER_UI_DIR}"
 
 if [[ ! -d node_modules ]]; then
-  echo "node_modules is missing in solace-publisher-ui; run 'npm install' first" >&2
+  echo "node_modules is missing in ${PUBLISHER_UI_DIR}; run 'npm install' first" >&2
   exit 1
 fi
 

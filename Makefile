@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start-api start-ui start-subscriber start-all test-api test-ui test-subscriber test
+.PHONY: help start-api start-ui start-subscriber start-all test-api test-ui test-subscriber test-scripts test
 
 help:
 	@echo "available targets:"
@@ -11,6 +11,7 @@ help:
 	@echo "  make test-api          - run broker api tests"
 	@echo "  make test-ui           - run publisher ui tests"
 	@echo "  make test-subscriber   - run subscriber tests"
+	@echo "  make test-scripts      - run root script smoke tests"
 	@echo "  make test              - run all test targets"
 
 start-api:
@@ -34,4 +35,7 @@ test-ui:
 test-subscriber:
 	@cd solace-subscriber && mvn test
 
-test: test-api test-ui test-subscriber
+test-scripts:
+	@./scripts/test-scripts.sh
+
+test: test-api test-ui test-subscriber test-scripts
