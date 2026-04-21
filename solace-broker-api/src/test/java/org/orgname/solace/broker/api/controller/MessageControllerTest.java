@@ -255,6 +255,26 @@ class MessageControllerTest {
     }
 
     @Test
+    void shouldReturnInternalServerErrorWhenPublishSucceedsButDatabaseStateUpdateFails() throws Exception {
+        MessageWrapperDTO wrapper = validWrapper();
+        directPublisherService.response = new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100");
+        database.failMarkPublished = true;
+
+        mockMvc.perform(post("/api/v1/messages/message")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrapper)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.error").value("Internal Server Error"))
+                .andExpect(jsonPath("$.message").value("Message was published to the broker but the database state could not be updated"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/message"));
+
+        assertEquals(PublishStatus.PENDING, database.lastSavedMessage.getPublishStatus());
+        assertEquals(null, database.lastSavedMessage.getFailureReason());
+        assertEquals(null, database.lastSavedMessage.getPublishedAt());
+    }
+
+    @Test
     void shouldReturnBadRequestWhenPublisherRejectsInput() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
         directPublisherService.illegalArgumentException = new IllegalArgumentException("Topic name cannot be empty");
@@ -421,6 +441,7 @@ class MessageControllerTest {
     private static final class StubDatabase implements Database {
         private final List<Message> storedMessages = new ArrayList<>();
         private Message lastSavedMessage;
+        private boolean failMarkPublished;
 
         @Override
         public Message savePendingMessage(MessageWrapperDTO wrapper) {
@@ -442,6 +463,9 @@ class MessageControllerTest {
 
         @Override
         public Message markMessagePublished(Long messageId) {
+            if (failMarkPublished) {
+                throw new IllegalStateException("database unavailable");
+            }
             Message message = getRequiredMessage(messageId);
             message.setPublishStatus(PublishStatus.PUBLISHED);
             message.setFailureReason(null);

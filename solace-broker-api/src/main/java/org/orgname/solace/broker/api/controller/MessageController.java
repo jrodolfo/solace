@@ -41,6 +41,8 @@ public class MessageController {
     private static final int MAX_PAGE_SIZE = 100;
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("createdAt", "priority", "destination", "innerMessageId");
     private static final String RETRY_BLOCKED_MESSAGE = "Only messages published with server-side broker configuration can be retried";
+    private static final String PUBLISH_STATE_UPDATE_FAILURE_MESSAGE =
+            "Message was published to the broker but the database state could not be updated";
     private final Database database;
     private final DirectPublisherService directPublisherService;
 
@@ -318,15 +320,16 @@ public class MessageController {
             } else {
                 responseMessage = directPublisherService.sendMessage(topicName, content, Optional.empty());
             }
-            database.markMessagePublished(savedMessage.getId());
         } catch (IllegalArgumentException e) {
-            database.markMessageFailed(savedMessage.getId(), e.getMessage());
+            markFailedSafely(savedMessage.getId(), topicName, e.getMessage());
             logger.log(Level.WARNING, "Rejected publish request for topic {0}: {1}", new Object[]{topicName, e.getMessage()});
             throw new BadRequestException(e.getMessage(), e);
         } catch (RuntimeException e) {
-            database.markMessageFailed(savedMessage.getId(), e.getMessage());
+            markFailedSafely(savedMessage.getId(), topicName, e.getMessage());
             throw e;
         }
+
+        markPublishedOrThrow(savedMessage.getId(), topicName);
 
         logger.log(Level.INFO, "Accepted publish request for topic {0}", topicName);
         return ResponseEntity.status(201).body(responseMessage);
@@ -350,15 +353,16 @@ public class MessageController {
 
         try {
             responseMessage = directPublisherService.sendMessage(topicName, content, Optional.empty());
-            database.markMessagePublished(messageId);
         } catch (IllegalArgumentException e) {
-            database.markMessageFailed(messageId, e.getMessage());
+            markFailedSafely(messageId, topicName, e.getMessage());
             logger.log(Level.WARNING, "Rejected retry request for stored message {0}: {1}", new Object[]{messageId, e.getMessage()});
             throw new BadRequestException(e.getMessage(), e);
         } catch (RuntimeException e) {
-            database.markMessageFailed(messageId, e.getMessage());
+            markFailedSafely(messageId, topicName, e.getMessage());
             throw e;
         }
+
+        markPublishedOrThrow(messageId, topicName);
 
         logger.log(Level.INFO, "Retried stored message {0} for topic {1}", new Object[]{messageId, topicName});
         return ResponseEntity.ok(responseMessage);
@@ -394,6 +398,31 @@ public class MessageController {
             return LocalDateTime.parse(value.trim());
         } catch (DateTimeParseException e) {
             throw new BadRequestException(fieldName + " must be a valid ISO-8601 date-time", e);
+        }
+    }
+
+    private void markPublishedOrThrow(Long messageId, String topicName) {
+        try {
+            database.markMessagePublished(messageId);
+        } catch (RuntimeException exception) {
+            logger.log(
+                    Level.SEVERE,
+                    "Published message {0} for topic {1} to the broker, but failed to update database state to PUBLISHED",
+                    new Object[]{messageId, topicName}
+            );
+            throw new IllegalStateException(PUBLISH_STATE_UPDATE_FAILURE_MESSAGE, exception);
+        }
+    }
+
+    private void markFailedSafely(Long messageId, String topicName, String failureReason) {
+        try {
+            database.markMessageFailed(messageId, failureReason);
+        } catch (RuntimeException updateException) {
+            logger.log(
+                    Level.SEVERE,
+                    "Failed to update database state to FAILED for message {0} on topic {1}: {2}",
+                    new Object[]{messageId, topicName, updateException.getMessage()}
+            );
         }
     }
 }

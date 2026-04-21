@@ -32,6 +32,8 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -238,6 +240,29 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.error").value("Bad Gateway"))
                 .andExpect(jsonPath("$.message").value("Failed to publish message to Solace broker"))
                 .andExpect(jsonPath("$.path").value("/api/v1/messages/message"));
+    }
+
+    @Test
+    void shouldReturnInternalServerErrorWhenPublishSucceedsButDatabaseStateUpdateFails() throws Exception {
+        MessageWrapperDTO wrapper = validWrapper();
+        when(database.savePendingMessage(any(MessageWrapperDTO.class))).thenReturn(new Message() {{
+            setId(1L);
+        }});
+        when(directPublisherService.sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any()))
+                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"));
+        doThrow(new IllegalStateException("database unavailable"))
+                .when(database)
+                .markMessagePublished(1L);
+
+        mockMvc.perform(post("/api/v1/messages/message")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrapper)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.error").value("Internal Server Error"))
+                .andExpect(jsonPath("$.message").value("Message was published to the broker but the database state could not be updated"));
+
+        verify(database, never()).markMessageFailed(eq(1L), any());
     }
 
     @Test
