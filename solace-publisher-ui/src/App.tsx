@@ -1,6 +1,7 @@
 import {useState} from "react";
 import axios, {AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig} from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "./App.css";
 import ShowOutput from "./ShowOutput.tsx";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
 import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
@@ -244,420 +245,477 @@ function App() {
     };
 
     return (
-        <div className="container-fluid p-5">
+        <div className="publisher-app">
 
             <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
-            <h2 className="mb-4 align-content-lg-center">Solace Publisher</h2>
-
-            {submissionMessage && submissionVariant && (
-                <div className={`alert alert-${submissionVariant}`} role="alert">
-                    {submissionMessage}
-                </div>
-            )}
-
-            <form onSubmit={handleSubmit}>
-
-                {/* UserName Field */}
-                <div className="col-lg-12">
-                    <label htmlFor="userName" className="form-label">
-                        User Name
-                    </label>
-                    <input
-                        id="userName"
-                        type="text"
-                        className="form-control w-100 mt-1 mb-4"
-                        value={userName}
-                        onChange={(e) => setUserName(e.target.value)}
-                        placeholder="Enter the user name"
-                        required
-                    />
-                </div>
-
-                {/* Password Field */}
-                <div className="col-lg-12">
-                    <label htmlFor="password" className="form-label">
-                        Password
-                    </label>
-                    <input
-                        id="password"
-                        type="password"
-                        className="form-control w-100 mt-1 mb-4"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter the password"
-                        required
-                    />
-                </div>
-
-                {/* Host Field */}
-                <div className="col-lg-12">
-                    <label htmlFor="host" className="form-label">
-                        Host
-                    </label>
-                    <input
-                        id="host"
-                        type="text"
-                        className="form-control w-100 mt-1 mb-4"
-                        value={host}
-                        onChange={(e) => setHost(e.target.value)}
-                        placeholder="Enter the host url and port"
-                        required
-                    />
-                </div>
-
-                {/* VPN Name Field */}
-                <div className="col-lg-12">
-                    <label htmlFor="vpnName" className="form-label">
-                        Event VPN Name
-                    </label>
-                    <input
-                        id="vpnName"
-                        type="text"
-                        className="form-control w-100 mt-1 mb-4"
-                        value={vpnName}
-                        onChange={(e) => setVpnName(e.target.value)}
-                        placeholder="Enter the VPN name"
-                        required
-                    />
-                </div>
-
-                {/* Message Fields */}
-                <div className="col-lg-12">
-                    <label htmlFor="innerMessageId" className="form-label">
-                        Inner Message Id
-                    </label>
-                    <input
-                        id="innerMessageId"
-                        type="text"
-                        className="form-control w-100 mt-1 mb-4"
-                        value={innerMessageId}
-                        onChange={(e) => setInnerMessageId(e.target.value)}
-                        placeholder="Enter the inner message id"
-                        required
-                    />
-                </div>
-
-                <div className="col-lg-12">
-                    <label htmlFor="destination" className="form-label">
-                        Destination
-                    </label>
-                    <input
-                        id="destination"
-                        type="text"
-                        className="form-control w-100 mt-1 mb-4"
-                        value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
-                        placeholder="Enter the destination topic"
-                        required
-                    />
-                </div>
-
-                <div className="col-lg-12">
-                    <label htmlFor="deliveryMode" className="form-label">
-                        Delivery Mode
-                    </label>
-                    <input
-                        id="deliveryMode"
-                        type="text"
-                        className="form-control w-100 mt-1 mb-4"
-                        value={deliveryMode}
-                        onChange={(e) => setDeliveryMode(e.target.value)}
-                        placeholder="Enter the delivery mode"
-                        required
-                    />
-                </div>
-
-                <div className="col-lg-12">
-                    <label htmlFor="priority" className="form-label">
-                        Priority
-                    </label>
-                    <input
-                        id="priority"
-                        type="number"
-                        min="0"
-                        className="form-control w-100 mt-1 mb-4"
-                        value={priority}
-                        onChange={(e) => setPriority(e.target.value)}
-                        placeholder="Enter the priority"
-                        required
-                    />
-                </div>
-
-                <div className="col-lg-12">
-                    <label htmlFor="payloadType" className="form-label">
-                        Payload Type
-                    </label>
-                    <input
-                        id="payloadType"
-                        type="text"
-                        className="form-control w-100 mt-1 mb-4"
-                        value={payloadType}
-                        onChange={(e) => setPayloadType(e.target.value)}
-                        placeholder="Enter the payload type"
-                        required
-                    />
-                </div>
-
-                <div className="col-lg-12">
-                    <label htmlFor="payloadContent" className="form-label">
-                        Payload Content
-                    </label>
-                    <textarea
-                        id="payloadContent"
-                        className="form-control w-100 mt-1 mb-4"
-                        value={payloadContent}
-                        onChange={(e) => setPayloadContent(e.target.value)}
-                        rows={8}
-                        placeholder="Enter the payload content"
-                        required
-                    ></textarea>
-                </div>
-
-                <div className="col-lg-12">
-                    <label className="form-label">Message Properties</label>
-                    {properties.map((property, index) => (
-                        <div className="row g-2 align-items-end mt-1 mb-3" key={`property-row-${index}`}>
-                            <div className="col-md-5">
-                                <label htmlFor={`propertyKey-${index}`} className="form-label">
-                                    Property Key {index + 1}
-                                </label>
-                                <input
-                                    id={`propertyKey-${index}`}
-                                    type="text"
-                                    className="form-control"
-                                    value={property.key}
-                                    onChange={(e) => updateProperty(index, "key", e.target.value)}
-                                    placeholder="Enter property key"
-                                />
-                            </div>
-                            <div className="col-md-5">
-                                <label htmlFor={`propertyValue-${index}`} className="form-label">
-                                    Property Value {index + 1}
-                                </label>
-                                <input
-                                    id={`propertyValue-${index}`}
-                                    type="text"
-                                    className="form-control"
-                                    value={property.value}
-                                    onChange={(e) => updateProperty(index, "value", e.target.value)}
-                                    placeholder="Enter property value"
-                                />
-                            </div>
-                            <div className="col-md-2">
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-secondary w-100"
-                                    onClick={() => removePropertyRow(index)}
-                                >
-                                    Remove
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                    <button
-                        type="button"
-                        className="btn btn-outline-primary mb-4"
-                        onClick={addPropertyRow}
-                    >
-                        Add Property
-                    </button>
-                </div>
-
-                {/* Submit Button */}
-                <div className="text-center">
-                    <button type="submit" className="btn btn-primary">
-                        Publish Message
-                    </button>
-                </div>
-            </form>
-
-            <div className="col-lg-12 mt-6 mb-6">
-                {showResponse && <ShowOutput res={response}></ShowOutput>}
-            </div>
-
-            <section className="mt-5">
-                <h2 className="mb-4 align-content-lg-center">Stored Messages</h2>
-
-                {browserMessage && browserVariant && (
-                    <div className={`alert alert-${browserVariant}`} role="alert">
-                        {browserMessage}
-                        {browserStatusCode !== null && ` (status: ${browserStatusCode})`}
+            <div className="container-fluid px-4 px-lg-5 py-4 py-lg-5">
+                <header className="publisher-hero mb-4">
+                    <div>
+                        <p className="publisher-eyebrow mb-2">solace tools</p>
+                        <h1 className="publisher-title mb-2">Publisher Workspace</h1>
+                        <p className="publisher-subtitle mb-0">
+                            Publish a message with typed fields, then inspect stored results with the paginated browser below.
+                        </p>
                     </div>
-                )}
+                </header>
 
-                <form onSubmit={handleBrowseMessages}>
-                    <div className="row g-3">
-                        <div className="col-md-4">
-                            <label htmlFor="filterDestination" className="form-label">
-                                Filter Destination
-                            </label>
-                            <input
-                                id="filterDestination"
-                                type="text"
-                                className="form-control"
-                                value={filterDestination}
-                                onChange={(e) => setFilterDestination(e.target.value)}
-                                placeholder="Filter by destination"
-                            />
-                        </div>
-                        <div className="col-md-4">
-                            <label htmlFor="filterDeliveryMode" className="form-label">
-                                Filter Delivery Mode
-                            </label>
-                            <input
-                                id="filterDeliveryMode"
-                                type="text"
-                                className="form-control"
-                                value={filterDeliveryMode}
-                                onChange={(e) => setFilterDeliveryMode(e.target.value)}
-                                placeholder="Filter by delivery mode"
-                            />
-                        </div>
-                        <div className="col-md-4">
-                            <label htmlFor="filterInnerMessageId" className="form-label">
-                                Filter Inner Message Id
-                            </label>
-                            <input
-                                id="filterInnerMessageId"
-                                type="text"
-                                className="form-control"
-                                value={filterInnerMessageId}
-                                onChange={(e) => setFilterInnerMessageId(e.target.value)}
-                                placeholder="Filter by inner message id"
-                            />
-                        </div>
-                        <div className="col-md-3">
-                            <label htmlFor="browserSortBy" className="form-label">
-                                Sort By
-                            </label>
-                            <select
-                                id="browserSortBy"
-                                className="form-select"
-                                value={browserSortBy}
-                                onChange={(e) => setBrowserSortBy(e.target.value)}
-                            >
-                                <option value="createdAt">createdAt</option>
-                                <option value="priority">priority</option>
-                                <option value="destination">destination</option>
-                                <option value="innerMessageId">innerMessageId</option>
-                            </select>
-                        </div>
-                        <div className="col-md-3">
-                            <label htmlFor="browserSortDirection" className="form-label">
-                                Sort Direction
-                            </label>
-                            <select
-                                id="browserSortDirection"
-                                className="form-select"
-                                value={browserSortDirection}
-                                onChange={(e) => setBrowserSortDirection(e.target.value)}
-                            >
-                                <option value="desc">desc</option>
-                                <option value="asc">asc</option>
-                            </select>
-                        </div>
-                        <div className="col-md-3">
-                            <label htmlFor="browserPage" className="form-label">
-                                Page
-                            </label>
-                            <input
-                                id="browserPage"
-                                type="number"
-                                min="0"
-                                className="form-control"
-                                value={browserPage}
-                                onChange={(e) => setBrowserPage(e.target.value)}
-                            />
-                        </div>
-                        <div className="col-md-3">
-                            <label htmlFor="browserSize" className="form-label">
-                                Size
-                            </label>
-                            <input
-                                id="browserSize"
-                                type="number"
-                                min="1"
-                                max="100"
-                                className="form-control"
-                                value={browserSize}
-                                onChange={(e) => setBrowserSize(e.target.value)}
-                            />
-                        </div>
-                    </div>
+                <div className="row g-4 align-items-start">
+                    <div className="col-12 col-xl-5">
+                        <section className="workspace-card h-100">
+                            <div className="workspace-card-header">
+                                <div>
+                                    <p className="workspace-kicker mb-1">write</p>
+                                    <h2 className="workspace-title mb-1">Publish Message</h2>
+                                    <p className="workspace-copy mb-0">Connection details, message fields, payload, and optional properties.</p>
+                                </div>
+                            </div>
 
-                    <div className="d-flex gap-2 mt-3">
-                        <button type="submit" className="btn btn-secondary" disabled={isLoadingMessages}>
-                            {isLoadingMessages ? "Loading..." : "Load Messages"}
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-outline-secondary"
-                            onClick={loadPreviousPage}
-                            disabled={!messagesResponse || messagesResponse.first || isLoadingMessages}
-                        >
-                            Previous Page
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-outline-secondary"
-                            onClick={loadNextPage}
-                            disabled={!messagesResponse || messagesResponse.last || isLoadingMessages}
-                        >
-                            Next Page
-                        </button>
-                    </div>
-                </form>
+                            {submissionMessage && submissionVariant && (
+                                <div className={`alert alert-${submissionVariant}`} role="alert">
+                                    {submissionMessage}
+                                </div>
+                            )}
 
-                {messagesResponse && (
-                    <div className="mt-4">
-                        <div className="card card-body mb-3">
-                            <strong>
-                                Page {messagesResponse.page + 1} of {messagesResponse.totalPages || 1}
-                            </strong>
-                            <span>
-                                {messagesResponse.totalElements} stored messages total, page size {messagesResponse.size}
-                            </span>
-                        </div>
-
-                        {messagesResponse.items.length === 0 ? (
-                            <div className="card card-body">No stored messages found.</div>
-                        ) : (
-                            <div className="row g-3">
-                                {messagesResponse.items.map((message) => (
-                                    <div className="col-12" key={`${message.id ?? "message"}-${message.innerMessageId}`}>
-                                        <div className="card card-body">
-                                            <div className="d-flex justify-content-between flex-wrap gap-2">
-                                                <h5 className="mb-0">{message.innerMessageId}</h5>
-                                                <span className="badge text-bg-secondary">{message.deliveryMode}</span>
+                            <form onSubmit={handleSubmit}>
+                                <div className="form-section-grid">
+                                    <section className="form-section-block">
+                                        <div className="form-section-heading">
+                                            <p className="workspace-kicker mb-1">connection</p>
+                                            <h3 className="form-section-title">Broker Access</h3>
+                                        </div>
+                                        <div className="row g-3">
+                                            <div className="col-md-6">
+                                                <label htmlFor="userName" className="form-label">
+                                                    User Name
+                                                </label>
+                                                <input
+                                                    id="userName"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={userName}
+                                                    onChange={(e) => setUserName(e.target.value)}
+                                                    placeholder="Enter the user name"
+                                                    required
+                                                />
                                             </div>
-                                            <p className="mb-1"><strong>Destination:</strong> {message.destination}</p>
-                                            <p className="mb-1"><strong>Priority:</strong> {message.priority}</p>
-                                            <p className="mb-1"><strong>Payload Type:</strong> {message.payload?.type}</p>
-                                            <p className="mb-3"><strong>Payload Content:</strong> {message.payload?.content}</p>
-                                            <div>
-                                                <strong>Properties:</strong>
-                                                {message.properties.length === 0 ? (
-                                                    <span> none</span>
-                                                ) : (
-                                                    <ul className="mb-0 mt-2">
-                                                        {message.properties.map((property) => (
-                                                            <li key={`${property.id ?? property.propertyKey}-${property.propertyValue}`}>
-                                                                {property.propertyKey}: {property.propertyValue}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                )}
+                                            <div className="col-md-6">
+                                                <label htmlFor="password" className="form-label">
+                                                    Password
+                                                </label>
+                                                <input
+                                                    id="password"
+                                                    type="password"
+                                                    className="form-control"
+                                                    value={password}
+                                                    onChange={(e) => setPassword(e.target.value)}
+                                                    placeholder="Enter the password"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-md-6">
+                                                <label htmlFor="host" className="form-label">
+                                                    Host
+                                                </label>
+                                                <input
+                                                    id="host"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={host}
+                                                    onChange={(e) => setHost(e.target.value)}
+                                                    placeholder="Enter the host url and port"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-md-6">
+                                                <label htmlFor="vpnName" className="form-label">
+                                                    Event VPN Name
+                                                </label>
+                                                <input
+                                                    id="vpnName"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={vpnName}
+                                                    onChange={(e) => setVpnName(e.target.value)}
+                                                    placeholder="Enter the VPN name"
+                                                    required
+                                                />
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-            </section>
+                                    </section>
 
+                                    <section className="form-section-block">
+                                        <div className="form-section-heading">
+                                            <p className="workspace-kicker mb-1">message</p>
+                                            <h3 className="form-section-title">Message Details</h3>
+                                        </div>
+                                        <div className="row g-3">
+                                            <div className="col-md-6">
+                                                <label htmlFor="innerMessageId" className="form-label">
+                                                    Inner Message Id
+                                                </label>
+                                                <input
+                                                    id="innerMessageId"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={innerMessageId}
+                                                    onChange={(e) => setInnerMessageId(e.target.value)}
+                                                    placeholder="Enter the inner message id"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-md-6">
+                                                <label htmlFor="destination" className="form-label">
+                                                    Destination
+                                                </label>
+                                                <input
+                                                    id="destination"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={destination}
+                                                    onChange={(e) => setDestination(e.target.value)}
+                                                    placeholder="Enter the destination topic"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-md-6">
+                                                <label htmlFor="deliveryMode" className="form-label">
+                                                    Delivery Mode
+                                                </label>
+                                                <input
+                                                    id="deliveryMode"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={deliveryMode}
+                                                    onChange={(e) => setDeliveryMode(e.target.value)}
+                                                    placeholder="Enter the delivery mode"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-md-6">
+                                                <label htmlFor="priority" className="form-label">
+                                                    Priority
+                                                </label>
+                                                <input
+                                                    id="priority"
+                                                    type="number"
+                                                    min="0"
+                                                    className="form-control"
+                                                    value={priority}
+                                                    onChange={(e) => setPriority(e.target.value)}
+                                                    placeholder="Enter the priority"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-md-6">
+                                                <label htmlFor="payloadType" className="form-label">
+                                                    Payload Type
+                                                </label>
+                                                <input
+                                                    id="payloadType"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={payloadType}
+                                                    onChange={(e) => setPayloadType(e.target.value)}
+                                                    placeholder="Enter the payload type"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-12">
+                                                <label htmlFor="payloadContent" className="form-label">
+                                                    Payload Content
+                                                </label>
+                                                <textarea
+                                                    id="payloadContent"
+                                                    className="form-control publisher-textarea"
+                                                    value={payloadContent}
+                                                    onChange={(e) => setPayloadContent(e.target.value)}
+                                                    rows={6}
+                                                    placeholder="Enter the payload content"
+                                                    required
+                                                ></textarea>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section className="form-section-block">
+                                        <div className="form-section-heading">
+                                            <p className="workspace-kicker mb-1">optional</p>
+                                            <h3 className="form-section-title">Message Properties</h3>
+                                        </div>
+                                        {properties.map((property, index) => (
+                                            <div className="row g-2 align-items-end mt-1 mb-3" key={`property-row-${index}`}>
+                                                <div className="col-md-5">
+                                                    <label htmlFor={`propertyKey-${index}`} className="form-label">
+                                                        Property Key {index + 1}
+                                                    </label>
+                                                    <input
+                                                        id={`propertyKey-${index}`}
+                                                        type="text"
+                                                        className="form-control"
+                                                        value={property.key}
+                                                        onChange={(e) => updateProperty(index, "key", e.target.value)}
+                                                        placeholder="Enter property key"
+                                                    />
+                                                </div>
+                                                <div className="col-md-5">
+                                                    <label htmlFor={`propertyValue-${index}`} className="form-label">
+                                                        Property Value {index + 1}
+                                                    </label>
+                                                    <input
+                                                        id={`propertyValue-${index}`}
+                                                        type="text"
+                                                        className="form-control"
+                                                        value={property.value}
+                                                        onChange={(e) => updateProperty(index, "value", e.target.value)}
+                                                        placeholder="Enter property value"
+                                                    />
+                                                </div>
+                                                <div className="col-md-2">
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-outline-secondary w-100"
+                                                        onClick={() => removePropertyRow(index)}
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-primary"
+                                            onClick={addPropertyRow}
+                                        >
+                                            Add Property
+                                        </button>
+                                    </section>
+                                </div>
+
+                                <div className="publish-actions mt-4">
+                                    <button type="submit" className="btn btn-primary btn-lg">
+                                        Publish Message
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div className="response-panel mt-4">
+                                {showResponse && <ShowOutput res={response}></ShowOutput>}
+                            </div>
+                        </section>
+                    </div>
+
+                    <div className="col-12 col-xl-7">
+                        <section className="workspace-card h-100">
+                            <div className="workspace-card-header">
+                                <div>
+                                    <p className="workspace-kicker mb-1">read</p>
+                                    <h2 className="workspace-title mb-1">Stored Messages</h2>
+                                    <p className="workspace-copy mb-0">Filter, sort, and page through persisted broker messages.</p>
+                                </div>
+                            </div>
+
+                            {browserMessage && browserVariant && (
+                                <div className={`alert alert-${browserVariant}`} role="alert">
+                                    {browserMessage}
+                                    {browserStatusCode !== null && ` (status: ${browserStatusCode})`}
+                                </div>
+                            )}
+
+                            <form onSubmit={handleBrowseMessages}>
+                                <div className="form-section-block browser-filter-block">
+                                    <div className="row g-3">
+                                        <div className="col-md-4">
+                                            <label htmlFor="filterDestination" className="form-label">
+                                                Filter Destination
+                                            </label>
+                                            <input
+                                                id="filterDestination"
+                                                type="text"
+                                                className="form-control"
+                                                value={filterDestination}
+                                                onChange={(e) => setFilterDestination(e.target.value)}
+                                                placeholder="Filter by destination"
+                                            />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label htmlFor="filterDeliveryMode" className="form-label">
+                                                Filter Delivery Mode
+                                            </label>
+                                            <input
+                                                id="filterDeliveryMode"
+                                                type="text"
+                                                className="form-control"
+                                                value={filterDeliveryMode}
+                                                onChange={(e) => setFilterDeliveryMode(e.target.value)}
+                                                placeholder="Filter by delivery mode"
+                                            />
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label htmlFor="filterInnerMessageId" className="form-label">
+                                                Filter Inner Message Id
+                                            </label>
+                                            <input
+                                                id="filterInnerMessageId"
+                                                type="text"
+                                                className="form-control"
+                                                value={filterInnerMessageId}
+                                                onChange={(e) => setFilterInnerMessageId(e.target.value)}
+                                                placeholder="Filter by inner message id"
+                                            />
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label htmlFor="browserSortBy" className="form-label">
+                                                Sort By
+                                            </label>
+                                            <select
+                                                id="browserSortBy"
+                                                className="form-select"
+                                                value={browserSortBy}
+                                                onChange={(e) => setBrowserSortBy(e.target.value)}
+                                            >
+                                                <option value="createdAt">createdAt</option>
+                                                <option value="priority">priority</option>
+                                                <option value="destination">destination</option>
+                                                <option value="innerMessageId">innerMessageId</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label htmlFor="browserSortDirection" className="form-label">
+                                                Sort Direction
+                                            </label>
+                                            <select
+                                                id="browserSortDirection"
+                                                className="form-select"
+                                                value={browserSortDirection}
+                                                onChange={(e) => setBrowserSortDirection(e.target.value)}
+                                            >
+                                                <option value="desc">desc</option>
+                                                <option value="asc">asc</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label htmlFor="browserPage" className="form-label">
+                                                Page
+                                            </label>
+                                            <input
+                                                id="browserPage"
+                                                type="number"
+                                                min="0"
+                                                className="form-control"
+                                                value={browserPage}
+                                                onChange={(e) => setBrowserPage(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="col-md-3">
+                                            <label htmlFor="browserSize" className="form-label">
+                                                Size
+                                            </label>
+                                            <input
+                                                id="browserSize"
+                                                type="number"
+                                                min="1"
+                                                max="100"
+                                                className="form-control"
+                                                value={browserSize}
+                                                onChange={(e) => setBrowserSize(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="d-flex gap-2 mt-3 flex-wrap">
+                                        <button type="submit" className="btn btn-secondary" disabled={isLoadingMessages}>
+                                            {isLoadingMessages ? "Loading..." : "Load Messages"}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-secondary"
+                                            onClick={loadPreviousPage}
+                                            disabled={!messagesResponse || messagesResponse.first || isLoadingMessages}
+                                        >
+                                            Previous Page
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-secondary"
+                                            onClick={loadNextPage}
+                                            disabled={!messagesResponse || messagesResponse.last || isLoadingMessages}
+                                        >
+                                            Next Page
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            {messagesResponse && (
+                                <div className="mt-4">
+                                    <div className="browser-summary mb-3">
+                                        <div>
+                                            <strong>
+                                                Page {messagesResponse.page + 1} of {messagesResponse.totalPages || 1}
+                                            </strong>
+                                        </div>
+                                        <span>
+                                            {messagesResponse.totalElements} stored messages total, page size {messagesResponse.size}
+                                        </span>
+                                    </div>
+
+                                    {messagesResponse.items.length === 0 ? (
+                                        <div className="card card-body">No stored messages found.</div>
+                                    ) : (
+                                        <div className="row g-3">
+                                            {messagesResponse.items.map((message) => (
+                                                <div className="col-12" key={`${message.id ?? "message"}-${message.innerMessageId}`}>
+                                                    <article className="message-browser-card">
+                                                        <div className="message-browser-topline">
+                                                            <div>
+                                                                <h5 className="mb-1">{message.innerMessageId}</h5>
+                                                                <p className="message-browser-destination mb-0">{message.destination}</p>
+                                                            </div>
+                                                            <div className="message-browser-badges">
+                                                                <span className="badge text-bg-secondary">{message.deliveryMode}</span>
+                                                                <span className="badge text-bg-light">priority {message.priority}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="message-browser-meta">
+                                                            <div>
+                                                                <span className="meta-label">payload type</span>
+                                                                <strong>{message.payload?.type}</strong>
+                                                            </div>
+                                                            <div>
+                                                                <span className="meta-label">properties</span>
+                                                                <strong>{message.properties.length}</strong>
+                                                            </div>
+                                                        </div>
+                                                        <div className="message-browser-content">
+                                                            <span className="meta-label">payload content</span>
+                                                            <p className="mb-0">{message.payload?.content}</p>
+                                                        </div>
+                                                        <div className="message-browser-properties">
+                                                            <span className="meta-label">properties</span>
+                                                            {message.properties.length === 0 ? (
+                                                                <p className="mb-0">none</p>
+                                                            ) : (
+                                                                <ul className="mb-0 mt-2">
+                                                                    {message.properties.map((property) => (
+                                                                        <li key={`${property.id ?? property.propertyKey}-${property.propertyValue}`}>
+                                                                            {property.propertyKey}: {property.propertyValue}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            )}
+                                                        </div>
+                                                    </article>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </section>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

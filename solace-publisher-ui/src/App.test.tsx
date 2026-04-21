@@ -281,7 +281,7 @@ describe("Stored Messages Browser", () => {
         expect(await screen.findByText(/Loaded 1 messages\./i)).toBeInTheDocument();
         expect(screen.getByText(/Page 1 of 1/i)).toBeInTheDocument();
         expect(screen.getByText(/solace\/java\/direct\/system-01/i)).toBeInTheDocument();
-        expect(screen.getByText(/Payload Type:/i)).toBeInTheDocument();
+        expect(screen.getByText(/^binary$/i)).toBeInTheDocument();
         expect(screen.getByText(/region: ca-east/i)).toBeInTheDocument();
     });
 
