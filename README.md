@@ -119,6 +119,17 @@ java -jar target/solace-subscriber-1.0-SNAPSHOT.jar
 - Root script smoke tests: `make test-scripts`
 - Whole workspace: `make test`
 
+## Continuous Integration
+
+GitHub Actions CI now runs on every push and pull request through [.github/workflows/ci.yml](/Users/jrodolfo/workspace/solace/solace/.github/workflows/ci.yml:1).
+
+The workflow currently covers:
+
+- root script smoke tests
+- `solace-broker-api` tests
+- `solace-publisher-ui` tests with `npm ci`
+- `solace-subscriber` tests
+
 ## Notes
 
 - Broker setup/how-to material lives under `solace-broker-api/doc/how-to/`.
