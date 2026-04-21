@@ -1,6 +1,6 @@
 import App from "./App";
 import '@testing-library/jest-dom';
-import {fireEvent, render, screen, waitFor} from "@testing-library/react";
+import {render, screen, waitFor} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import axios from "axios";
@@ -9,13 +9,12 @@ import {AxiosHeaders} from "axios";
 
 
 test('it shows 5 inputs and 1 button', () => {
-    // render the component
     render(<App/>);
-    // manipulate the component or find an element in it
-    const inputs = screen.getAllByRole('textbox');
+    const textboxes = screen.getAllByRole('textbox');
+    const spinbutton = screen.getByRole('spinbutton');
     const button = screen.getByRole('button');
-    // Assertion - make sure the component is doing what we expect it to do
-    expect(inputs).toHaveLength(4);
+    expect(textboxes).toHaveLength(8);
+    expect(spinbutton).toBeInTheDocument();
     expect(button).toBeInTheDocument();
 });
 
@@ -34,6 +33,20 @@ beforeEach(() => {
 
 describe("Form Submission Tests", () => {
 
+    async function fillRequiredFormFields() {
+        await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
+        await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
+        await userEvent.type(screen.getByLabelText(/^Host$/i), "localhost");
+        await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
+        await userEvent.type(screen.getByLabelText(/Inner Message Id/i), "001");
+        await userEvent.type(screen.getByLabelText(/Destination/i), "solace/java/direct/system-01");
+        await userEvent.type(screen.getByLabelText(/Delivery Mode/i), "PERSISTENT");
+        await userEvent.clear(screen.getByLabelText(/Priority/i));
+        await userEvent.type(screen.getByLabelText(/Priority/i), "3");
+        await userEvent.type(screen.getByLabelText(/Payload Type/i), "binary");
+        await userEvent.type(screen.getByLabelText(/Payload Content/i), "01001000 01100101 01101100");
+    }
+
     test("Submits form and handles API response", async () => {
         mockedAxios.post.mockResolvedValue({
             data: {
@@ -48,18 +61,9 @@ describe("Form Submission Tests", () => {
 
         render(<App/>);
 
-        await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
-        await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
-        await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
-        await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
-        const messageInput = screen.getByLabelText(/Message/i);
-        fireEvent.input(messageInput, {
-            target: {
-                value: '{"innerMessageId":"001","destination":"solace/java/direct/system-01","deliveryMode":"PERSISTENT","priority":3,"payload":{"type":"binary","content":"01001000 01100101 01101100"}}'
-            }
-        });
+        await fillRequiredFormFields();
 
-        fireEvent.submit(screen.getByRole("button", {name: /publish message/i}));
+        await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
 
         await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(1));
 
@@ -113,12 +117,7 @@ describe("Form Submission Tests", () => {
 
         render(<App/>);
 
-        await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
-        await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
-        await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
-        await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
-        const messageInput = screen.getByLabelText(/Message/i);
-        fireEvent.input(messageInput, {target: {value: '{"innerMessageId":"001","destination":"solace/java/direct/system-01","deliveryMode":"PERSISTENT","priority":3,"payload":{"type":"binary","content":"01001000 01100101 01101100"}}'}});
+        await fillRequiredFormFields();
 
         await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
 
@@ -128,34 +127,20 @@ describe("Form Submission Tests", () => {
         expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
     });
 
-    test("Handles invalid message json before calling the api", async () => {
-        render(<App/>);
-
-        await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
-        await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
-        await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
-        await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
-        fireEvent.input(screen.getByLabelText(/Message/i), {target: {value: '{"invalidJson"'}});
-
-        await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
-
-        expect(mockedAxios.post).not.toHaveBeenCalled();
-        expect(await screen.findByRole("alert")).toHaveTextContent("Message must be valid JSON");
-        expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
-    });
-
     test("Handles missing required message fields before calling the api", async () => {
         render(<App/>);
 
         await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
         await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
-        await userEvent.type(screen.getByLabelText(/Host/i), "localhost");
+        await userEvent.type(screen.getByLabelText(/^Host$/i), "localhost");
         await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
-        fireEvent.input(screen.getByLabelText(/Message/i), {
-            target: {
-                value: '{"destination":"solace/java/direct/system-01","payload":{"content":"01001000 01100101 01101100"}}'
-            }
-        });
+        await userEvent.type(screen.getByLabelText(/Inner Message Id/i), " ");
+        await userEvent.type(screen.getByLabelText(/Destination/i), "solace/java/direct/system-01");
+        await userEvent.type(screen.getByLabelText(/Delivery Mode/i), " ");
+        await userEvent.clear(screen.getByLabelText(/Priority/i));
+        await userEvent.type(screen.getByLabelText(/Priority/i), "0");
+        await userEvent.type(screen.getByLabelText(/Payload Type/i), " ");
+        await userEvent.type(screen.getByLabelText(/Payload Content/i), "01001000 01100101 01101100");
 
         await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
 
@@ -163,7 +148,6 @@ describe("Form Submission Tests", () => {
         expect(await screen.findByRole("alert")).toHaveTextContent("Request validation failed");
         expect(screen.getByText(/message\.innermessageid is required/i)).toBeInTheDocument();
         expect(screen.getByText(/message\.deliverymode is required/i)).toBeInTheDocument();
-        expect(screen.getByText(/message\.priority is required/i)).toBeInTheDocument();
         expect(screen.getByText(/payload\.type is required/i)).toBeInTheDocument();
         expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
     });

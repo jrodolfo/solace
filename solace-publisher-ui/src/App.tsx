@@ -14,7 +14,12 @@ function App() {
     const [password, setPassword] = useState("");
     const [vpnName, setVpnName] = useState("");
     const [host, setHost] = useState("");
-    const [message, setMessage] = useState("");
+    const [innerMessageId, setInnerMessageId] = useState("");
+    const [destination, setDestination] = useState("");
+    const [deliveryMode, setDeliveryMode] = useState("");
+    const [priority, setPriority] = useState("0");
+    const [payloadType, setPayloadType] = useState("");
+    const [payloadContent, setPayloadContent] = useState("");
     const [response, setResponse] = useState<AxiosResponse<SolaceBrokerAPIResponse | SolaceBrokerAPIError> | null>(null);
     const [showResponse, setShowResponse] = useState(false);
     const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
@@ -27,29 +32,19 @@ function App() {
         setSubmissionMessage(null);
         setSubmissionVariant(null);
 
-        let parsedMessage;
-        try {
-            parsedMessage = JSON.parse(message);
-        } catch {
-            const parseErrorResponse = buildSyntheticErrorResponse(
-                400,
-                "Bad Request",
-                {
-                    status: 400,
-                    error: "Bad Request",
-                    message: "Message must be valid JSON",
-                    path: "/api/v1/messages/message",
-                    validationErrors: null
-                }
-            );
-            setResponse(parseErrorResponse);
-            setShowResponse(true);
-            setSubmissionVariant("danger");
-            setSubmissionMessage("Message must be valid JSON");
-            return;
-        }
+        const parsedPriority = Number(priority);
+        const messagePayload = {
+            innerMessageId,
+            destination,
+            deliveryMode,
+            priority: parsedPriority,
+            payload: {
+                type: payloadType,
+                content: payloadContent
+            }
+        };
 
-        const validationErrors = validateMessagePayload(parsedMessage);
+        const validationErrors = validateMessagePayload(messagePayload);
         if (Object.keys(validationErrors).length > 0) {
             const validationErrorResponse = buildSyntheticErrorResponse(
                 400,
@@ -77,7 +72,7 @@ function App() {
                     password,
                     host,
                     vpnName,
-                    message: parsedMessage
+                    message: messagePayload
                 },
                 {
                     headers: {
@@ -198,18 +193,94 @@ function App() {
                     />
                 </div>
 
-                {/* Message Field */}
+                {/* Message Fields */}
                 <div className="col-lg-12">
-                    <label htmlFor="message" className="form-label">
-                        Message
+                    <label htmlFor="innerMessageId" className="form-label">
+                        Inner Message Id
+                    </label>
+                    <input
+                        id="innerMessageId"
+                        type="text"
+                        className="form-control w-100 mt-1 mb-4"
+                        value={innerMessageId}
+                        onChange={(e) => setInnerMessageId(e.target.value)}
+                        placeholder="Enter the inner message id"
+                        required
+                    />
+                </div>
+
+                <div className="col-lg-12">
+                    <label htmlFor="destination" className="form-label">
+                        Destination
+                    </label>
+                    <input
+                        id="destination"
+                        type="text"
+                        className="form-control w-100 mt-1 mb-4"
+                        value={destination}
+                        onChange={(e) => setDestination(e.target.value)}
+                        placeholder="Enter the destination topic"
+                        required
+                    />
+                </div>
+
+                <div className="col-lg-12">
+                    <label htmlFor="deliveryMode" className="form-label">
+                        Delivery Mode
+                    </label>
+                    <input
+                        id="deliveryMode"
+                        type="text"
+                        className="form-control w-100 mt-1 mb-4"
+                        value={deliveryMode}
+                        onChange={(e) => setDeliveryMode(e.target.value)}
+                        placeholder="Enter the delivery mode"
+                        required
+                    />
+                </div>
+
+                <div className="col-lg-12">
+                    <label htmlFor="priority" className="form-label">
+                        Priority
+                    </label>
+                    <input
+                        id="priority"
+                        type="number"
+                        min="0"
+                        className="form-control w-100 mt-1 mb-4"
+                        value={priority}
+                        onChange={(e) => setPriority(e.target.value)}
+                        placeholder="Enter the priority"
+                        required
+                    />
+                </div>
+
+                <div className="col-lg-12">
+                    <label htmlFor="payloadType" className="form-label">
+                        Payload Type
+                    </label>
+                    <input
+                        id="payloadType"
+                        type="text"
+                        className="form-control w-100 mt-1 mb-4"
+                        value={payloadType}
+                        onChange={(e) => setPayloadType(e.target.value)}
+                        placeholder="Enter the payload type"
+                        required
+                    />
+                </div>
+
+                <div className="col-lg-12">
+                    <label htmlFor="payloadContent" className="form-label">
+                        Payload Content
                     </label>
                     <textarea
-                        id="message"
+                        id="payloadContent"
                         className="form-control w-100 mt-1 mb-4"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        rows={20}
-                        placeholder="Enter the message content"
+                        value={payloadContent}
+                        onChange={(e) => setPayloadContent(e.target.value)}
+                        rows={8}
+                        placeholder="Enter the payload content"
                         required
                     ></textarea>
                 </div>
@@ -229,7 +300,6 @@ function App() {
         </div>
     );
 }
-
 function buildSyntheticErrorResponse(
     status: number,
     statusText: string,
