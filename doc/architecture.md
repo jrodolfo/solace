@@ -14,6 +14,8 @@ At a high level:
 2. the broker API persists publish attempts and sends messages to Solace
 3. the subscriber independently listens to Solace topics and logs inbound traffic
 
+![Solace workspace architecture](./solace.png)
+
 ## Module Responsibilities
 
 ### `solace-publisher-ui`
