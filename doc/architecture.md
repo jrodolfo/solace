@@ -11,6 +11,7 @@ This repository is organized as a small three-module Solace workspace:
 At a high level:
 
 1. the UI sends publish and query requests to `solace-broker-api`
+   other HTTP clients such as Postman, JMeter, or custom tools can call the same broker API endpoints directly
 2. the broker API persists publish attempts and sends messages to Solace
 3. the subscriber independently listens to Solace topics and logs inbound traffic
 
@@ -50,6 +51,8 @@ Does not own:
 
 - direct browser rendering
 - long-running subscription behavior
+
+The broker API is not frontend-exclusive. It can be called by `solace-publisher-ui`, Postman, JMeter, or any other HTTP client that speaks the documented request contract.
 
 ### `solace-subscriber`
 
