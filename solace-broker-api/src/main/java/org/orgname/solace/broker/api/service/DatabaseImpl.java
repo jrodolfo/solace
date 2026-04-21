@@ -23,6 +23,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+/**
+ * JPA-backed implementation of the stored publish-attempt lifecycle.
+ *
+ * <p>This implementation owns two important behaviors:
+ * <ul>
+ *   <li>building normalized stored-message entities from incoming publish requests</li>
+ *   <li>moving existing rows through lifecycle transitions used by publish, retry,
+ *       and stale-pending reconciliation flows</li>
+ * </ul>
+ *
+ * <p>Lifecycle updates use repository-level update queries, so the persistence
+ * context is cleared before re-reading entities to avoid returning stale state.
+ */
 @Service
 public class DatabaseImpl implements Database {
 
@@ -36,6 +49,9 @@ public class DatabaseImpl implements Database {
     }
 
     @Override
+    /**
+     * Executes the paginated read contract used by the browser and API tests.
+     */
     public PagedMessagesResponseDTO getAllMessages(
             int page,
             int size,
@@ -82,6 +98,12 @@ public class DatabaseImpl implements Database {
     }
 
     @Override
+    /**
+     * Creates the initial stored record for a publish attempt.
+     *
+     * <p>New records always start as {@code PENDING}. Retry metadata is derived
+     * from whether the original request used explicit broker credentials.
+     */
     public Message savePendingMessage(MessageWrapperDTO wrapper) {
 
         // Create the main Message entity
@@ -125,12 +147,18 @@ public class DatabaseImpl implements Database {
     }
 
     @Override
+    /**
+     * Loads a stored message by id or fails fast if it does not exist.
+     */
     public Message findMessageById(Long messageId) {
         return getRequiredMessage(messageId);
     }
 
     @Override
     @Transactional
+    /**
+     * Reclassifies an existing row as {@code PENDING}, typically before retry.
+     */
     public Message markMessagePending(Long messageId) {
         messageRepository.markPending(messageId, PublishStatus.PENDING);
         clearPersistenceContext();
@@ -139,6 +167,9 @@ public class DatabaseImpl implements Database {
 
     @Override
     @Transactional
+    /**
+     * Reclassifies an existing row as {@code PUBLISHED} and stamps publish time.
+     */
     public Message markMessagePublished(Long messageId) {
         messageRepository.markPublished(messageId, PublishStatus.PUBLISHED, LocalDateTime.now());
         clearPersistenceContext();
@@ -147,6 +178,10 @@ public class DatabaseImpl implements Database {
 
     @Override
     @Transactional
+    /**
+     * Reclassifies an existing row as {@code FAILED} with an operator-visible
+     * failure reason.
+     */
     public Message markMessageFailed(Long messageId, String failureReason) {
         messageRepository.markFailed(messageId, PublishStatus.FAILED, failureReason);
         clearPersistenceContext();
@@ -180,6 +215,10 @@ public class DatabaseImpl implements Database {
         return (root, query, criteriaBuilder) -> criteriaBuilder.lessThanOrEqualTo(root.get(fieldName), value);
     }
 
+    /**
+     * Clears the current JPA persistence context after repository bulk-update
+     * queries so subsequent reads return the actual database state.
+     */
     private void clearPersistenceContext() {
         if (entityManager != null) {
             entityManager.clear();

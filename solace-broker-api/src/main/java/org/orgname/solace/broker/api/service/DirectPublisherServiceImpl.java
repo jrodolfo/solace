@@ -24,8 +24,12 @@ import java.util.logging.Logger;
 import static org.orgname.solace.broker.api.constants.Constants.ERROR_EMPTY_MESSAGE_OR_TOPIC_NAME;
 
 /**
- * Code that publishes to a topic
- * Disclaimer: most of the code below comes from the Solace training material
+ * Solace direct-publish implementation used by the broker API write path.
+ *
+ * <p>This class isolates broker-specific concerns from the controller:
+ * property resolution, messaging-service lifecycle, publisher startup,
+ * message construction, and cleanup. It does not manage persistence or
+ * publish-status transitions; those remain in the controller/database layer.
  */
 @Service
 public class DirectPublisherServiceImpl implements DirectPublisherService {
@@ -40,6 +44,12 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
 
 
     @Override
+    /**
+     * Publishes one message to Solace and returns the typed HTTP success body.
+     *
+     * <p>If explicit broker parameters are supplied they are used only for this
+     * publish attempt. Otherwise server-side configuration is used.
+     */
     public PublishMessageResponseDTO sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) {
         validateInput(topicName, content);
         Properties properties = resolveProperties(solaceParametersOptional);
@@ -60,12 +70,21 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         }
     }
 
+    /**
+     * Rejects empty topic or payload values before any broker work begins.
+     */
     private void validateInput(String topicName, String content) {
         if (topicName == null || topicName.isEmpty() || content == null || content.isEmpty()) {
             throw new IllegalArgumentException(ERROR_EMPTY_MESSAGE_OR_TOPIC_NAME);
         }
     }
 
+    /**
+     * Resolves the broker connection properties for this publish attempt.
+     *
+     * <p>Per-request parameters take precedence when provided; otherwise the
+     * service falls back to server-side broker configuration.
+     */
     private Properties resolveProperties(Optional<ParameterDTO> solaceParametersOptional) {
         try {
             ParameterDTO parameterDTO = solaceParametersOptional.orElse(null);
@@ -80,6 +99,10 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         }
     }
 
+    /**
+     * Builds an unconnected Solace messaging service from already validated
+     * connection properties.
+     */
     private MessagingService createMessagingService(Properties properties) {
         try {
             return MessagingService.builder(ConfigurationProfile.V1)
@@ -90,6 +113,10 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         }
     }
 
+    /**
+     * Connects the messaging service and registers lifecycle listeners used for
+     * operational logging.
+     */
     private void connectMessagingService(MessagingService messagingService) {
         try {
             messagingService.connect();
@@ -105,6 +132,10 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
                 logger.log(Level.INFO, "Reconnected to Solace broker: {0}", serviceEvent));
     }
 
+    /**
+     * Creates and starts the direct publisher associated with the connected
+     * messaging service.
+     */
     private DirectMessagePublisher createAndStartPublisher(MessagingService messagingService) {
         try {
             DirectMessagePublisher publisher = messagingService.createDirectMessagePublisherBuilder()
@@ -119,6 +150,10 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         }
     }
 
+    /**
+     * Creates the outbound payload to publish. The broker API currently treats
+     * the request payload content as UTF-8 text.
+     */
     private OutboundMessage buildOutboundMessage(MessagingService messagingService, String content) {
         byte[] payload = content.getBytes(StandardCharsets.UTF_8);
         OutboundMessageBuilder messageBuilder = messagingService.messageBuilder();
@@ -126,6 +161,9 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         return messageBuilder.build(payload);
     }
 
+    /**
+     * Sends the outbound message to the target Solace topic.
+     */
     private void publishMessage(DirectMessagePublisher publisher, String topicName, OutboundMessage message) {
         try {
             publisher.publish(message, Topic.of(topicName));
@@ -135,6 +173,10 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         }
     }
 
+    /**
+     * Adds a short pacing pause after publish to keep the sample publisher flow
+     * predictable under local runtime conditions.
+     */
     private void pauseAfterPublish() {
         try {
             Thread.sleep(1000 / APPROX_MSG_RATE_PER_SEC);
@@ -144,6 +186,10 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         }
     }
 
+    /**
+     * Attempts to release Solace publisher and service resources even when
+     * publish or startup steps fail.
+     */
     private void cleanup(MessagingService messagingService, DirectMessagePublisher publisher) {
         if (publisher != null) {
             try {
@@ -159,6 +205,9 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         }
     }
 
+    /**
+     * Creates the typed HTTP success body returned by the controller.
+     */
     PublishMessageResponseDTO buildResponse(String topicName, String content) {
         return new PublishMessageResponseDTO(topicName, content);
     }

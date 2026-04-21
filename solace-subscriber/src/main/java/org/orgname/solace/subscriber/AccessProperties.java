@@ -10,9 +10,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This class provides the values for the parameters to connect to a Solace Broker
+ * Resolves the subscriber's Solace connection properties from environment
+ * variables.
  *
- * See: https://docs.solace.com/Solace-PubSub-Messaging-APIs/API-Developer-Guide/Configuring-Connection-T.htm
+ * <p>The subscriber deliberately uses server-side configuration only. Missing
+ * required variables are treated as startup errors rather than deferred
+ * connection failures.
+ *
+ * <p>See: https://docs.solace.com/Solace-PubSub-Messaging-APIs/API-Developer-Guide/Configuring-Connection-T.htm
  */
 public class AccessProperties {
 
@@ -27,6 +32,10 @@ public class AccessProperties {
         this.environmentProvider = environmentProvider;
     }
 
+    /**
+     * Builds the base Solace connection properties shared by publisher/receiver
+     * use cases in this module.
+     */
     private Properties getProperties() {
 
         // Retrieve environment variables
@@ -59,10 +68,18 @@ public class AccessProperties {
         return properties;
     }
 
+    /**
+     * Returns publisher-style properties. This exists for naming parity with
+     * the broker API access-properties service.
+     */
     public Properties getPropertiesPublisher() {
         return getProperties();
     }
 
+    /**
+     * Returns receiver properties, including direct-subscription reapply after
+     * reconnect so the subscriber resumes topic observation automatically.
+     */
     public Properties getPropertiesReceiver() {
         final Properties properties = getProperties();
         properties.setProperty(SolaceProperties.ServiceProperties.RECEIVER_DIRECT_SUBSCRIPTION_REAPPLY, "true");  // subscribe Direct subs after reconnect

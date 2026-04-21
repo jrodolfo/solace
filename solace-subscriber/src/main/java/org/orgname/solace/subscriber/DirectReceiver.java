@@ -14,8 +14,11 @@ import java.util.logging.Logger;
 import static org.orgname.solace.subscriber.Constants.TOPIC_NAME;
 
 /**
- * Application that subscribes to a topic.
- * Disclaimer: most of the code below comes from the Solace training material
+ * Command-line subscriber for observing direct Solace topic traffic.
+ *
+ * <p>This class owns runtime lifecycle concerns for the subscriber module:
+ * service startup, reconnect/discard logging, asynchronous inbound message
+ * handling, throughput reporting, and orderly shutdown on user request.
  */
 public class DirectReceiver {
 
@@ -33,7 +36,9 @@ public class DirectReceiver {
         this.accessProperties = accessProperties;
     }
 
-    /** Main method. */
+    /**
+     * Entrypoint for the standalone subscriber process.
+     */
     public static void main(String... args) {
         try {
             new DirectReceiver().run();
@@ -44,6 +49,9 @@ public class DirectReceiver {
         }
     }
 
+    /**
+     * Runs the subscriber lifecycle until shutdown is requested.
+     */
     void run() {
         logger.log(Level.INFO, "Initializing subscriber.");
 
@@ -59,12 +67,20 @@ public class DirectReceiver {
         shutdown(receiver, messagingService);
     }
 
+    /**
+     * Builds the Solace messaging service from already-resolved connection
+     * properties.
+     */
     MessagingService buildMessagingService(Properties properties) {
         return MessagingService.builder(ConfigurationProfile.V1)
                 .fromProperties(properties)
                 .build();
     }
 
+    /**
+     * Registers runtime listeners used for interruption and reconnection
+     * visibility.
+     */
     void configureMessagingServiceListeners(MessagingService messagingService) {
         messagingService.addServiceInterruptionListener(serviceEvent ->
                 logger.log(Level.SEVERE, "Messaging service interrupted.", serviceEvent.getCause()));
@@ -74,6 +90,9 @@ public class DirectReceiver {
                 logger.log(Level.INFO, "Messaging service reconnected: {0}", serviceEvent));
     }
 
+    /**
+     * Creates and starts the direct receiver subscribed to the configured topic.
+     */
     DirectMessageReceiver createAndStartReceiver(MessagingService messagingService) {
         final DirectMessageReceiver receiver = messagingService.createDirectMessageReceiverBuilder()
                 .withSubscriptions(TopicSubscription.of(TOPIC_NAME))
@@ -85,6 +104,9 @@ public class DirectReceiver {
         return receiver;
     }
 
+    /**
+     * Creates the async inbound-message handler used during normal runtime.
+     */
     MessageHandler createMessageHandler() {
         return inboundMessage -> {
             logger.log(Level.INFO, "InboundMessage: " + inboundMessage);
@@ -95,6 +117,9 @@ public class DirectReceiver {
         };
     }
 
+    /**
+     * Updates in-memory counters for throughput and discard reporting.
+     */
     void handleInboundMessageState(boolean brokerDiscardIndication, boolean internalDiscardIndication) {
         msgRecvCounter++;
         if (brokerDiscardIndication || internalDiscardIndication) {
@@ -102,6 +127,9 @@ public class DirectReceiver {
         }
     }
 
+    /**
+     * Blocks until the operator requests shutdown from standard input.
+     */
     void waitForShutdownSignal() {
         logger.log(Level.INFO, "Subscriber is running. Press [ENTER] to quit.");
 
@@ -115,6 +143,10 @@ public class DirectReceiver {
         }
     }
 
+    /**
+     * Emits a one-second throughput snapshot and any discard warning detected
+     * since the previous interval.
+     */
     void logThroughputAndReset() {
         logger.log(Level.INFO, "Received messages in the last second: {0}", msgRecvCounter);
         msgRecvCounter = 0;
@@ -124,6 +156,9 @@ public class DirectReceiver {
         }
     }
 
+    /**
+     * Terminates receiver resources and disconnects from the broker.
+     */
     void shutdown(DirectMessageReceiver receiver, MessagingService messagingService) {
         isShutdown = true;
         receiver.terminate(500);
