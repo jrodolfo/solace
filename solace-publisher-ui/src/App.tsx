@@ -67,6 +67,7 @@ function App() {
     const [browserStatusCode, setBrowserStatusCode] = useState<number | null>(null);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [retryingMessageId, setRetryingMessageId] = useState<string | null>(null);
+    const [isBulkRetrying, setIsBulkRetrying] = useState(false);
     const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
     const [hasLoadedMessages, setHasLoadedMessages] = useState(false);
     const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
@@ -289,6 +290,55 @@ function App() {
         } finally {
             setRetryingMessageId(null);
         }
+    };
+
+    const retryVisibleFailedMessages = async () => {
+        const failedMessages = (messagesResponse?.items ?? []).filter(
+            (message) => message.publishStatus === "FAILED" && message.id
+        );
+
+        if (failedMessages.length === 0) {
+            setBrowserMessage("No visible failed messages are available to retry.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+            return;
+        }
+
+        setIsBulkRetrying(true);
+        setBrowserMessage(null);
+        setBrowserVariant(null);
+        setBrowserStatusCode(null);
+
+        let successfulRetries = 0;
+        let failedRetries = 0;
+
+        for (const message of failedMessages) {
+            try {
+                await axios.post<SolaceBrokerAPIResponse>(`${messagesApiUrl}/${message.id}/retry`);
+                successfulRetries += 1;
+            } catch (error) {
+                failedRetries += 1;
+                console.error(`Failed to retry stored message ${message.id}.`, error);
+            }
+        }
+
+        await fetchMessages(messagesResponse ? {page: messagesResponse.page, size: messagesResponse.size} : undefined);
+
+        if (failedRetries === 0) {
+            setBrowserMessage(`Retried ${successfulRetries} failed messages successfully.`);
+            setBrowserVariant("success");
+            setBrowserStatusCode(200);
+        } else if (successfulRetries === 0) {
+            setBrowserMessage(`Failed to retry all ${failedRetries} visible failed messages.`);
+            setBrowserVariant("danger");
+            setBrowserStatusCode(502);
+        } else {
+            setBrowserMessage(`Retried ${successfulRetries} failed messages successfully. ${failedRetries} retries failed.`);
+            setBrowserVariant("info");
+            setBrowserStatusCode(207);
+        }
+
+        setIsBulkRetrying(false);
     };
 
     const copyToClipboard = async (label: string, value: string) => {
@@ -853,11 +903,21 @@ function App() {
                                     </div>
 
                                     <div className="d-flex gap-2 mt-3 flex-wrap">
+                                        {messagesResponse && messagesResponse.items.some((message) => message.publishStatus === "FAILED" && message.id) && (
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-danger"
+                                                onClick={retryVisibleFailedMessages}
+                                                disabled={isLoadingMessages || isBulkRetrying || retryingMessageId !== null}
+                                            >
+                                                {isBulkRetrying ? "Retrying Visible Failed Messages..." : "Retry Visible Failed Messages"}
+                                            </button>
+                                        )}
                                         <button
                                             type="button"
                                             className="btn btn-outline-danger"
                                             onClick={() => applyBrowserPreset("FAILED_TODAY")}
-                                            disabled={isLoadingMessages}
+                                            disabled={isLoadingMessages || isBulkRetrying}
                                         >
                                             Failed Today
                                         </button>
@@ -865,7 +925,7 @@ function App() {
                                             type="button"
                                             className="btn btn-outline-success"
                                             onClick={() => applyBrowserPreset("PUBLISHED_TODAY")}
-                                            disabled={isLoadingMessages}
+                                            disabled={isLoadingMessages || isBulkRetrying}
                                         >
                                             Published Today
                                         </button>
@@ -873,7 +933,7 @@ function App() {
                                             type="button"
                                             className="btn btn-outline-warning"
                                             onClick={() => applyBrowserPreset("PENDING_NOW")}
-                                            disabled={isLoadingMessages}
+                                            disabled={isLoadingMessages || isBulkRetrying}
                                         >
                                             Pending Now
                                         </button>
@@ -881,18 +941,18 @@ function App() {
                                             type="button"
                                             className="btn btn-outline-secondary"
                                             onClick={() => applyBrowserPreset("FAILED_LAST_24H")}
-                                            disabled={isLoadingMessages}
+                                            disabled={isLoadingMessages || isBulkRetrying}
                                         >
                                             Failed Last 24h
                                         </button>
-                                        <button type="submit" className="btn btn-secondary" disabled={isLoadingMessages}>
+                                        <button type="submit" className="btn btn-secondary" disabled={isLoadingMessages || isBulkRetrying}>
                                             {isLoadingMessages ? "Loading..." : "Load Messages"}
                                         </button>
                                         <button
                                             type="button"
                                             className="btn btn-outline-primary"
                                             onClick={refreshBrowserResults}
-                                            disabled={isLoadingMessages}
+                                            disabled={isLoadingMessages || isBulkRetrying}
                                         >
                                             Refresh Results
                                         </button>
@@ -900,7 +960,7 @@ function App() {
                                             type="button"
                                             className="btn btn-outline-dark"
                                             onClick={resetBrowserFilters}
-                                            disabled={isLoadingMessages}
+                                            disabled={isLoadingMessages || isBulkRetrying}
                                         >
                                             Reset Filters
                                         </button>
@@ -908,7 +968,7 @@ function App() {
                                             type="button"
                                             className="btn btn-outline-secondary"
                                             onClick={loadPreviousPage}
-                                            disabled={!messagesResponse || messagesResponse.first || isLoadingMessages}
+                                            disabled={!messagesResponse || messagesResponse.first || isLoadingMessages || isBulkRetrying}
                                         >
                                             Previous Page
                                         </button>
@@ -916,7 +976,7 @@ function App() {
                                             type="button"
                                             className="btn btn-outline-secondary"
                                             onClick={loadNextPage}
-                                            disabled={!messagesResponse || messagesResponse.last || isLoadingMessages}
+                                            disabled={!messagesResponse || messagesResponse.last || isLoadingMessages || isBulkRetrying}
                                         >
                                             Next Page
                                         </button>
@@ -1017,7 +1077,7 @@ function App() {
                                                                     type="button"
                                                                     className="btn btn-sm btn-outline-danger"
                                                                     onClick={() => retryFailedMessage(message)}
-                                                                    disabled={isLoadingMessages || retryingMessageId === messageKey}
+                                                                    disabled={isLoadingMessages || isBulkRetrying || retryingMessageId === messageKey}
                                                                 >
                                                                     {retryingMessageId === messageKey ? "Retrying..." : "Retry Failed Message"}
                                                                 </button>
