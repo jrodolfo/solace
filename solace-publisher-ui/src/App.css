@@ -103,6 +103,17 @@
     border: 1px solid rgba(21, 48, 71, 0.08);
 }
 
+.browser-feedback-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    background: #f4f8fb;
+    border: 1px dashed rgba(21, 48, 71, 0.18);
+    color: #3f5b70;
+}
+
 .message-browser-card {
     background: white;
     border: 1px solid rgba(21, 48, 71, 0.08);

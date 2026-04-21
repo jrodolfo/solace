@@ -51,6 +51,7 @@ function App() {
     const [browserStatusCode, setBrowserStatusCode] = useState<number | null>(null);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
+    const [hasLoadedMessages, setHasLoadedMessages] = useState(false);
 
     const updateProperty = (index: number, field: keyof MessagePropertyFormRow, value: string) => {
         setProperties((currentProperties) =>
@@ -114,10 +115,12 @@ function App() {
             setBrowserPage(String(response.data.page));
             setBrowserSize(String(response.data.size));
             setExpandedMessageId(null);
+            setHasLoadedMessages(true);
             setBrowserMessage(`Loaded ${response.data.items.length} messages.`);
             setBrowserVariant("info");
             setBrowserStatusCode(response.status);
         } catch (error) {
+            setHasLoadedMessages(true);
             if (axios.isAxiosError<SolaceBrokerAPIError>(error) && error.response) {
                 setBrowserMessage(error.response.data?.message ?? "Failed to load stored messages.");
                 setBrowserVariant("danger");
@@ -167,6 +170,8 @@ function App() {
         setBrowserMessage(null);
         setBrowserVariant(null);
         setBrowserStatusCode(null);
+        setMessagesResponse(null);
+        setHasLoadedMessages(false);
     };
 
     const refreshBrowserResults = async () => {
@@ -688,7 +693,21 @@ function App() {
                                 </div>
                             </form>
 
-                            {messagesResponse && (
+                            {isLoadingMessages && (
+                                <div className="mt-4 browser-feedback-card" role="status" aria-live="polite">
+                                    <strong>Loading stored messages...</strong>
+                                    <span>Fetching the latest results for the current filters.</span>
+                                </div>
+                            )}
+
+                            {!isLoadingMessages && !hasLoadedMessages && (
+                                <div className="mt-4 browser-feedback-card">
+                                    <strong>No results loaded yet.</strong>
+                                    <span>Use the browser controls above, then select `Load Messages` to fetch stored messages.</span>
+                                </div>
+                            )}
+
+                            {!isLoadingMessages && messagesResponse && (
                                 <div className="mt-4">
                                     <div className="browser-summary mb-3">
                                         <div>
@@ -702,7 +721,10 @@ function App() {
                                     </div>
 
                                     {messagesResponse.items.length === 0 ? (
-                                        <div className="card card-body">No stored messages found.</div>
+                                        <div className="browser-feedback-card">
+                                            <strong>No stored messages matched these filters.</strong>
+                                            <span>Adjust the filters or reset them, then load the browser again.</span>
+                                        </div>
                                     ) : (
                                         <div className="row g-3">
                                             {messagesResponse.items.map((message) => (

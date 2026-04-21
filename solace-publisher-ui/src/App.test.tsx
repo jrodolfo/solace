@@ -18,6 +18,7 @@ test('it shows 5 inputs and 1 button', () => {
     expect(screen.getByRole('button', {name: /load messages/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /refresh results/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /reset filters/i})).toBeInTheDocument();
+    expect(screen.getByText(/No results loaded yet\./i)).toBeInTheDocument();
 });
 
 // Mock Axios
@@ -272,6 +273,36 @@ describe("Form Submission Tests", () => {
 });
 
 describe("Stored Messages Browser", () => {
+    test("Shows loading feedback while stored messages are being fetched", async () => {
+        let resolveRequest: ((value: unknown) => void) | undefined;
+        mockedAxios.get.mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    resolveRequest = resolve;
+                })
+        );
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+
+        expect(await screen.findByRole("status")).toHaveTextContent("Loading stored messages...");
+
+        resolveRequest?.({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+    });
+
     test("Loads and renders paginated stored messages", async () => {
         const createdAt = "2026-04-20T21:30:00Z";
         mockedAxios.get.mockResolvedValue({
@@ -496,6 +527,29 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /show details/i}));
         expect(screen.getAllByText(/not available/i).length).toBeGreaterThanOrEqual(3);
+    });
+
+    test("Shows an improved empty state when no stored messages match the filters", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                items: [],
+                totalElements: 0,
+                totalPages: 0,
+                last: true,
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+        expect(screen.getByText(/No stored messages matched these filters\./i)).toBeInTheDocument();
+        expect(screen.getByText(/Adjust the filters or reset them/i)).toBeInTheDocument();
     });
 
     test("Shows a backend error when loading stored messages fails", async () => {
