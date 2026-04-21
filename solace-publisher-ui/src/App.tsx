@@ -13,6 +13,11 @@ type MessagePropertyFormRow = {
     value: string;
 };
 
+const DEFAULT_BROWSER_SORT_BY = "createdAt";
+const DEFAULT_BROWSER_SORT_DIRECTION = "desc";
+const DEFAULT_BROWSER_PAGE = "0";
+const DEFAULT_BROWSER_SIZE = "20";
+
 function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
     const messagesApiUrl = "http://localhost:8081/api/v1/messages/all";
@@ -36,10 +41,10 @@ function App() {
     const [filterDestination, setFilterDestination] = useState("");
     const [filterDeliveryMode, setFilterDeliveryMode] = useState("");
     const [filterInnerMessageId, setFilterInnerMessageId] = useState("");
-    const [browserSortBy, setBrowserSortBy] = useState("createdAt");
-    const [browserSortDirection, setBrowserSortDirection] = useState("desc");
-    const [browserPage, setBrowserPage] = useState("0");
-    const [browserSize, setBrowserSize] = useState("20");
+    const [browserSortBy, setBrowserSortBy] = useState(DEFAULT_BROWSER_SORT_BY);
+    const [browserSortDirection, setBrowserSortDirection] = useState(DEFAULT_BROWSER_SORT_DIRECTION);
+    const [browserPage, setBrowserPage] = useState(DEFAULT_BROWSER_PAGE);
+    const [browserSize, setBrowserSize] = useState(DEFAULT_BROWSER_SIZE);
     const [messagesResponse, setMessagesResponse] = useState<PagedStoredMessagesResponse | null>(null);
     const [browserMessage, setBrowserMessage] = useState<string | null>(null);
     const [browserVariant, setBrowserVariant] = useState<"success" | "danger" | "info" | null>(null);
@@ -148,6 +153,24 @@ function App() {
         }
 
         await fetchMessages({page: messagesResponse.page + 1});
+    };
+
+    const resetBrowserFilters = () => {
+        setFilterDestination("");
+        setFilterDeliveryMode("");
+        setFilterInnerMessageId("");
+        setBrowserSortBy(DEFAULT_BROWSER_SORT_BY);
+        setBrowserSortDirection(DEFAULT_BROWSER_SORT_DIRECTION);
+        setBrowserPage(DEFAULT_BROWSER_PAGE);
+        setBrowserSize(DEFAULT_BROWSER_SIZE);
+        setExpandedMessageId(null);
+        setBrowserMessage(null);
+        setBrowserVariant(null);
+        setBrowserStatusCode(null);
+    };
+
+    const refreshBrowserResults = async () => {
+        await fetchMessages();
     };
 
     // Submit handler
@@ -628,6 +651,22 @@ function App() {
                                     <div className="d-flex gap-2 mt-3 flex-wrap">
                                         <button type="submit" className="btn btn-secondary" disabled={isLoadingMessages}>
                                             {isLoadingMessages ? "Loading..." : "Load Messages"}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-primary"
+                                            onClick={refreshBrowserResults}
+                                            disabled={isLoadingMessages}
+                                        >
+                                            Refresh Results
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-dark"
+                                            onClick={resetBrowserFilters}
+                                            disabled={isLoadingMessages}
+                                        >
+                                            Reset Filters
                                         </button>
                                         <button
                                             type="button"

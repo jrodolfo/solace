@@ -16,6 +16,8 @@ test('it shows 5 inputs and 1 button', () => {
     expect(spinbuttons).toHaveLength(3);
     expect(screen.getByRole('button', {name: /publish message/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /load messages/i})).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: /refresh results/i})).toBeInTheDocument();
+    expect(screen.getByRole('button', {name: /reset filters/i})).toBeInTheDocument();
 });
 
 // Mock Axios
@@ -448,5 +450,106 @@ describe("Stored Messages Browser", () => {
 
         expect(await screen.findByRole("alert")).toHaveTextContent("sortBy must be one of createdAt, priority, destination, innerMessageId");
         expect(screen.getByText(/status: 400/i)).toBeInTheDocument();
+    });
+
+    test("Refreshes stored messages with the current query state", async () => {
+        mockedAxios.get
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(1, {
+                    size: 15,
+                    first: false,
+                    last: false,
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            })
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(1, {
+                    size: 15,
+                    first: false,
+                    last: false,
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            });
+
+        render(<App/>);
+
+        await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-03");
+        await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
+        await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "003");
+        await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
+        await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
+        await userEvent.clear(screen.getByLabelText(/^Page$/i));
+        await userEvent.type(screen.getByLabelText(/^Page$/i), "1");
+        await userEvent.clear(screen.getByLabelText(/^Size$/i));
+        await userEvent.type(screen.getByLabelText(/^Size$/i), "15");
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        await userEvent.click(screen.getByRole("button", {name: /refresh results/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
+
+        expect(mockedAxios.get).toHaveBeenLastCalledWith(
+            "http://localhost:8081/api/v1/messages/all",
+            {
+                params: {
+                    page: 1,
+                    size: 15,
+                    destination: "system-03",
+                    deliveryMode: "PERSISTENT",
+                    innerMessageId: "003",
+                    sortBy: "priority",
+                    sortDirection: "asc",
+                },
+            }
+        );
+    });
+
+    test("Resets browser filters back to defaults", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-03");
+        await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
+        await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "003");
+        await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
+        await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
+        await userEvent.clear(screen.getByLabelText(/^Page$/i));
+        await userEvent.type(screen.getByLabelText(/^Page$/i), "2");
+        await userEvent.clear(screen.getByLabelText(/^Size$/i));
+        await userEvent.type(screen.getByLabelText(/^Size$/i), "15");
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+        await userEvent.click(screen.getByRole("button", {name: /show details/i}));
+        expect(screen.getByRole("button", {name: /hide details/i})).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole("button", {name: /reset filters/i}));
+
+        expect(screen.getByLabelText(/Filter Destination/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Filter Delivery Mode/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Filter Inner Message Id/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Sort By/i)).toHaveValue("createdAt");
+        expect(screen.getByLabelText(/Sort Direction/i)).toHaveValue("desc");
+        expect(screen.getByLabelText(/^Page$/i)).toHaveValue(0);
+        expect(screen.getByLabelText(/^Size$/i)).toHaveValue(20);
+        expect(screen.queryByRole("button", {name: /hide details/i})).not.toBeInTheDocument();
     });
 });
