@@ -137,6 +137,8 @@ Successful response, `201 Created`:
 }
 ```
 
+`innerMessageId` is required as part of the request payload, but it is treated as descriptive message metadata. The API does not enforce uniqueness for this field, and duplicate `innerMessageId` values are allowed across separate stored publish attempts.
+
 Validation failure, `400 Bad Request`:
 
 ```json
@@ -253,7 +255,7 @@ Supported query parameters:
 - `size`: page size, default `20`, max `100`
 - `destination`: case-insensitive contains filter
 - `deliveryMode`: case-insensitive contains filter
-- `innerMessageId`: case-insensitive contains filter
+- `innerMessageId`: case-insensitive contains filter on descriptive payload metadata, not a unique key
 - `publishStatus`: exact filter, one of `PENDING`, `PUBLISHED`, `FAILED`
 - `createdAtFrom`: ISO-8601 local date-time lower bound
 - `createdAtTo`: ISO-8601 local date-time upper bound

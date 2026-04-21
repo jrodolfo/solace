@@ -92,6 +92,7 @@ Each stored message can include:
 - `publishStatus`
 - `failureReason`
 - `publishedAt`
+- `innerMessageId` as descriptive payload metadata
 - normalized `properties` as a key/value map in API responses
 - payload plus audit timestamps
 
@@ -100,6 +101,8 @@ Lifecycle states:
 - `PENDING`: accepted and waiting for broker outcome
 - `PUBLISHED`: successfully published
 - `FAILED`: publish attempt failed
+
+`innerMessageId` is not used as a database or API uniqueness constraint. Multiple stored publish attempts may carry the same `innerMessageId`, and the persisted record `id` remains the actual stored-message identity for lifecycle and retry operations.
 
 ## Retry Flow
 
