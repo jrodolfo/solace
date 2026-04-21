@@ -31,6 +31,32 @@ solace/java/direct/system-0*
 
 ## Recommended Local Workflow
 
+### Root Scripts And Makefile
+
+This repo now includes a root `scripts/` folder plus a `Makefile` so you do not have to remember each module’s startup command.
+
+Available scripts:
+
+- `scripts/start-broker-api.sh`
+- `scripts/start-publisher-ui.sh`
+- `scripts/start-subscriber.sh`
+- `scripts/start-all.sh`
+
+Available `make` targets:
+
+- `make help`
+- `make start-api`
+- `make start-ui`
+- `make start-subscriber`
+- `make start-all`
+- `make test`
+
+Notes:
+
+- `start-broker-api.sh` and `start-subscriber.sh` require the shared Solace env vars.
+- `start-publisher-ui.sh` expects `solace-publisher-ui/node_modules` to already exist. If not, run `cd solace-publisher-ui && npm install` once first.
+- `start-all.sh` runs all three modules together in the current terminal and stops them on `ctrl-c`.
+
 ### 1. Start the backend
 
 From `solace-broker-api`:
@@ -89,6 +115,7 @@ java -jar target/solace-subscriber-1.0-SNAPSHOT.jar
 - Backend: `cd solace-broker-api && mvn test`
 - UI: `cd solace-publisher-ui && npm test -- --run`
 - Subscriber: `cd solace-subscriber && mvn test`
+- Whole workspace: `make test`
 
 ## Notes
 
