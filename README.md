@@ -2,9 +2,11 @@
 
 This repository contains a small Solace-focused workspace with three active modules:
 
-- [solace-broker-api](/Users/jrodolfo/workspace/solace/solace/solace-broker-api/README.md:1): Spring Boot backend for publishing and storing messages
-- [solace-publisher-ui](/Users/jrodolfo/workspace/solace/solace/solace-publisher-ui/README.md:1): React UI for publishing and browsing stored messages
-- [solace-subscriber](/Users/jrodolfo/workspace/solace/solace/solace-subscriber/README.md:1): Java command-line subscriber for direct topic traffic
+- [solace-broker-api](solace-broker-api/README.md): Spring Boot backend for publishing, storing, retrying, and querying messages
+- [solace-publisher-ui](solace-publisher-ui/README.md): React UI for publishing messages and browsing stored results
+- [solace-subscriber](solace-subscriber/README.md): Java command-line subscriber for direct topic traffic
+
+For the repo-level design, see [doc/architecture.md](doc/architecture.md).
 
 ## Shared Solace Contract
 
@@ -33,7 +35,7 @@ solace/java/direct/system-0*
 
 ### Root Scripts And Makefile
 
-This repo now includes a root `scripts/` folder plus a `Makefile` so you do not have to remember each module’s startup command.
+This repo includes a root `scripts/` folder plus a `Makefile` so you do not have to remember each module’s startup command.
 
 Available scripts:
 
@@ -41,6 +43,7 @@ Available scripts:
 - `scripts/start-publisher-ui.sh`
 - `scripts/start-subscriber.sh`
 - `scripts/start-all.sh`
+- `scripts/test-scripts.sh`
 
 Available `make` targets:
 
@@ -49,6 +52,9 @@ Available `make` targets:
 - `make start-ui`
 - `make start-subscriber`
 - `make start-all`
+- `make test-api`
+- `make test-ui`
+- `make test-subscriber`
 - `make test-scripts`
 - `make test`
 
@@ -93,16 +99,18 @@ java -jar target/solace-subscriber-1.0-SNAPSHOT.jar
 ### `solace-broker-api`
 
 - typed API validation and error responses
+- publish lifecycle tracking with `PENDING`, `PUBLISHED`, and `FAILED`
+- retry support for failed stored messages
 - paginated, filterable, sortable stored-message reads
-- documented OpenAPI responses and examples
-- no longer persists request connection credentials
+- normalized read DTOs instead of raw JPA serialization
 
 ### `solace-publisher-ui`
 
 - typed publish form instead of a raw JSON textarea
 - optional property editing
 - paginated stored-message browser
-- detail expansion, friendly timestamps, refresh/reset, and copy actions
+- lifecycle and date-range filter presets
+- single-message and bulk retry actions for failed rows
 
 ### `solace-subscriber`
 
@@ -121,7 +129,7 @@ java -jar target/solace-subscriber-1.0-SNAPSHOT.jar
 
 ## Continuous Integration
 
-GitHub Actions CI now runs on every push and pull request through [.github/workflows/ci.yml](/Users/jrodolfo/workspace/solace/solace/.github/workflows/ci.yml:1).
+GitHub Actions CI runs on every push and pull request through [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 The workflow currently covers:
 
@@ -134,4 +142,5 @@ The workflow currently covers:
 
 - Broker setup/how-to material lives under `solace-broker-api/doc/how-to/`.
 - Postman, curl, JMeter, and sample-message artifacts still live under `solace-broker-api/doc/`.
+- The architecture overview lives in [doc/architecture.md](doc/architecture.md).
 - If you want details for one module, use that module’s README rather than relying on this root summary.

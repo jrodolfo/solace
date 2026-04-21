@@ -5,6 +5,8 @@
 - publishing Solace messages with typed form fields
 - browsing stored messages with pagination, filtering, sorting, details expansion, timestamp formatting, and copy actions
 
+For the repo-level data flow and module boundaries, see [../doc/architecture.md](../doc/architecture.md).
+
 ## Requirements
 
 - Node.js 20+ or newer
@@ -52,16 +54,19 @@ The UI performs client-side validation before calling the backend and preserves 
 The browser loads `GET /api/v1/messages/all` from `solace-broker-api` and supports:
 
 - `destination`, `deliveryMode`, and `innerMessageId` filters
+- `publishStatus`, `createdAt`, and `publishedAt` filtering
 - `sortBy` and `sortDirection`
 - `page` and `size`
+- quick lifecycle/date presets such as `failed today`
 - previous/next paging
 - refresh and reset controls
 - expandable message details
 - friendly timestamp rendering
 - copy actions for destination, payload content, and properties
+- bulk retry for currently visible failed messages
 
 ## Notes
 
 - Sample destinations used throughout the repo still follow the pattern `solace/java/direct/system-01`.
 - If the backend is unavailable, the UI will surface the backend/network failure in the response area rather than silently swallowing it.
-- For backend env-var setup, see [solace-broker-api/README.md](/Users/jrodolfo/workspace/solace/solace/solace-broker-api/README.md:1).
+- For backend env-var setup, see [../solace-broker-api/README.md](../solace-broker-api/README.md).

@@ -2,6 +2,8 @@
 
 `solace-subscriber` is a small Java 21 command-line receiver for a Solace PubSub+ broker. It connects with environment-based credentials, subscribes to the direct topic pattern `solace/java/direct/system-0*`, logs inbound traffic, and reports reconnect or discard conditions while it runs.
 
+For the repo-level relationships between the subscriber, UI, and broker API, see [../doc/architecture.md](../doc/architecture.md).
+
 ## Requirements
 
 - JDK 21
@@ -67,9 +69,9 @@ Press `ENTER` to shut the subscriber down cleanly.
 
 ## Notes
 
-- The subscribed topic pattern is defined in [Constants.java](/Users/jrodolfo/workspace/solace/solace/solace-subscriber/src/main/java/org/orgname/solace/subscriber/Constants.java:1).
+- The subscribed topic pattern is defined in [Constants.java](src/main/java/org/orgname/solace/subscriber/Constants.java).
 - The receiver is currently a single-process command-line tool, not a Spring service.
-- If you need help obtaining broker credentials, see the broker setup notes in `../solace-broker-api/doc/how-to/09-pubsub-plus-on-cloud.txt`.
+- If you need help obtaining broker credentials, see [../solace-broker-api/doc/how-to/09-pubsub-plus-on-cloud.txt](../solace-broker-api/doc/how-to/09-pubsub-plus-on-cloud.txt).
 
 ## References
 

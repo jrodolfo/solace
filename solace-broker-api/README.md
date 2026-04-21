@@ -2,6 +2,8 @@
 
 `solace-broker-api` is a Spring Boot service that accepts publish requests, persists them with lifecycle state, sends them to Solace, and exposes a paginated read API for browsing stored messages.
 
+For the repo-level module relationships and flow, see [../doc/architecture.md](../doc/architecture.md).
+
 ## Stack
 
 - Java 21
