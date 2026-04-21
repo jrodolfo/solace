@@ -6,17 +6,20 @@ import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
+import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.repository.MessageRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.NoSuchElementException;
 
 @Service
 public class DatabaseImpl implements Database {
@@ -54,7 +57,7 @@ public class DatabaseImpl implements Database {
     }
 
     @Override
-    public Message saveMessage(MessageWrapperDTO wrapper) {
+    public Message savePendingMessage(MessageWrapperDTO wrapper) {
 
         // Create the main Message entity
         Message message = new Message();
@@ -63,6 +66,9 @@ public class DatabaseImpl implements Database {
         message.setDestination(inner.getDestination());
         message.setDeliveryMode(inner.getDeliveryMode());
         message.setPriority(inner.getPriority());
+        message.setPublishStatus(PublishStatus.PENDING);
+        message.setFailureReason(null);
+        message.setPublishedAt(null);
 
         // Create and attach Payload entity
         Payload payload = new Payload();
@@ -89,6 +95,25 @@ public class DatabaseImpl implements Database {
         // Save the entire structure (cascade persists related entities)
         messageRepository.save(message);
         return message;
+    }
+
+    @Override
+    @Transactional
+    public Message markMessagePublished(Long messageId) {
+        messageRepository.markPublished(messageId, PublishStatus.PUBLISHED, LocalDateTime.now());
+        return getRequiredMessage(messageId);
+    }
+
+    @Override
+    @Transactional
+    public Message markMessageFailed(Long messageId, String failureReason) {
+        messageRepository.markFailed(messageId, PublishStatus.FAILED, failureReason);
+        return getRequiredMessage(messageId);
+    }
+
+    private Message getRequiredMessage(Long messageId) {
+        return messageRepository.findById(messageId)
+                .orElseThrow(() -> new NoSuchElementException("Message not found for id " + messageId));
     }
 
     private static boolean hasText(String value) {

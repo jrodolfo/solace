@@ -5,9 +5,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
-@EqualsAndHashCode(callSuper = true) // explicitly indicated that I want the call to the superclass’s equals and hashCode implementations
+@ToString(exclude = "message")
+@EqualsAndHashCode(callSuper = true, exclude = "message") // explicitly indicated that I want the call to the superclass’s equals and hashCode implementations
 @NoArgsConstructor
 @Entity
 @Table(name = "Payload")

@@ -5,11 +5,14 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@EqualsAndHashCode(callSuper = true) // explicitly indicated that I want the call to the superclass’s equals and hashCode implementations
+@ToString(exclude = {"properties", "payload"})
+@EqualsAndHashCode(callSuper = true, exclude = {"properties", "payload"}) // explicitly indicated that I want the call to the superclass’s equals and hashCode implementations
 @NoArgsConstructor
 @Entity
 @Table(
@@ -37,6 +40,16 @@ public class Message extends Auditable {
 
     @Column(name = "priority", nullable = false)
     private Integer priority;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "publish_status", nullable = false)
+    private PublishStatus publishStatus;
+
+    @Column(name = "failure_reason", columnDefinition = "TEXT")
+    private String failureReason;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
 
     /**
      * The Message entity has a list of Property objects, and each Property holds a reference back to the Message.

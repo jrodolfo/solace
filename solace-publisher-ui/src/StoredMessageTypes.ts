@@ -11,6 +11,9 @@ export interface StoredMessage {
     destination: string;
     deliveryMode: string;
     priority: number;
+    publishStatus: "PENDING" | "PUBLISHED" | "FAILED";
+    failureReason?: string | null;
+    publishedAt?: string | null;
     properties: Record<string, string>;
     payload: StoredMessagePayload;
     createdAt?: string | null;

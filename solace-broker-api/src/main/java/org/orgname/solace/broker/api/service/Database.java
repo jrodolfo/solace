@@ -6,7 +6,11 @@ import org.orgname.solace.broker.api.jpa.Message;
 
 public interface Database {
 
-    Message saveMessage(MessageWrapperDTO wrapper);
+    Message savePendingMessage(MessageWrapperDTO wrapper);
+
+    Message markMessagePublished(Long messageId);
+
+    Message markMessageFailed(Long messageId, String failureReason);
 
     PagedMessagesResponseDTO getAllMessages(
             int page,

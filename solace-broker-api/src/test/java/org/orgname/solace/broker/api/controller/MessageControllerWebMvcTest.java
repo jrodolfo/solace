@@ -13,6 +13,7 @@ import org.orgname.solace.broker.api.exception.BrokerConnectionException;
 import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
+import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
@@ -68,6 +69,7 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-01"))
                 .andExpect(jsonPath("$.items[0].deliveryMode").value("PERSISTENT"))
                 .andExpect(jsonPath("$.items[0].priority").value(3))
+                .andExpect(jsonPath("$.items[0].publishStatus").value("PUBLISHED"))
                 .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
                 .andExpect(jsonPath("$.items[0].payload.content").value("01001000 01100101 01101100"))
                 .andExpect(jsonPath("$.items[0].properties.property01").value("value01"));
@@ -143,7 +145,10 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldReturnCreatedForSuccessfulMessagePublish() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        when(database.saveMessage(any(MessageWrapperDTO.class))).thenReturn(new Message());
+        when(database.savePendingMessage(any(MessageWrapperDTO.class))).thenReturn(new Message() {{
+            setId(1L);
+        }});
+        when(database.markMessagePublished(1L)).thenReturn(new Message());
         when(directPublisherService.sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any()))
                 .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"));
 
@@ -173,7 +178,10 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldReturnTypedDownstreamFailureResponse() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        when(database.saveMessage(any(MessageWrapperDTO.class))).thenReturn(new Message());
+        when(database.savePendingMessage(any(MessageWrapperDTO.class))).thenReturn(new Message() {{
+            setId(1L);
+        }});
+        when(database.markMessageFailed(1L, "Failed to publish message to Solace broker")).thenReturn(new Message());
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
                 .when(directPublisherService)
                 .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any());
@@ -191,7 +199,10 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldReturnInternalServerErrorForMissingBrokerConfiguration() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        when(database.saveMessage(any(MessageWrapperDTO.class))).thenReturn(new Message());
+        when(database.savePendingMessage(any(MessageWrapperDTO.class))).thenReturn(new Message() {{
+            setId(1L);
+        }});
+        when(database.markMessageFailed(1L, "System environment variables SOLACE_CLOUD_HOST, SOLACE_CLOUD_VPN, SOLACE_CLOUD_USERNAME, SOLACE_CLOUD_PASSWORD are not set.")).thenReturn(new Message());
         doThrow(new BrokerConfigurationException("System environment variables SOLACE_CLOUD_HOST, SOLACE_CLOUD_VPN, SOLACE_CLOUD_USERNAME, SOLACE_CLOUD_PASSWORD are not set."))
                 .when(directPublisherService)
                 .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any());
@@ -207,7 +218,10 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldReturnServiceUnavailableForBrokerConnectionFailure() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        when(database.saveMessage(any(MessageWrapperDTO.class))).thenReturn(new Message());
+        when(database.savePendingMessage(any(MessageWrapperDTO.class))).thenReturn(new Message() {{
+            setId(1L);
+        }});
+        when(database.markMessageFailed(1L, "Failed to connect to Solace broker")).thenReturn(new Message());
         doThrow(new BrokerConnectionException("Failed to connect to Solace broker", new RuntimeException("connect failed")))
                 .when(directPublisherService)
                 .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any());
@@ -249,6 +263,7 @@ class MessageControllerWebMvcTest {
         message.setDestination(destination);
         message.setDeliveryMode(deliveryMode);
         message.setPriority(priority);
+        message.setPublishStatus(PublishStatus.PUBLISHED);
 
         Payload payload = new Payload();
         payload.setId(20L);

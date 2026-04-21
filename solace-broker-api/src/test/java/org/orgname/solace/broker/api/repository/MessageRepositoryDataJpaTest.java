@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
+import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.service.DatabaseImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -79,6 +80,9 @@ class MessageRepositoryDataJpaTest {
         message.setDestination(destination);
         message.setDeliveryMode(deliveryMode);
         message.setPriority(priority);
+        message.setPublishStatus(PublishStatus.PUBLISHED);
+        message.setFailureReason(null);
+        message.setPublishedAt(createdAt);
         message.setCreatedAt(createdAt);
         message.setUpdatedAt(createdAt);
 

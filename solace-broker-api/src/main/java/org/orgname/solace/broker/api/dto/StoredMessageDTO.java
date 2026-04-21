@@ -1,6 +1,7 @@
 package org.orgname.solace.broker.api.dto;
 
 import org.orgname.solace.broker.api.jpa.Message;
+import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 
 import java.time.LocalDateTime;
@@ -15,6 +16,9 @@ public class StoredMessageDTO {
     private final String destination;
     private final String deliveryMode;
     private final Integer priority;
+    private final PublishStatus publishStatus;
+    private final String failureReason;
+    private final LocalDateTime publishedAt;
     private final Map<String, String> properties;
     private final StoredMessagePayloadDTO payload;
     private final LocalDateTime createdAt;
@@ -26,6 +30,9 @@ public class StoredMessageDTO {
         this.destination = message.getDestination();
         this.deliveryMode = message.getDeliveryMode();
         this.priority = message.getPriority();
+        this.publishStatus = message.getPublishStatus();
+        this.failureReason = message.getFailureReason();
+        this.publishedAt = message.getPublishedAt();
         this.properties = toPropertyMap(message.getProperties());
         this.payload = new StoredMessagePayloadDTO(message.getPayload());
         this.createdAt = message.getCreatedAt();
@@ -62,6 +69,18 @@ public class StoredMessageDTO {
 
     public Integer getPriority() {
         return priority;
+    }
+
+    public PublishStatus getPublishStatus() {
+        return publishStatus;
+    }
+
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public LocalDateTime getPublishedAt() {
+        return publishedAt;
     }
 
     public Map<String, String> getProperties() {

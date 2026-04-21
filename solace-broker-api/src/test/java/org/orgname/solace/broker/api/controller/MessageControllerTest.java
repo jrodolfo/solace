@@ -13,6 +13,7 @@ import org.orgname.solace.broker.api.exception.ApiExceptionHandler;
 import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
+import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
@@ -166,6 +167,10 @@ class MessageControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.destination").value("solace/java/direct/system-01"))
                 .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
+
+        assertEquals(PublishStatus.PUBLISHED, database.lastSavedMessage.getPublishStatus());
+        assertEquals(null, database.lastSavedMessage.getFailureReason());
+        org.junit.jupiter.api.Assertions.assertNotNull(database.lastSavedMessage.getPublishedAt());
     }
 
     @Test
@@ -196,6 +201,10 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.error").value("Bad Gateway"))
                 .andExpect(jsonPath("$.message").value("Failed to publish message to Solace broker"))
                 .andExpect(jsonPath("$.path").value("/api/v1/messages/message"));
+
+        assertEquals(PublishStatus.FAILED, database.lastSavedMessage.getPublishStatus());
+        assertEquals("Failed to publish message to Solace broker", database.lastSavedMessage.getFailureReason());
+        assertEquals(null, database.lastSavedMessage.getPublishedAt());
     }
 
     @Test
@@ -211,6 +220,9 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.message").value("Topic name cannot be empty"))
                 .andExpect(jsonPath("$.path").value("/api/v1/messages/message"));
+
+        assertEquals(PublishStatus.FAILED, database.lastSavedMessage.getPublishStatus());
+        assertEquals("Topic name cannot be empty", database.lastSavedMessage.getFailureReason());
     }
 
     @Test
@@ -275,6 +287,9 @@ class MessageControllerTest {
         message.setDestination(destination);
         message.setDeliveryMode(deliveryMode);
         message.setPriority(priority);
+        message.setPublishStatus(PublishStatus.PUBLISHED);
+        message.setFailureReason(null);
+        message.setPublishedAt(java.time.LocalDateTime.parse(createdAt));
         message.setCreatedAt(java.time.LocalDateTime.parse(createdAt));
         message.setUpdatedAt(java.time.LocalDateTime.parse(createdAt));
 
@@ -313,13 +328,37 @@ class MessageControllerTest {
 
     private static final class StubDatabase implements Database {
         private final List<Message> storedMessages = new ArrayList<>();
+        private Message lastSavedMessage;
 
         @Override
-        public Message saveMessage(MessageWrapperDTO wrapper) {
+        public Message savePendingMessage(MessageWrapperDTO wrapper) {
             Message message = new Message();
+            message.setId((long) (storedMessages.size() + 1));
             message.setInnerMessageId(wrapper.getMessage().getInnerMessageId());
             message.setDestination(wrapper.getMessage().getDestination());
+            message.setDeliveryMode(wrapper.getMessage().getDeliveryMode());
+            message.setPriority(wrapper.getMessage().getPriority());
+            message.setPublishStatus(PublishStatus.PENDING);
             storedMessages.add(message);
+            lastSavedMessage = message;
+            return message;
+        }
+
+        @Override
+        public Message markMessagePublished(Long messageId) {
+            Message message = getRequiredMessage(messageId);
+            message.setPublishStatus(PublishStatus.PUBLISHED);
+            message.setFailureReason(null);
+            message.setPublishedAt(java.time.LocalDateTime.now());
+            return message;
+        }
+
+        @Override
+        public Message markMessageFailed(Long messageId, String failureReason) {
+            Message message = getRequiredMessage(messageId);
+            message.setPublishStatus(PublishStatus.FAILED);
+            message.setFailureReason(failureReason);
+            message.setPublishedAt(null);
             return message;
         }
 
@@ -343,6 +382,13 @@ class MessageControllerTest {
             int end = Math.min(start + size, filteredMessages.size());
             List<Message> content = filteredMessages.subList(start, end);
             return PagedMessagesResponseDTO.fromMessages(new PageImpl<>(content, PageRequest.of(page, size), filteredMessages.size()));
+        }
+
+        private Message getRequiredMessage(Long messageId) {
+            return storedMessages.stream()
+                    .filter(message -> messageId.equals(message.getId()))
+                    .findFirst()
+                    .orElseThrow();
         }
 
         private static boolean matches(String actualValue, String filterValue) {

@@ -766,6 +766,7 @@ function App() {
                                                             <div className="message-browser-badges">
                                                                 <span className="badge text-bg-secondary">{message.deliveryMode}</span>
                                                                 <span className="badge text-bg-light">priority {message.priority}</span>
+                                                                <span className={`badge text-bg-${publishStatusVariant(message.publishStatus)}`}>{message.publishStatus}</span>
                                                             </div>
                                                         </div>
                                                         <div className="message-browser-copy-actions">
@@ -791,7 +792,11 @@ function App() {
                                                             </div>
                                                             <div>
                                                                 <span className="meta-label">properties</span>
-                                                                <strong>{message.properties.length}</strong>
+                                                                <strong>{propertyCount(message.properties)}</strong>
+                                                            </div>
+                                                            <div>
+                                                                <span className="meta-label">published</span>
+                                                                <strong>{formatTimestamp(message.publishedAt)}</strong>
                                                             </div>
                                                             <div>
                                                                 <span className="meta-label">created</span>
@@ -823,7 +828,21 @@ function App() {
                                                                         <span className="meta-label">updated at</span>
                                                                         <p className="mb-0">{formatTimestamp(message.updatedAt)}</p>
                                                                     </div>
+                                                                    <div>
+                                                                        <span className="meta-label">published at</span>
+                                                                        <p className="mb-0">{formatTimestamp(message.publishedAt)}</p>
+                                                                    </div>
                                                                 </div>
+                                                                <div className="message-browser-content">
+                                                                    <span className="meta-label">publish status</span>
+                                                                    <p className="mb-0">{message.publishStatus}</p>
+                                                                </div>
+                                                                {message.failureReason && (
+                                                                    <div className="message-browser-content">
+                                                                        <span className="meta-label">failure reason</span>
+                                                                        <p className="mb-0">{message.failureReason}</p>
+                                                                    </div>
+                                                                )}
                                                                 <div className="message-browser-content">
                                                                     <span className="meta-label">payload content</span>
                                                                     <p className="mb-0">{message.payload?.content}</p>
@@ -958,6 +977,20 @@ function hasNonBlankString(value: unknown): value is string {
 
 function isNonNegativeNumber(value: unknown): value is number {
     return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function propertyCount(properties?: Record<string, string>): number {
+    return Object.keys(properties ?? {}).length;
+}
+
+function publishStatusVariant(status: "PENDING" | "PUBLISHED" | "FAILED"): string {
+    if (status === "PUBLISHED") {
+        return "success";
+    }
+    if (status === "FAILED") {
+        return "danger";
+    }
+    return "warning";
 }
 
 function formatTimestamp(value?: string | null): string {

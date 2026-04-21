@@ -5,9 +5,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
-import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
+import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
+import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.repository.MessageRepository;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +21,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -83,6 +84,8 @@ class MessageApiContractIntegrationTest {
                 .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-01"))
                 .andExpect(jsonPath("$.items[0].deliveryMode").value("PERSISTENT"))
                 .andExpect(jsonPath("$.items[0].priority").value(3))
+                .andExpect(jsonPath("$.items[0].publishStatus").value("PUBLISHED"))
+                .andExpect(jsonPath("$.items[0].publishedAt").isNotEmpty())
                 .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
                 .andExpect(jsonPath("$.items[0].payload.content").value("01001000 01100101 01101100"))
                 .andExpect(jsonPath("$.items[0].properties.region").value("ca-east"))
@@ -92,6 +95,25 @@ class MessageApiContractIntegrationTest {
                 eq("solace/java/direct/system-01"),
                 eq("01001000 01100101 01101100"),
                 any(Optional.class));
+    }
+
+    @Test
+    void shouldPersistFailedPublishAttemptWithFailureReason() throws Exception {
+        MessageWrapperDTO wrapper = validWrapper();
+        doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
+                .when(directPublisherService)
+                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any(Optional.class));
+
+        mockMvc.perform(post("/api/v1/messages/message")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrapper)))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.message").value("Failed to publish message to Solace broker"));
+
+        org.orgname.solace.broker.api.jpa.Message storedMessage = messageRepository.findAll().getFirst();
+        org.junit.jupiter.api.Assertions.assertEquals(PublishStatus.FAILED, storedMessage.getPublishStatus());
+        org.junit.jupiter.api.Assertions.assertEquals("Failed to publish message to Solace broker", storedMessage.getFailureReason());
+        org.junit.jupiter.api.Assertions.assertNull(storedMessage.getPublishedAt());
     }
 
     private static MessageWrapperDTO validWrapper() {

@@ -76,6 +76,9 @@ function buildStoredMessage(overrides?: Partial<StoredMessage>): StoredMessage {
         destination: "solace/java/direct/system-01",
         deliveryMode: "PERSISTENT",
         priority: 3,
+        publishStatus: "PUBLISHED",
+        failureReason: null,
+        publishedAt: "2026-04-21T08:00:00Z",
         payload: {
             type: "binary",
             content: "01001000 01100101 01101100",
@@ -414,22 +417,11 @@ describe("Stored Messages Browser", () => {
                 totalPages: 1,
                 last: true,
                 items: [
-                    {
-                        id: 1,
-                        innerMessageId: "001",
-                        destination: "solace/java/direct/system-01",
-                        deliveryMode: "PERSISTENT",
-                        priority: 3,
+                    buildStoredMessage({
                         createdAt,
                         updatedAt: null,
-                        payload: {
-                            type: "binary",
-                            content: "01001000 01100101 01101100",
-                        },
-                        properties: {
-                            region: "ca-east",
-                        },
-                    },
+                        publishedAt: createdAt,
+                    }),
                 ],
             }),
             status: 200,
@@ -447,7 +439,8 @@ describe("Stored Messages Browser", () => {
         expect(screen.getByText(/Page 1 of 1/i)).toBeInTheDocument();
         expect(screen.getByText(/solace\/java\/direct\/system-01/i)).toBeInTheDocument();
         expect(screen.getByText(/^binary$/i)).toBeInTheDocument();
-        expect(screen.getByText(formatExpectedTimestamp(createdAt))).toBeInTheDocument();
+        expect(screen.getAllByText(formatExpectedTimestamp(createdAt)).length).toBeGreaterThanOrEqual(1);
+        expect(screen.getByText(/^PUBLISHED$/i, {selector: ".badge"})).toBeInTheDocument();
         expect(screen.getByRole("button", {name: /show details/i})).toBeInTheDocument();
         expect(screen.queryByText(/region: ca-east/i)).not.toBeInTheDocument();
     });
@@ -511,18 +504,21 @@ describe("Stored Messages Browser", () => {
             .mockResolvedValueOnce({
                 data: buildMessagesPage(1, {
                     items: [
-                        {
+                        buildStoredMessage({
                             id: 2,
                             innerMessageId: "002",
                             destination: "solace/java/direct/system-02",
                             deliveryMode: "DIRECT",
                             priority: 1,
+                            publishStatus: "FAILED",
+                            failureReason: "Failed to publish message to Solace broker",
+                            publishedAt: null,
                             payload: {
                                 type: "text",
                                 content: "hello world",
                             },
-                            properties: [],
-                        },
+                            properties: {},
+                        }),
                     ],
                     first: false,
                     last: true,
@@ -582,6 +578,7 @@ describe("Stored Messages Browser", () => {
 
         expect(screen.getByRole("button", {name: /hide details/i})).toHaveAttribute("aria-expanded", "true");
         expect(screen.getByText(/01001000 01100101 01101100/i)).toBeInTheDocument();
+        expect(screen.getByText(/publish status/i)).toBeInTheDocument();
         expect(screen.getByText(/region: ca-east/i)).toBeInTheDocument();
 
         await userEvent.click(screen.getByRole("button", {name: /hide details/i}));
@@ -597,20 +594,12 @@ describe("Stored Messages Browser", () => {
                 totalPages: 1,
                 last: true,
                 items: [
-                    {
-                        id: 1,
-                        innerMessageId: "001",
-                        destination: "solace/java/direct/system-01",
-                        deliveryMode: "PERSISTENT",
-                        priority: 3,
+                    buildStoredMessage({
                         createdAt: null,
                         updatedAt: null,
-                        payload: {
-                            type: "binary",
-                            content: "01001000 01100101 01101100",
-                        },
-                        properties: [],
-                    },
+                        publishedAt: null,
+                        properties: {},
+                    }),
                 ],
             }),
             status: 200,
@@ -623,10 +612,41 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
-        expect(screen.getByText(/not available/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/not available/i).length).toBeGreaterThanOrEqual(1);
 
         await userEvent.click(screen.getByRole("button", {name: /show details/i}));
         expect(screen.getAllByText(/not available/i).length).toBeGreaterThanOrEqual(3);
+    });
+
+    test("Shows failure lifecycle details for failed publish attempts", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+                items: [
+                    buildStoredMessage({
+                        publishStatus: "FAILED",
+                        failureReason: "Failed to publish message to Solace broker",
+                        publishedAt: null,
+                    }),
+                ],
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+        expect(screen.getByText(/FAILED/i)).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole("button", {name: /show details/i}));
+        expect(screen.getByText(/Failed to publish message to Solace broker/i)).toBeInTheDocument();
+        expect(screen.getByText(/publish status/i)).toBeInTheDocument();
     });
 
     test("Shows an improved empty state when no stored messages match the filters", async () => {

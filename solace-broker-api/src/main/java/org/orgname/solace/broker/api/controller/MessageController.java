@@ -66,6 +66,9 @@ public class MessageController {
                                                   "destination": "solace/java/direct/system-01",
                                                   "deliveryMode": "PERSISTENT",
                                                   "priority": 3,
+                                                  "publishStatus": "PUBLISHED",
+                                                  "failureReason": null,
+                                                  "publishedAt": "2026-04-20T19:55:10",
                                                   "properties": {
                                                     "property01": "value01"
                                                   },
@@ -84,6 +87,9 @@ public class MessageController {
                                                   "destination": "solace/java/direct/system-02",
                                                   "deliveryMode": "PERSISTENT",
                                                   "priority": 1,
+                                                  "publishStatus": "FAILED",
+                                                  "failureReason": "Failed to publish message to Solace broker",
+                                                  "publishedAt": null,
                                                   "properties": {},
                                                   "payload": {
                                                     "type": "binary",
@@ -272,7 +278,7 @@ public class MessageController {
             throw new BadRequestException("Message is null");
         }
 
-        database.saveMessage(wrapper);
+        org.orgname.solace.broker.api.jpa.Message savedMessage = database.savePendingMessage(wrapper);
 
         String topicName = wrapper.getMessage().getDestination();
         String content = wrapper.getMessage().getPayload().getContent();
@@ -285,9 +291,14 @@ public class MessageController {
             } else {
                 responseMessage = directPublisherService.sendMessage(topicName, content, Optional.empty());
             }
+            database.markMessagePublished(savedMessage.getId());
         } catch (IllegalArgumentException e) {
+            database.markMessageFailed(savedMessage.getId(), e.getMessage());
             logger.log(Level.WARNING, "Rejected publish request for topic {0}: {1}", new Object[]{topicName, e.getMessage()});
             throw new BadRequestException(e.getMessage(), e);
+        } catch (RuntimeException e) {
+            database.markMessageFailed(savedMessage.getId(), e.getMessage());
+            throw e;
         }
 
         logger.log(Level.INFO, "Accepted publish request for topic {0}", topicName);
