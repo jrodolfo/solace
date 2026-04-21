@@ -7,6 +7,7 @@ import axios from "axios";
 import {beforeEach, Mock, vi} from "vitest";
 import {AxiosHeaders} from "axios";
 
+const writeTextMock = vi.fn();
 
 test('it shows 5 inputs and 1 button', () => {
     render(<App/>);
@@ -34,6 +35,14 @@ beforeEach(() => {
     mockedAxios.post.mockReset();
     mockedAxios.get.mockReset();
     mockedAxios.isAxiosError.mockImplementation((error: unknown) => Boolean((error as { isAxiosError?: boolean })?.isAxiosError));
+    writeTextMock.mockReset();
+});
+
+Object.defineProperty(navigator, "clipboard", {
+    value: {
+        writeText: writeTextMock,
+    },
+    configurable: true,
 });
 
 function buildMessagesPage(page: number, overrides?: Partial<{
@@ -677,5 +686,58 @@ describe("Stored Messages Browser", () => {
         expect(screen.getByLabelText(/^Page$/i)).toHaveValue(0);
         expect(screen.getByLabelText(/^Size$/i)).toHaveValue(20);
         expect(screen.queryByRole("button", {name: /hide details/i})).not.toBeInTheDocument();
+    });
+
+    test("Copies destination and payload content from a stored message", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+        writeTextMock.mockResolvedValue(undefined);
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        await userEvent.click(screen.getByRole("button", {name: /copy destination/i}));
+        expect(writeTextMock).toHaveBeenCalledWith("solace/java/direct/system-01");
+        expect(await screen.findByRole("status")).toHaveTextContent("Destination copied.");
+
+        await userEvent.click(screen.getByRole("button", {name: /copy payload/i}));
+        expect(writeTextMock).toHaveBeenLastCalledWith("01001000 01100101 01101100");
+        expect(await screen.findByRole("status")).toHaveTextContent("Payload content copied.");
+    });
+
+    test("Copies serialized properties from expanded message details", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+        writeTextMock.mockResolvedValue(undefined);
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+        await userEvent.click(screen.getByRole("button", {name: /show details/i}));
+        await userEvent.click(screen.getByRole("button", {name: /copy properties/i}));
+
+        expect(writeTextMock).toHaveBeenCalledWith("region: ca-east");
+        expect(await screen.findByRole("status")).toHaveTextContent("Properties copied.");
     });
 });

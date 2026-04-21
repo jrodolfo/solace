@@ -52,6 +52,7 @@ function App() {
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
     const [hasLoadedMessages, setHasLoadedMessages] = useState(false);
+    const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
     const updateProperty = (index: number, field: keyof MessagePropertyFormRow, value: string) => {
         setProperties((currentProperties) =>
@@ -176,6 +177,16 @@ function App() {
 
     const refreshBrowserResults = async () => {
         await fetchMessages();
+    };
+
+    const copyToClipboard = async (label: string, value: string) => {
+        try {
+            await navigator.clipboard.writeText(value);
+            setCopyFeedback(`${label} copied.`);
+        } catch (error) {
+            console.error(`Failed to copy ${label}.`, error);
+            setCopyFeedback(`Failed to copy ${label}.`);
+        }
     };
 
     // Submit handler
@@ -552,6 +563,12 @@ function App() {
                                 </div>
                             )}
 
+                            {copyFeedback && (
+                                <div className="alert alert-secondary browser-copy-feedback" role="status" aria-live="polite">
+                                    {copyFeedback}
+                                </div>
+                            )}
+
                             <form onSubmit={handleBrowseMessages}>
                                 <div className="form-section-block browser-filter-block">
                                     <div className="row g-3">
@@ -745,6 +762,22 @@ function App() {
                                                                 <span className="badge text-bg-light">priority {message.priority}</span>
                                                             </div>
                                                         </div>
+                                                        <div className="message-browser-copy-actions">
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm btn-outline-secondary"
+                                                                onClick={() => copyToClipboard("Destination", message.destination)}
+                                                            >
+                                                                Copy Destination
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm btn-outline-secondary"
+                                                                onClick={() => copyToClipboard("Payload content", message.payload?.content ?? "")}
+                                                            >
+                                                                Copy Payload
+                                                            </button>
+                                                        </div>
                                                         <div className="message-browser-meta">
                                                             <div>
                                                                 <span className="meta-label">payload type</span>
@@ -794,13 +827,29 @@ function App() {
                                                                     {message.properties.length === 0 ? (
                                                                         <p className="mb-0">none</p>
                                                                     ) : (
-                                                                        <ul className="mb-0 mt-2">
-                                                                            {message.properties.map((property) => (
-                                                                                <li key={`${property.id ?? property.propertyKey}-${property.propertyValue}`}>
-                                                                                    {property.propertyKey}: {property.propertyValue}
-                                                                                </li>
-                                                                            ))}
-                                                                        </ul>
+                                                                        <>
+                                                                            <button
+                                                                                type="button"
+                                                                                className="btn btn-sm btn-outline-secondary mb-2"
+                                                                                onClick={() =>
+                                                                                    copyToClipboard(
+                                                                                        "Properties",
+                                                                                        message.properties
+                                                                                            .map((property) => `${property.propertyKey}: ${property.propertyValue}`)
+                                                                                            .join("\n")
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                Copy Properties
+                                                                            </button>
+                                                                            <ul className="mb-0 mt-2">
+                                                                                {message.properties.map((property) => (
+                                                                                    <li key={`${property.id ?? property.propertyKey}-${property.propertyValue}`}>
+                                                                                        {property.propertyKey}: {property.propertyValue}
+                                                                                    </li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        </>
                                                                     )}
                                                                 </div>
                                                             </div>
