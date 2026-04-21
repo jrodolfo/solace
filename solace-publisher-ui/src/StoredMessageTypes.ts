@@ -1,13 +1,4 @@
-export interface StoredMessageProperty {
-    id?: number;
-    propertyKey: string;
-    propertyValue: string;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-}
-
 export interface StoredMessagePayload {
-    id?: number;
     type: string;
     content: string;
     createdAt?: string | null;
@@ -20,7 +11,7 @@ export interface StoredMessage {
     destination: string;
     deliveryMode: string;
     priority: number;
-    properties: StoredMessageProperty[];
+    properties: Record<string, string>;
     payload: StoredMessagePayload;
     createdAt?: string | null;
     updatedAt?: string | null;

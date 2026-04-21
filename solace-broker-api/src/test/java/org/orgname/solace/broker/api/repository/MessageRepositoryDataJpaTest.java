@@ -49,7 +49,7 @@ class MessageRepositoryDataJpaTest {
         PagedMessagesResponseDTO response = database.getAllMessages(0, 20, null, null, null, "priority", "asc");
 
         assertEquals(List.of("002", "003", "001"),
-                response.getItems().stream().map(Message::getInnerMessageId).toList());
+                response.getItems().stream().map(item -> item.getInnerMessageId()).toList());
     }
 
     @Test

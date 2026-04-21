@@ -65,12 +65,9 @@ function buildMessagesPage(page: number, overrides?: Partial<{
                     type: "binary",
                     content: "01001000 01100101 01101100",
                 },
-                properties: [
-                    {
-                        propertyKey: "region",
-                        propertyValue: "ca-east",
-                    },
-                ],
+                properties: {
+                    region: "ca-east",
+                },
             },
         ],
         page,
@@ -332,12 +329,9 @@ describe("Stored Messages Browser", () => {
                             type: "binary",
                             content: "01001000 01100101 01101100",
                         },
-                        properties: [
-                            {
-                                propertyKey: "region",
-                                propertyValue: "ca-east",
-                            },
-                        ],
+                        properties: {
+                            region: "ca-east",
+                        },
                     },
                 ],
             }),

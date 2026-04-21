@@ -71,8 +71,7 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.items[0].priority").value(3))
                 .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
                 .andExpect(jsonPath("$.items[0].payload.content").value("01001000 01100101 01101100"))
-                .andExpect(jsonPath("$.items[0].properties[0].propertyKey").value("property01"))
-                .andExpect(jsonPath("$.items[0].properties[0].propertyValue").value("value01"));
+                .andExpect(jsonPath("$.items[0].properties.property01").value("value01"));
     }
 
     @Test
@@ -268,6 +267,6 @@ class MessageControllerWebMvcTest {
     }
 
     private static PagedMessagesResponseDTO messagePageResponse(List<Message> messages, int page, int size, long totalElements) {
-        return new PagedMessagesResponseDTO(new PageImpl<>(messages, PageRequest.of(page, size), totalElements));
+        return PagedMessagesResponseDTO.fromMessages(new PageImpl<>(messages, PageRequest.of(page, size), totalElements));
     }
 }

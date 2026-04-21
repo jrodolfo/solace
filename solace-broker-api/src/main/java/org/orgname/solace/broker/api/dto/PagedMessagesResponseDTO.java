@@ -1,13 +1,13 @@
 package org.orgname.solace.broker.api.dto;
 
-import org.orgname.solace.broker.api.jpa.Message;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.function.Function;
 
 public class PagedMessagesResponseDTO {
 
-    private final List<Message> items;
+    private final List<StoredMessageDTO> items;
     private final int page;
     private final int size;
     private final long totalElements;
@@ -15,17 +15,31 @@ public class PagedMessagesResponseDTO {
     private final boolean first;
     private final boolean last;
 
-    public PagedMessagesResponseDTO(Page<Message> messagePage) {
-        this.items = messagePage.getContent();
-        this.page = messagePage.getNumber();
-        this.size = messagePage.getSize();
-        this.totalElements = messagePage.getTotalElements();
-        this.totalPages = messagePage.getTotalPages();
-        this.first = messagePage.isFirst();
-        this.last = messagePage.isLast();
+    public <T> PagedMessagesResponseDTO(Page<T> page, Function<T, StoredMessageDTO> itemMapper) {
+        this.items = page.getContent().stream().map(itemMapper).toList();
+        this.page = page.getNumber();
+        this.size = page.getSize();
+        this.totalElements = page.getTotalElements();
+        this.totalPages = page.getTotalPages();
+        this.first = page.isFirst();
+        this.last = page.isLast();
     }
 
-    public List<Message> getItems() {
+    public PagedMessagesResponseDTO(Page<StoredMessageDTO> page) {
+        this.items = page.getContent();
+        this.page = page.getNumber();
+        this.size = page.getSize();
+        this.totalElements = page.getTotalElements();
+        this.totalPages = page.getTotalPages();
+        this.first = page.isFirst();
+        this.last = page.isLast();
+    }
+
+    public static PagedMessagesResponseDTO fromMessages(Page<org.orgname.solace.broker.api.jpa.Message> messagePage) {
+        return new PagedMessagesResponseDTO(messagePage, StoredMessageDTO::new);
+    }
+
+    public List<StoredMessageDTO> getItems() {
         return items;
     }
 

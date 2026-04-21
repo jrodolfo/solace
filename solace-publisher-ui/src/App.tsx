@@ -830,7 +830,7 @@ function App() {
                                                                 </div>
                                                                 <div className="message-browser-properties">
                                                                     <span className="meta-label">properties</span>
-                                                                    {message.properties.length === 0 ? (
+                                                                    {Object.keys(message.properties ?? {}).length === 0 ? (
                                                                         <p className="mb-0">none</p>
                                                                     ) : (
                                                                         <>
@@ -840,8 +840,8 @@ function App() {
                                                                                 onClick={() =>
                                                                                     copyToClipboard(
                                                                                         "Properties",
-                                                                                        message.properties
-                                                                                            .map((property) => `${property.propertyKey}: ${property.propertyValue}`)
+                                                                                        Object.entries(message.properties)
+                                                                                            .map(([key, value]) => `${key}: ${value}`)
                                                                                             .join("\n")
                                                                                     )
                                                                                 }
@@ -849,9 +849,9 @@ function App() {
                                                                                 Copy Properties
                                                                             </button>
                                                                             <ul className="mb-0 mt-2">
-                                                                                {message.properties.map((property) => (
-                                                                                    <li key={`${property.id ?? property.propertyKey}-${property.propertyValue}`}>
-                                                                                        {property.propertyKey}: {property.propertyValue}
+                                                                                {Object.entries(message.properties).map(([key, value]) => (
+                                                                                    <li key={`${key}-${value}`}>
+                                                                                        {key}: {value}
                                                                                     </li>
                                                                                 ))}
                                                                             </ul>

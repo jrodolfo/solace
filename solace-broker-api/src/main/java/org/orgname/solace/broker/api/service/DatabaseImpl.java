@@ -50,7 +50,7 @@ public class DatabaseImpl implements Database {
 
         Sort.Direction direction = Sort.Direction.fromString(sortDirection);
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
-        return new PagedMessagesResponseDTO(messageRepository.findAll(specification, pageRequest));
+        return PagedMessagesResponseDTO.fromMessages(messageRepository.findAll(specification, pageRequest));
     }
 
     @Override

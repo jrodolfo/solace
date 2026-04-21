@@ -65,17 +65,10 @@ public class MessageController {
                                                   "destination": "solace/java/direct/system-01",
                                                   "deliveryMode": "PERSISTENT",
                                                   "priority": 3,
-                                                  "properties": [
-                                                    {
-                                                      "id": 10,
-                                                      "propertyKey": "property01",
-                                                      "propertyValue": "value01",
-                                                      "createdAt": null,
-                                                      "updatedAt": null
-                                                    }
-                                                  ],
+                                                  "properties": {
+                                                    "property01": "value01"
+                                                  },
                                                   "payload": {
-                                                    "id": 20,
                                                     "type": "binary",
                                                     "content": "01001000 01100101 01101100",
                                                     "createdAt": null,
@@ -90,9 +83,8 @@ public class MessageController {
                                                   "destination": "solace/java/direct/system-02",
                                                   "deliveryMode": "PERSISTENT",
                                                   "priority": 1,
-                                                  "properties": [],
+                                                  "properties": {},
                                                   "payload": {
-                                                    "id": 21,
                                                     "type": "binary",
                                                     "content": "01010111 01101111 01110010 01101100 01100100",
                                                     "createdAt": null,

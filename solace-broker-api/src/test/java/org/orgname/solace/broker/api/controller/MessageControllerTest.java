@@ -83,7 +83,7 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("001"))
                 .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-01"))
                 .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
-                .andExpect(jsonPath("$.items[0].properties[0].propertyKey").value("property01"))
+                .andExpect(jsonPath("$.items[0].properties.property01").value("value01"))
                 .andExpect(jsonPath("$.items[1].innerMessageId").value("002"))
                 .andExpect(jsonPath("$.items[1].destination").value("solace/java/direct/system-02"));
     }
@@ -342,7 +342,7 @@ class MessageControllerTest {
             int start = Math.min(page * size, filteredMessages.size());
             int end = Math.min(start + size, filteredMessages.size());
             List<Message> content = filteredMessages.subList(start, end);
-            return new PagedMessagesResponseDTO(new PageImpl<>(content, PageRequest.of(page, size), filteredMessages.size()));
+            return PagedMessagesResponseDTO.fromMessages(new PageImpl<>(content, PageRequest.of(page, size), filteredMessages.size()));
         }
 
         private static boolean matches(String actualValue, String filterValue) {
