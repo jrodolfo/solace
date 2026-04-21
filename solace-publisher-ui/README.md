@@ -64,6 +64,7 @@ The browser loads `GET /api/v1/messages/all` from `solace-broker-api` and suppor
 - friendly timestamp rendering
 - copy actions for destination, payload content, and properties
 - bulk retry for currently visible failed messages
+- manual reconciliation for stale `PENDING` messages
 
 ## Notes
 

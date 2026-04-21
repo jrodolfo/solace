@@ -21,6 +21,7 @@ For the repo-level module relationships and flow, see [../doc/architecture.md](.
 - If publish succeeds, the stored record becomes `PUBLISHED` and `publishedAt` is set.
 - If publish fails, the stored record becomes `FAILED` and `failureReason` is set.
 - `POST /api/v1/messages/{messageId}/retry` retries only `FAILED` messages.
+- `POST /api/v1/messages/{messageId}/reconcile-stale-pending` manually reclassifies stale `PENDING` messages as `FAILED`.
 - `GET /api/v1/messages/all` returns normalized DTOs, not raw JPA entities.
 
 ## Publish lifecycle
@@ -30,8 +31,14 @@ Each stored message has:
 - `publishStatus`: `PENDING`, `PUBLISHED`, or `FAILED`
 - `failureReason`: present when publish fails
 - `publishedAt`: present when publish succeeds
+- `stalePending`: derived `true` when the message is still `PENDING` more than 5 minutes after `createdAt`
 
 This means the database represents publish attempts and their outcomes, not only successful publishes.
+
+Operational note:
+
+- a fresh `PENDING` record means the publish attempt has been accepted and is still awaiting a final broker/database outcome
+- a stale `PENDING` record means the message remained pending past the stale threshold and may need operator review
 
 ## Requirements
 
@@ -243,6 +250,50 @@ Rejected retry, `400 Bad Request`:
 }
 ```
 
+## Stale pending reconciliation endpoint
+
+### `POST /{messageId}/reconcile-stale-pending`
+
+Manually reclassifies a stale `PENDING` message as `FAILED`.
+
+Contract:
+
+- loads the stored message by id
+- rejects unless the message is currently `PENDING`
+- rejects unless the message is stale under the 5-minute stale-pending threshold
+- updates the same record to `FAILED`
+- sets `failureReason` to `Marked as FAILED after manual reconciliation of a stale PENDING message`
+- returns the updated stored-message DTO
+
+Successful response, `200 OK`:
+
+```json
+{
+  "id": 12,
+  "innerMessageId": "msg-012",
+  "destination": "solace/java/direct/system-01",
+  "deliveryMode": "PERSISTENT",
+  "priority": 3,
+  "publishStatus": "FAILED",
+  "failureReason": "Marked as FAILED after manual reconciliation of a stale PENDING message",
+  "publishedAt": null,
+  "stalePending": false
+}
+```
+
+Rejected reconciliation for a fresh `PENDING` message, `400 Bad Request`:
+
+```json
+{
+  "timestamp": "2026-04-21T10:05:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Only stale PENDING messages can be reconciled",
+  "path": "/api/v1/messages/12/reconcile-stale-pending",
+  "validationErrors": null
+}
+```
+
 ## Read endpoint
 
 ### `GET /all`
@@ -284,6 +335,7 @@ Representative response:
       "publishStatus": "PUBLISHED",
       "failureReason": null,
       "publishedAt": "2026-04-20T19:55:10",
+      "stalePending": false,
       "properties": {
         "property01": "value01"
       },
@@ -305,6 +357,7 @@ Representative response:
       "publishStatus": "FAILED",
       "failureReason": "Failed to publish message to Solace broker",
       "publishedAt": null,
+      "stalePending": false,
       "properties": {},
       "payload": {
         "type": "binary",
@@ -364,3 +417,5 @@ mvn test
 - Stored connection parameters are not persisted with the message.
 - Retry uses server-side Solace configuration, not the original request credentials.
 - The read API returns normalized DTOs, including `properties` as a plain object map.
+- `stalePending` is a derived operational signal for `PENDING` rows older than 5 minutes.
+- Manual reconciliation is for stale `PENDING` messages; retry is for retryable `FAILED` messages.

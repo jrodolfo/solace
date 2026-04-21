@@ -25,6 +25,7 @@ Owns:
 - stored-message browser
 - lifecycle/date filter presets
 - single-message and bulk retry actions for failed rows
+- manual reconciliation action for stale pending rows
 
 Does not own:
 
@@ -92,6 +93,7 @@ Each stored message can include:
 - `publishStatus`
 - `failureReason`
 - `publishedAt`
+- `stalePending` as a derived operational flag
 - `innerMessageId` as descriptive payload metadata
 - normalized `properties` as a key/value map in API responses
 - payload plus audit timestamps
@@ -101,6 +103,12 @@ Lifecycle states:
 - `PENDING`: accepted and waiting for broker outcome
 - `PUBLISHED`: successfully published
 - `FAILED`: publish attempt failed
+
+Stale pending signal:
+
+- `stalePending` is derived when a message is still `PENDING` more than 5 minutes after `createdAt`
+- this does not change the stored `publishStatus` by itself
+- it exists to highlight rows that may need operator review after a publish/database inconsistency
 
 `innerMessageId` is not used as a database or API uniqueness constraint. Multiple stored publish attempts may carry the same `innerMessageId`, and the persisted record `id` remains the actual stored-message identity for lifecycle and retry operations.
 
@@ -128,6 +136,31 @@ The UI supports both:
 - retrying all currently visible failed messages in the browser
 
 The bulk retry action is UI fan-out over the single retry endpoint; there is no backend bulk-retry endpoint yet.
+
+## Stale Pending Reconciliation Flow
+
+Manual reconciliation is handled by `POST /api/v1/messages/{messageId}/reconcile-stale-pending`.
+
+Rules:
+
+- only `PENDING` messages can be reconciled
+- the message must be stale under the same 5-minute threshold used by the read DTO
+- reconciliation does not attempt another broker publish
+- the same stored message record is updated to `FAILED`
+- `failureReason` is set to an explicit manual reconciliation message
+
+Reconciliation sequence:
+
+1. load stored message
+2. reject unless status is `PENDING`
+3. reject unless the row is stale
+4. mark it `FAILED`
+5. return the updated stored-message DTO
+
+Operational distinction:
+
+- retry is for retryable `FAILED` messages
+- manual reconciliation is for stale `PENDING` messages that need operator classification without republishing
 
 ## Read Flow
 
