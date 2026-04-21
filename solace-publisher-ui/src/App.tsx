@@ -13,6 +13,12 @@ type MessagePropertyFormRow = {
     value: string;
 };
 
+type BrowserPreset =
+    | "FAILED_TODAY"
+    | "PUBLISHED_TODAY"
+    | "PENDING_NOW"
+    | "FAILED_LAST_24H";
+
 const DEFAULT_BROWSER_SORT_BY = "createdAt";
 const DEFAULT_BROWSER_SORT_DIRECTION = "desc";
 const DEFAULT_BROWSER_PAGE = "0";
@@ -198,6 +204,55 @@ function App() {
 
     const refreshBrowserResults = async () => {
         await fetchMessages();
+    };
+
+    const applyBrowserPreset = (preset: BrowserPreset) => {
+        const now = new Date();
+        const startOfToday = startOfDay(now);
+        const endOfToday = endOfDay(now);
+        const last24Hours = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+
+        setFilterDestination("");
+        setFilterDeliveryMode("");
+        setFilterInnerMessageId("");
+        setBrowserPage(DEFAULT_BROWSER_PAGE);
+        setExpandedMessageId(null);
+        setBrowserMessage(null);
+        setBrowserVariant(null);
+        setBrowserStatusCode(null);
+
+        if (preset === "FAILED_TODAY") {
+            setFilterPublishStatus("FAILED");
+            setFilterCreatedAtFrom(toDateTimeLocalValue(startOfToday));
+            setFilterCreatedAtTo(toDateTimeLocalValue(endOfToday));
+            setFilterPublishedAtFrom(DEFAULT_BROWSER_PUBLISHED_AT_FROM);
+            setFilterPublishedAtTo(DEFAULT_BROWSER_PUBLISHED_AT_TO);
+            return;
+        }
+
+        if (preset === "PUBLISHED_TODAY") {
+            setFilterPublishStatus("PUBLISHED");
+            setFilterCreatedAtFrom(DEFAULT_BROWSER_CREATED_AT_FROM);
+            setFilterCreatedAtTo(DEFAULT_BROWSER_CREATED_AT_TO);
+            setFilterPublishedAtFrom(toDateTimeLocalValue(startOfToday));
+            setFilterPublishedAtTo(toDateTimeLocalValue(endOfToday));
+            return;
+        }
+
+        if (preset === "PENDING_NOW") {
+            setFilterPublishStatus("PENDING");
+            setFilterCreatedAtFrom(DEFAULT_BROWSER_CREATED_AT_FROM);
+            setFilterCreatedAtTo(DEFAULT_BROWSER_CREATED_AT_TO);
+            setFilterPublishedAtFrom(DEFAULT_BROWSER_PUBLISHED_AT_FROM);
+            setFilterPublishedAtTo(DEFAULT_BROWSER_PUBLISHED_AT_TO);
+            return;
+        }
+
+        setFilterPublishStatus("FAILED");
+        setFilterCreatedAtFrom(toDateTimeLocalValue(last24Hours));
+        setFilterCreatedAtTo(toDateTimeLocalValue(now));
+        setFilterPublishedAtFrom(DEFAULT_BROWSER_PUBLISHED_AT_FROM);
+        setFilterPublishedAtTo(DEFAULT_BROWSER_PUBLISHED_AT_TO);
     };
 
     const retryFailedMessage = async (message: PagedStoredMessagesResponse["items"][number]) => {
@@ -798,6 +853,38 @@ function App() {
                                     </div>
 
                                     <div className="d-flex gap-2 mt-3 flex-wrap">
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-danger"
+                                            onClick={() => applyBrowserPreset("FAILED_TODAY")}
+                                            disabled={isLoadingMessages}
+                                        >
+                                            Failed Today
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-success"
+                                            onClick={() => applyBrowserPreset("PUBLISHED_TODAY")}
+                                            disabled={isLoadingMessages}
+                                        >
+                                            Published Today
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-warning"
+                                            onClick={() => applyBrowserPreset("PENDING_NOW")}
+                                            disabled={isLoadingMessages}
+                                        >
+                                            Pending Now
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-secondary"
+                                            onClick={() => applyBrowserPreset("FAILED_LAST_24H")}
+                                            disabled={isLoadingMessages}
+                                        >
+                                            Failed Last 24h
+                                        </button>
                                         <button type="submit" className="btn btn-secondary" disabled={isLoadingMessages}>
                                             {isLoadingMessages ? "Loading..." : "Load Messages"}
                                         </button>
@@ -1126,6 +1213,27 @@ function publishStatusVariant(status: "PENDING" | "PUBLISHED" | "FAILED"): strin
 
 function toIsoLocalDateTime(value: string): string {
     return value.length === 16 ? `${value}:00` : value;
+}
+
+function toDateTimeLocalValue(value: Date): string {
+    const year = value.getFullYear();
+    const month = `${value.getMonth() + 1}`.padStart(2, "0");
+    const day = `${value.getDate()}`.padStart(2, "0");
+    const hours = `${value.getHours()}`.padStart(2, "0");
+    const minutes = `${value.getMinutes()}`.padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function startOfDay(value: Date): Date {
+    const nextValue = new Date(value);
+    nextValue.setHours(0, 0, 0, 0);
+    return nextValue;
+}
+
+function endOfDay(value: Date): Date {
+    const nextValue = new Date(value);
+    nextValue.setHours(23, 59, 0, 0);
+    return nextValue;
 }
 
 function formatTimestamp(value?: string | null): string {

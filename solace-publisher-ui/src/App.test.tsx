@@ -39,6 +39,7 @@ const mockedAxios = axios as unknown as {
 };
 
 beforeEach(() => {
+    vi.useRealTimers();
     mockedAxios.post.mockReset();
     mockedAxios.get.mockReset();
     mockedAxios.isAxiosError.mockImplementation((error: unknown) => Boolean((error as { isAxiosError?: boolean })?.isAxiosError));
@@ -877,6 +878,140 @@ describe("Stored Messages Browser", () => {
                     publishedAtTo: "2026-04-21T08:15:00",
                     sortBy: "priority",
                     sortDirection: "asc",
+                },
+            }
+        );
+    });
+
+    test("Applies the failed today preset to the existing browser controls", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 0,
+                totalPages: 0,
+                items: [],
+                last: true,
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /failed today/i}));
+
+        const createdAtFrom = screen.getByLabelText(/Created At From/i) as HTMLInputElement;
+        const createdAtTo = screen.getByLabelText(/Created At To/i) as HTMLInputElement;
+
+        expect(screen.getByLabelText(/Filter Publish Status/i)).toHaveValue("FAILED");
+        expect(createdAtFrom.value).toMatch(/T00:00$/);
+        expect(createdAtTo.value).toMatch(/T23:59$/);
+        expect(screen.getByLabelText(/Published At From/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Published At To/i)).toHaveValue("");
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+            "http://localhost:8081/api/v1/messages/all",
+            {
+                params: {
+                    page: 0,
+                    size: 20,
+                    publishStatus: "FAILED",
+                    createdAtFrom: `${createdAtFrom.value}:00`,
+                    createdAtTo: `${createdAtTo.value}:00`,
+                    sortBy: "createdAt",
+                    sortDirection: "desc",
+                },
+            }
+        );
+    });
+
+    test("Applies the published today preset to published-at filters", async () => {
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /published today/i}));
+
+        const publishedAtFrom = screen.getByLabelText(/Published At From/i) as HTMLInputElement;
+        const publishedAtTo = screen.getByLabelText(/Published At To/i) as HTMLInputElement;
+
+        expect(screen.getByLabelText(/Filter Publish Status/i)).toHaveValue("PUBLISHED");
+        expect(screen.getByLabelText(/Created At From/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Created At To/i)).toHaveValue("");
+        expect(publishedAtFrom.value).toMatch(/T00:00$/);
+        expect(publishedAtTo.value).toMatch(/T23:59$/);
+    });
+
+    test("Applies the pending now preset and clears date ranges", async () => {
+        render(<App/>);
+
+        await userEvent.type(screen.getByLabelText(/Created At From/i), "2026-04-20T09:30");
+        await userEvent.type(screen.getByLabelText(/Published At From/i), "2026-04-21T07:00");
+
+        await userEvent.click(screen.getByRole("button", {name: /pending now/i}));
+
+        expect(screen.getByLabelText(/Filter Publish Status/i)).toHaveValue("PENDING");
+        expect(screen.getByLabelText(/Created At From/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Created At To/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Published At From/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Published At To/i)).toHaveValue("");
+        expect(screen.getByLabelText(/^Page$/i)).toHaveValue(0);
+    });
+
+    test("Applies the failed last 24h preset and refresh preserves it", async () => {
+        mockedAxios.get
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    totalElements: 0,
+                    totalPages: 0,
+                    items: [],
+                    last: true,
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            })
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    totalElements: 0,
+                    totalPages: 0,
+                    items: [],
+                    last: true,
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /failed last 24h/i}));
+        const createdAtFrom = screen.getByLabelText(/Created At From/i) as HTMLInputElement;
+        const createdAtTo = screen.getByLabelText(/Created At To/i) as HTMLInputElement;
+        expect(screen.getByLabelText(/Filter Publish Status/i)).toHaveValue("FAILED");
+        expect(createdAtFrom.value).not.toBe("");
+        expect(createdAtTo.value).not.toBe("");
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+        await userEvent.click(screen.getByRole("button", {name: /refresh results/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
+
+        expect(mockedAxios.get).toHaveBeenLastCalledWith(
+            "http://localhost:8081/api/v1/messages/all",
+            {
+                params: {
+                    page: 0,
+                    size: 20,
+                    publishStatus: "FAILED",
+                    createdAtFrom: `${createdAtFrom.value}:00`,
+                    createdAtTo: `${createdAtTo.value}:00`,
+                    sortBy: "createdAt",
+                    sortDirection: "desc",
                 },
             }
         );
