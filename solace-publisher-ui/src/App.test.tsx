@@ -72,6 +72,16 @@ function buildMessagesPage(page: number, overrides?: Partial<{
     };
 }
 
+function formatExpectedTimestamp(value: string): string {
+    return new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+    }).format(new Date(value));
+}
+
 describe("Form Submission Tests", () => {
 
     async function fillRequiredFormFields() {
@@ -263,11 +273,33 @@ describe("Form Submission Tests", () => {
 
 describe("Stored Messages Browser", () => {
     test("Loads and renders paginated stored messages", async () => {
+        const createdAt = "2026-04-20T21:30:00Z";
         mockedAxios.get.mockResolvedValue({
             data: buildMessagesPage(0, {
                 totalElements: 1,
                 totalPages: 1,
                 last: true,
+                items: [
+                    {
+                        id: 1,
+                        innerMessageId: "001",
+                        destination: "solace/java/direct/system-01",
+                        deliveryMode: "PERSISTENT",
+                        priority: 3,
+                        createdAt,
+                        updatedAt: null,
+                        payload: {
+                            type: "binary",
+                            content: "01001000 01100101 01101100",
+                        },
+                        properties: [
+                            {
+                                propertyKey: "region",
+                                propertyValue: "ca-east",
+                            },
+                        ],
+                    },
+                ],
             }),
             status: 200,
             statusText: "OK",
@@ -284,6 +316,7 @@ describe("Stored Messages Browser", () => {
         expect(screen.getByText(/Page 1 of 1/i)).toBeInTheDocument();
         expect(screen.getByText(/solace\/java\/direct\/system-01/i)).toBeInTheDocument();
         expect(screen.getByText(/^binary$/i)).toBeInTheDocument();
+        expect(screen.getByText(formatExpectedTimestamp(createdAt))).toBeInTheDocument();
         expect(screen.getByRole("button", {name: /show details/i})).toBeInTheDocument();
         expect(screen.queryByText(/region: ca-east/i)).not.toBeInTheDocument();
     });
@@ -424,6 +457,45 @@ describe("Stored Messages Browser", () => {
 
         expect(screen.getByRole("button", {name: /show details/i})).toHaveAttribute("aria-expanded", "false");
         expect(screen.queryByText(/region: ca-east/i)).not.toBeInTheDocument();
+    });
+
+    test("Shows a fallback when message timestamps are not available", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+                items: [
+                    {
+                        id: 1,
+                        innerMessageId: "001",
+                        destination: "solace/java/direct/system-01",
+                        deliveryMode: "PERSISTENT",
+                        priority: 3,
+                        createdAt: null,
+                        updatedAt: null,
+                        payload: {
+                            type: "binary",
+                            content: "01001000 01100101 01101100",
+                        },
+                        properties: [],
+                    },
+                ],
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+        expect(screen.getByText(/not available/i)).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole("button", {name: /show details/i}));
+        expect(screen.getAllByText(/not available/i).length).toBeGreaterThanOrEqual(3);
     });
 
     test("Shows a backend error when loading stored messages fails", async () => {

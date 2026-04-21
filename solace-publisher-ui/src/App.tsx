@@ -732,6 +732,10 @@ function App() {
                                                                 <span className="meta-label">properties</span>
                                                                 <strong>{message.properties.length}</strong>
                                                             </div>
+                                                            <div>
+                                                                <span className="meta-label">created</span>
+                                                                <strong>{formatTimestamp(message.createdAt)}</strong>
+                                                            </div>
                                                         </div>
                                                         <div className="message-browser-actions">
                                                             <button
@@ -749,6 +753,16 @@ function App() {
                                                                 className="message-browser-details"
                                                                 id={`message-details-${messageKey}`}
                                                             >
+                                                                <div className="message-browser-timestamps">
+                                                                    <div>
+                                                                        <span className="meta-label">created at</span>
+                                                                        <p className="mb-0">{formatTimestamp(message.createdAt)}</p>
+                                                                    </div>
+                                                                    <div>
+                                                                        <span className="meta-label">updated at</span>
+                                                                        <p className="mb-0">{formatTimestamp(message.updatedAt)}</p>
+                                                                    </div>
+                                                                </div>
                                                                 <div className="message-browser-content">
                                                                     <span className="meta-label">payload content</span>
                                                                     <p className="mb-0">{message.payload?.content}</p>
@@ -873,6 +887,25 @@ function hasNonBlankString(value: unknown): value is string {
 
 function isNonNegativeNumber(value: unknown): value is number {
     return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function formatTimestamp(value?: string | null): string {
+    if (!value) {
+        return "not available";
+    }
+
+    const timestamp = new Date(value);
+    if (Number.isNaN(timestamp.getTime())) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+    }).format(timestamp);
 }
 
 export default App;

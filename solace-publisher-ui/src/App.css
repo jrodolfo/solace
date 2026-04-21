@@ -152,6 +152,13 @@
     border-top: 1px solid rgba(21, 48, 71, 0.08);
 }
 
+.message-browser-timestamps {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
 .meta-label {
     display: block;
     color: #5c7488;
@@ -170,6 +177,10 @@
 
 @media (max-width: 767px) {
     .message-browser-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .message-browser-timestamps {
         grid-template-columns: 1fr;
     }
 
