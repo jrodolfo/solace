@@ -45,6 +45,7 @@ function App() {
     const [browserVariant, setBrowserVariant] = useState<"success" | "danger" | "info" | null>(null);
     const [browserStatusCode, setBrowserStatusCode] = useState<number | null>(null);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+    const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
 
     const updateProperty = (index: number, field: keyof MessagePropertyFormRow, value: string) => {
         setProperties((currentProperties) =>
@@ -107,6 +108,7 @@ function App() {
             setMessagesResponse(response.data);
             setBrowserPage(String(response.data.page));
             setBrowserSize(String(response.data.size));
+            setExpandedMessageId(null);
             setBrowserMessage(`Loaded ${response.data.items.length} messages.`);
             setBrowserVariant("info");
             setBrowserStatusCode(response.status);
@@ -666,6 +668,11 @@ function App() {
                                         <div className="row g-3">
                                             {messagesResponse.items.map((message) => (
                                                 <div className="col-12" key={`${message.id ?? "message"}-${message.innerMessageId}`}>
+                                                    {(() => {
+                                                        const messageKey = String(message.id ?? message.innerMessageId);
+                                                        const isExpanded = expandedMessageId === messageKey;
+
+                                                        return (
                                                     <article className="message-browser-card">
                                                         <div className="message-browser-topline">
                                                             <div>
@@ -687,25 +694,45 @@ function App() {
                                                                 <strong>{message.properties.length}</strong>
                                                             </div>
                                                         </div>
-                                                        <div className="message-browser-content">
-                                                            <span className="meta-label">payload content</span>
-                                                            <p className="mb-0">{message.payload?.content}</p>
+                                                        <div className="message-browser-actions">
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm btn-outline-primary"
+                                                                aria-expanded={isExpanded}
+                                                                aria-controls={`message-details-${messageKey}`}
+                                                                onClick={() => setExpandedMessageId(isExpanded ? null : messageKey)}
+                                                            >
+                                                                {isExpanded ? "Hide Details" : "Show Details"}
+                                                            </button>
                                                         </div>
-                                                        <div className="message-browser-properties">
-                                                            <span className="meta-label">properties</span>
-                                                            {message.properties.length === 0 ? (
-                                                                <p className="mb-0">none</p>
-                                                            ) : (
-                                                                <ul className="mb-0 mt-2">
-                                                                    {message.properties.map((property) => (
-                                                                        <li key={`${property.id ?? property.propertyKey}-${property.propertyValue}`}>
-                                                                            {property.propertyKey}: {property.propertyValue}
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            )}
-                                                        </div>
+                                                        {isExpanded && (
+                                                            <div
+                                                                className="message-browser-details"
+                                                                id={`message-details-${messageKey}`}
+                                                            >
+                                                                <div className="message-browser-content">
+                                                                    <span className="meta-label">payload content</span>
+                                                                    <p className="mb-0">{message.payload?.content}</p>
+                                                                </div>
+                                                                <div className="message-browser-properties">
+                                                                    <span className="meta-label">properties</span>
+                                                                    {message.properties.length === 0 ? (
+                                                                        <p className="mb-0">none</p>
+                                                                    ) : (
+                                                                        <ul className="mb-0 mt-2">
+                                                                            {message.properties.map((property) => (
+                                                                                <li key={`${property.id ?? property.propertyKey}-${property.propertyValue}`}>
+                                                                                    {property.propertyKey}: {property.propertyValue}
+                                                                                </li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </article>
+                                                        );
+                                                    })()}
                                                 </div>
                                             ))}
                                         </div>

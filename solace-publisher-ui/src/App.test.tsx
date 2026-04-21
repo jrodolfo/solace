@@ -282,7 +282,8 @@ describe("Stored Messages Browser", () => {
         expect(screen.getByText(/Page 1 of 1/i)).toBeInTheDocument();
         expect(screen.getByText(/solace\/java\/direct\/system-01/i)).toBeInTheDocument();
         expect(screen.getByText(/^binary$/i)).toBeInTheDocument();
-        expect(screen.getByText(/region: ca-east/i)).toBeInTheDocument();
+        expect(screen.getByRole("button", {name: /show details/i})).toBeInTheDocument();
+        expect(screen.queryByText(/region: ca-east/i)).not.toBeInTheDocument();
     });
 
     test("Builds the expected filter and sort query parameters", async () => {
@@ -387,6 +388,40 @@ describe("Stored Messages Browser", () => {
         );
         expect(await screen.findByText(/002/i)).toBeInTheDocument();
         expect(screen.getByText(/Page 2 of 2/i)).toBeInTheDocument();
+    });
+
+    test("Expands and collapses stored message details", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        const toggleButton = screen.getByRole("button", {name: /show details/i});
+        expect(toggleButton).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByText(/01001000 01100101 01101100/i)).not.toBeInTheDocument();
+
+        await userEvent.click(toggleButton);
+
+        expect(screen.getByRole("button", {name: /hide details/i})).toHaveAttribute("aria-expanded", "true");
+        expect(screen.getByText(/01001000 01100101 01101100/i)).toBeInTheDocument();
+        expect(screen.getByText(/region: ca-east/i)).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole("button", {name: /hide details/i}));
+
+        expect(screen.getByRole("button", {name: /show details/i})).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByText(/region: ca-east/i)).not.toBeInTheDocument();
     });
 
     test("Shows a backend error when loading stored messages fails", async () => {
