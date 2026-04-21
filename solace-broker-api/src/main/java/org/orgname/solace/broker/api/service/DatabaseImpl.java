@@ -37,6 +37,7 @@ public class DatabaseImpl implements Database {
             String destination,
             String deliveryMode,
             String innerMessageId,
+            PublishStatus publishStatus,
             String sortBy,
             String sortDirection) {
         Specification<Message> specification = Specification.where(null);
@@ -49,6 +50,9 @@ public class DatabaseImpl implements Database {
         }
         if (hasText(innerMessageId)) {
             specification = specification.and(stringContains("innerMessageId", innerMessageId));
+        }
+        if (publishStatus != null) {
+            specification = specification.and(enumEquals("publishStatus", publishStatus));
         }
 
         Sort.Direction direction = Sort.Direction.fromString(sortDirection);
@@ -124,6 +128,10 @@ public class DatabaseImpl implements Database {
         String normalizedValue = "%" + value.trim().toLowerCase() + "%";
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.like(criteriaBuilder.lower(root.get(fieldName)), normalizedValue);
+    }
+
+    private static <T extends Enum<T>> Specification<Message> enumEquals(String fieldName, T value) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get(fieldName), value);
     }
 
 }

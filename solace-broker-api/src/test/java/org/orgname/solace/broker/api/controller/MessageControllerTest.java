@@ -67,7 +67,7 @@ class MessageControllerTest {
         database.storedMessages.add(first);
         database.storedMessages.add(second);
 
-        PagedMessagesResponseDTO messages = controller.getAllMessages(0, 20, null, null, null, "createdAt", "desc");
+        PagedMessagesResponseDTO messages = controller.getAllMessages(0, 20, null, null, null, null, "createdAt", "desc");
         assertEquals(2, messages.getItems().size());
         assertEquals(2L, messages.getTotalElements());
         assertEquals(1, messages.getTotalPages());
@@ -117,6 +117,22 @@ class MessageControllerTest {
     }
 
     @Test
+    void shouldFilterMessagesByPublishStatus() throws Exception {
+        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, "2026-04-20T10:00:00"));
+        Message failedMessage = storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1, "2026-04-19T10:00:00");
+        failedMessage.setPublishStatus(PublishStatus.FAILED);
+        failedMessage.setFailureReason("Failed to publish message to Solace broker");
+        failedMessage.setPublishedAt(null);
+        database.storedMessages.add(failedMessage);
+
+        mockMvc.perform(get("/api/v1/messages/all?publishStatus=FAILED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("002"))
+                .andExpect(jsonPath("$.items[0].publishStatus").value("FAILED"));
+    }
+
+    @Test
     void shouldRespectExplicitSortingParameters() throws Exception {
         database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, "2026-04-20T10:00:00"));
         database.storedMessages.add(storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1, "2026-04-19T10:00:00"));
@@ -153,6 +169,15 @@ class MessageControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("sortBy must be one of createdAt, priority, destination, innerMessageId"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
+    }
+
+    @Test
+    void shouldRejectInvalidPublishStatus() throws Exception {
+        mockMvc.perform(get("/api/v1/messages/all?publishStatus=done"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("publishStatus must be one of PENDING, PUBLISHED, FAILED"))
                 .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
     }
 
@@ -369,12 +394,14 @@ class MessageControllerTest {
                 String destination,
                 String deliveryMode,
                 String innerMessageId,
+                PublishStatus publishStatus,
                 String sortBy,
                 String sortDirection) {
             List<Message> filteredMessages = storedMessages.stream()
                     .filter(message -> matches(message.getDestination(), destination))
                     .filter(message -> matches(message.getDeliveryMode(), deliveryMode))
                     .filter(message -> matches(message.getInnerMessageId(), innerMessageId))
+                    .filter(message -> publishStatus == null || publishStatus == message.getPublishStatus())
                     .sorted(comparatorFor(sortBy, sortDirection))
                     .collect(Collectors.toList());
 

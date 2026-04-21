@@ -16,6 +16,7 @@ import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.BadRequestException;
 import org.orgname.solace.broker.api.exception.ErrorMessage;
+import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,6 +126,8 @@ public class MessageController {
             @RequestParam(required = false) String deliveryMode,
             @Parameter(description = "Optional case-insensitive filter for the inner message id", example = "001")
             @RequestParam(required = false) String innerMessageId,
+            @Parameter(description = "Optional exact filter for publish status. Allowed values: PENDING, PUBLISHED, FAILED", example = "FAILED")
+            @RequestParam(required = false) String publishStatus,
             @Parameter(description = "Field to sort by. Allowed values: createdAt, priority, destination, innerMessageId", example = "createdAt")
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @Parameter(description = "Sort direction. Allowed values: asc, desc", example = "desc")
@@ -144,7 +147,15 @@ public class MessageController {
         if (!"asc".equalsIgnoreCase(sortDirection) && !"desc".equalsIgnoreCase(sortDirection)) {
             throw new BadRequestException("sortDirection must be asc or desc");
         }
-        return database.getAllMessages(page, size, destination, deliveryMode, innerMessageId, sortBy, sortDirection);
+        return database.getAllMessages(
+                page,
+                size,
+                destination,
+                deliveryMode,
+                innerMessageId,
+                parsePublishStatus(publishStatus),
+                sortBy,
+                sortDirection);
     }
 
     @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}) // Allow React app origin
@@ -312,5 +323,17 @@ public class MessageController {
         parameterDTO.setUserName(wrapper.getUserName());
         parameterDTO.setPassword(wrapper.getPassword());
         return parameterDTO;
+    }
+
+    private static PublishStatus parsePublishStatus(String publishStatus) {
+        if (publishStatus == null || publishStatus.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return PublishStatus.valueOf(publishStatus.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("publishStatus must be one of PENDING, PUBLISHED, FAILED", e);
+        }
     }
 }

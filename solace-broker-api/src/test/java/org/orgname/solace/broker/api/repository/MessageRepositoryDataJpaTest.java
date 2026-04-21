@@ -33,7 +33,7 @@ class MessageRepositoryDataJpaTest {
         persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("abc-003", "solace/java/direct/system-03", "PERSISTENT", 2, LocalDateTime.of(2026, 4, 18, 10, 0));
 
-        PagedMessagesResponseDTO response = database.getAllMessages(0, 20, "SYSTEM-03", "persistent", "ABC", "createdAt", "desc");
+        PagedMessagesResponseDTO response = database.getAllMessages(0, 20, "SYSTEM-03", "persistent", "ABC", PublishStatus.PUBLISHED, "createdAt", "desc");
 
         assertEquals(1L, response.getTotalElements());
         assertEquals("abc-003", response.getItems().getFirst().getInnerMessageId());
@@ -47,7 +47,7 @@ class MessageRepositoryDataJpaTest {
         persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, LocalDateTime.of(2026, 4, 18, 10, 0));
 
-        PagedMessagesResponseDTO response = database.getAllMessages(0, 20, null, null, null, "priority", "asc");
+        PagedMessagesResponseDTO response = database.getAllMessages(0, 20, null, null, null, null, "priority", "asc");
 
         assertEquals(List.of("002", "003", "001"),
                 response.getItems().stream().map(item -> item.getInnerMessageId()).toList());
@@ -60,7 +60,7 @@ class MessageRepositoryDataJpaTest {
         persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, LocalDateTime.of(2026, 4, 20, 10, 0));
 
-        PagedMessagesResponseDTO response = database.getAllMessages(1, 1, null, null, null, "createdAt", "desc");
+        PagedMessagesResponseDTO response = database.getAllMessages(1, 1, null, null, null, null, "createdAt", "desc");
 
         assertEquals(3L, response.getTotalElements());
         assertEquals(3, response.getTotalPages());
@@ -69,20 +69,44 @@ class MessageRepositoryDataJpaTest {
         assertEquals("002", response.getItems().getFirst().getInnerMessageId());
     }
 
+    @Test
+    void shouldFilterMessagesByPublishStatus() {
+        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        persistMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
+
+        PagedMessagesResponseDTO response = database.getAllMessages(0, 20, null, null, null, PublishStatus.FAILED, "createdAt", "desc");
+
+        assertEquals(1L, response.getTotalElements());
+        assertEquals("002", response.getItems().getFirst().getInnerMessageId());
+        assertEquals(PublishStatus.FAILED, response.getItems().getFirst().getPublishStatus());
+    }
+
     private void persistMessage(
             String innerMessageId,
             String destination,
             String deliveryMode,
             int priority,
             LocalDateTime createdAt) {
+        persistMessage(innerMessageId, destination, deliveryMode, priority, PublishStatus.PUBLISHED, createdAt);
+    }
+
+    private void persistMessage(
+            String innerMessageId,
+            String destination,
+            String deliveryMode,
+            int priority,
+            PublishStatus publishStatus,
+            LocalDateTime createdAt) {
         Message message = new Message();
         message.setInnerMessageId(innerMessageId);
         message.setDestination(destination);
         message.setDeliveryMode(deliveryMode);
         message.setPriority(priority);
-        message.setPublishStatus(PublishStatus.PUBLISHED);
-        message.setFailureReason(null);
-        message.setPublishedAt(createdAt);
+        message.setPublishStatus(publishStatus);
+        message.setFailureReason(publishStatus == PublishStatus.FAILED ? "Failed to publish message to Solace broker" : null);
+        message.setPublishedAt(publishStatus == PublishStatus.PUBLISHED ? createdAt : null);
         message.setCreatedAt(createdAt);
         message.setUpdatedAt(createdAt);
 

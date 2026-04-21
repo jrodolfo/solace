@@ -17,6 +17,7 @@ const DEFAULT_BROWSER_SORT_BY = "createdAt";
 const DEFAULT_BROWSER_SORT_DIRECTION = "desc";
 const DEFAULT_BROWSER_PAGE = "0";
 const DEFAULT_BROWSER_SIZE = "20";
+const DEFAULT_BROWSER_PUBLISH_STATUS = "";
 
 function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
@@ -41,6 +42,7 @@ function App() {
     const [filterDestination, setFilterDestination] = useState("");
     const [filterDeliveryMode, setFilterDeliveryMode] = useState("");
     const [filterInnerMessageId, setFilterInnerMessageId] = useState("");
+    const [filterPublishStatus, setFilterPublishStatus] = useState(DEFAULT_BROWSER_PUBLISH_STATUS);
     const [browserSortBy, setBrowserSortBy] = useState(DEFAULT_BROWSER_SORT_BY);
     const [browserSortDirection, setBrowserSortDirection] = useState(DEFAULT_BROWSER_SORT_DIRECTION);
     const [browserPage, setBrowserPage] = useState(DEFAULT_BROWSER_PAGE);
@@ -107,6 +109,7 @@ function App() {
                     ...(filterDestination.trim() ? {destination: filterDestination.trim()} : {}),
                     ...(filterDeliveryMode.trim() ? {deliveryMode: filterDeliveryMode.trim()} : {}),
                     ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
+                    ...(filterPublishStatus ? {publishStatus: filterPublishStatus} : {}),
                     sortBy: browserSortBy,
                     sortDirection: browserSortDirection
                 }
@@ -163,6 +166,7 @@ function App() {
         setFilterDestination("");
         setFilterDeliveryMode("");
         setFilterInnerMessageId("");
+        setFilterPublishStatus(DEFAULT_BROWSER_PUBLISH_STATUS);
         setBrowserSortBy(DEFAULT_BROWSER_SORT_BY);
         setBrowserSortDirection(DEFAULT_BROWSER_SORT_DIRECTION);
         setBrowserPage(DEFAULT_BROWSER_PAGE);
@@ -617,7 +621,23 @@ function App() {
                                                 placeholder="Filter by inner message id"
                                             />
                                         </div>
-                                        <div className="col-md-3">
+                                        <div className="col-md-4">
+                                            <label htmlFor="filterPublishStatus" className="form-label">
+                                                Filter Publish Status
+                                            </label>
+                                            <select
+                                                id="filterPublishStatus"
+                                                className="form-select"
+                                                value={filterPublishStatus}
+                                                onChange={(e) => setFilterPublishStatus(e.target.value)}
+                                            >
+                                                <option value="">all statuses</option>
+                                                <option value="PENDING">PENDING</option>
+                                                <option value="PUBLISHED">PUBLISHED</option>
+                                                <option value="FAILED">FAILED</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-md-2">
                                             <label htmlFor="browserSortBy" className="form-label">
                                                 Sort By
                                             </label>
@@ -633,7 +653,7 @@ function App() {
                                                 <option value="innerMessageId">innerMessageId</option>
                                             </select>
                                         </div>
-                                        <div className="col-md-3">
+                                        <div className="col-md-2">
                                             <label htmlFor="browserSortDirection" className="form-label">
                                                 Sort Direction
                                             </label>
@@ -647,7 +667,7 @@ function App() {
                                                 <option value="asc">asc</option>
                                             </select>
                                         </div>
-                                        <div className="col-md-3">
+                                        <div className="col-md-2">
                                             <label htmlFor="browserPage" className="form-label">
                                                 Page
                                             </label>
@@ -660,7 +680,7 @@ function App() {
                                                 onChange={(e) => setBrowserPage(e.target.value)}
                                             />
                                         </div>
-                                        <div className="col-md-3">
+                                        <div className="col-md-2">
                                             <label htmlFor="browserSize" className="form-label">
                                                 Size
                                             </label>

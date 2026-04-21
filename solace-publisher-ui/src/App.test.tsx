@@ -463,6 +463,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
         await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "002");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
         await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
         await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
         await userEvent.clear(screen.getByLabelText(/^Page$/i));
@@ -482,6 +483,7 @@ describe("Stored Messages Browser", () => {
                     destination: "system-02",
                     deliveryMode: "DIRECT",
                     innerMessageId: "002",
+                    publishStatus: "FAILED",
                     sortBy: "priority",
                     sortDirection: "asc",
                 },
@@ -578,7 +580,7 @@ describe("Stored Messages Browser", () => {
 
         expect(screen.getByRole("button", {name: /hide details/i})).toHaveAttribute("aria-expanded", "true");
         expect(screen.getByText(/01001000 01100101 01101100/i)).toBeInTheDocument();
-        expect(screen.getByText(/publish status/i)).toBeInTheDocument();
+        expect(screen.getByText(/^publish status$/i, {selector: ".meta-label"})).toBeInTheDocument();
         expect(screen.getByText(/region: ca-east/i)).toBeInTheDocument();
 
         await userEvent.click(screen.getByRole("button", {name: /hide details/i}));
@@ -642,11 +644,11 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
-        expect(screen.getByText(/FAILED/i)).toBeInTheDocument();
+        expect(screen.getByText(/^FAILED$/i, {selector: ".badge"})).toBeInTheDocument();
 
         await userEvent.click(screen.getByRole("button", {name: /show details/i}));
         expect(screen.getByText(/Failed to publish message to Solace broker/i)).toBeInTheDocument();
-        expect(screen.getByText(/publish status/i)).toBeInTheDocument();
+        expect(screen.getByText(/^publish status$/i, {selector: ".meta-label"})).toBeInTheDocument();
     });
 
     test("Shows an improved empty state when no stored messages match the filters", async () => {
@@ -728,6 +730,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-03");
         await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "003");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
         await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
         await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
         await userEvent.clear(screen.getByLabelText(/^Page$/i));
@@ -750,6 +753,7 @@ describe("Stored Messages Browser", () => {
                     destination: "system-03",
                     deliveryMode: "PERSISTENT",
                     innerMessageId: "003",
+                    publishStatus: "FAILED",
                     sortBy: "priority",
                     sortDirection: "asc",
                 },
@@ -775,6 +779,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-03");
         await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "003");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "PUBLISHED");
         await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
         await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
         await userEvent.clear(screen.getByLabelText(/^Page$/i));
@@ -792,6 +797,7 @@ describe("Stored Messages Browser", () => {
         expect(screen.getByLabelText(/Filter Destination/i)).toHaveValue("");
         expect(screen.getByLabelText(/Filter Delivery Mode/i)).toHaveValue("");
         expect(screen.getByLabelText(/Filter Inner Message Id/i)).toHaveValue("");
+        expect(screen.getByLabelText(/Filter Publish Status/i)).toHaveValue("");
         expect(screen.getByLabelText(/Sort By/i)).toHaveValue("createdAt");
         expect(screen.getByLabelText(/Sort Direction/i)).toHaveValue("desc");
         expect(screen.getByLabelText(/^Page$/i)).toHaveValue(0);

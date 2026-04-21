@@ -19,14 +19,13 @@ import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Optional;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -35,7 +34,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -57,7 +55,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldReturnStoredMessagesJsonContract() throws Exception {
-        when(database.getAllMessages(0, 20, null, null, null, "createdAt", "desc"))
+        when(database.getAllMessages(0, 20, null, null, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all"))
@@ -77,7 +75,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldReturnExplicitPageOfStoredMessages() throws Exception {
-        when(database.getAllMessages(1, 1, null, null, null, "createdAt", "desc"))
+        when(database.getAllMessages(1, 1, null, null, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1)), 1, 1, 2));
 
         mockMvc.perform(get("/api/v1/messages/all?page=1&size=1"))
@@ -93,7 +91,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldFilterStoredMessagesByDeliveryMode() throws Exception {
-        when(database.getAllMessages(0, 20, null, "PERSISTENT", null, "createdAt", "desc"))
+        when(database.getAllMessages(0, 20, null, "PERSISTENT", null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?deliveryMode=PERSISTENT"))
@@ -103,8 +101,20 @@ class MessageControllerWebMvcTest {
     }
 
     @Test
+    void shouldFilterStoredMessagesByPublishStatus() throws Exception {
+        when(database.getAllMessages(0, 20, null, null, null, PublishStatus.FAILED, "createdAt", "desc"))
+                .thenReturn(messagePageResponse(List.of(failedStoredMessage("002", "solace/java/direct/system-02", "DIRECT", 1)), 0, 20, 1));
+
+        mockMvc.perform(get("/api/v1/messages/all?publishStatus=FAILED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].publishStatus").value("FAILED"))
+                .andExpect(jsonPath("$.items[0].failureReason").value("Failed to publish message to Solace broker"));
+    }
+
+    @Test
     void shouldRespectExplicitSortFieldAndDirection() throws Exception {
-        when(database.getAllMessages(0, 20, null, null, null, "priority", "asc"))
+        when(database.getAllMessages(0, 20, null, null, null, null, "priority", "asc"))
                 .thenReturn(messagePageResponse(List.of(
                         storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1),
                         storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 2));
@@ -139,6 +149,15 @@ class MessageControllerWebMvcTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("sortDirection must be asc or desc"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
+    }
+
+    @Test
+    void shouldRejectInvalidPublishStatus() throws Exception {
+        mockMvc.perform(get("/api/v1/messages/all?publishStatus=UNKNOWN"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("publishStatus must be one of PENDING, PUBLISHED, FAILED"))
                 .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
     }
 
@@ -278,6 +297,14 @@ class MessageControllerWebMvcTest {
         property.setPropertyValue("value01");
         property.setMessage(message);
         message.setProperties(List.of(property));
+        return message;
+    }
+
+    private static Message failedStoredMessage(String innerMessageId, String destination, String deliveryMode, int priority) {
+        Message message = storedMessage(innerMessageId, destination, deliveryMode, priority);
+        message.setPublishStatus(PublishStatus.FAILED);
+        message.setFailureReason("Failed to publish message to Solace broker");
+        message.setPublishedAt(null);
         return message;
     }
 
