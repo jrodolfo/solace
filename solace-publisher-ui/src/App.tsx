@@ -203,6 +203,9 @@ function App() {
                 value: property.value.trim()
             }))
             .filter((property) => property.key.length > 0 || property.value.length > 0);
+        const propertyMap = Object.fromEntries(
+            trimmedProperties.map((property) => [property.key, property.value])
+        );
         const messagePayload = {
             innerMessageId,
             destination,
@@ -212,10 +215,13 @@ function App() {
                 type: payloadType,
                 content: payloadContent
             },
-            ...(trimmedProperties.length > 0 ? {properties: trimmedProperties} : {})
+            ...(trimmedProperties.length > 0 ? {properties: propertyMap} : {})
         };
 
-        const validationErrors = validateMessagePayload(messagePayload);
+        const validationErrors = {
+            ...validateMessagePayload(messagePayload),
+            ...validatePropertyRows(properties)
+        };
         if (Object.keys(validationErrors).length > 0) {
             const validationErrorResponse = buildSyntheticErrorResponse(
                 400,
@@ -919,31 +925,25 @@ function validateMessagePayload(payload: unknown): MessagePayloadValidationError
         validationErrors["message.payload.content"] = "payload.content is required";
     }
 
-    if (payload.properties !== undefined) {
-        if (!Array.isArray(payload.properties)) {
-            validationErrors["message.properties"] = "message.properties must be an array";
-            return validationErrors;
+    return validationErrors;
+}
+
+function validatePropertyRows(rows: MessagePropertyFormRow[]): MessagePayloadValidationErrorMap {
+    const validationErrors: MessagePayloadValidationErrorMap = {};
+
+    rows.forEach((property, index) => {
+        const hasKey = property.key.trim().length > 0;
+        const hasValue = property.value.trim().length > 0;
+
+        if (hasKey !== hasValue) {
+            if (!hasKey) {
+                validationErrors[`message.properties[${index}].key`] = `message.properties[${index}].key is required`;
+            }
+            if (!hasValue) {
+                validationErrors[`message.properties[${index}].value`] = `message.properties[${index}].value is required`;
+            }
         }
-
-        payload.properties.forEach((property, index) => {
-            if (!isRecord(property)) {
-                validationErrors[`message.properties[${index}]`] = `message.properties[${index}] must be an object`;
-                return;
-            }
-
-            const hasKey = hasNonBlankString(property.key);
-            const hasValue = hasNonBlankString(property.value);
-
-            if (hasKey !== hasValue) {
-                if (!hasKey) {
-                    validationErrors[`message.properties[${index}].key`] = `message.properties[${index}].key is required`;
-                }
-                if (!hasValue) {
-                    validationErrors[`message.properties[${index}].value`] = `message.properties[${index}].value is required`;
-                }
-            }
-        });
-    }
+    });
 
     return validationErrors;
 }

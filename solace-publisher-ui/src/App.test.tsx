@@ -197,10 +197,10 @@ describe("Form Submission Tests", () => {
                         type: "binary",
                         content: "01001000 01100101 01101100",
                     },
-                    properties: [
-                        {key: "region", value: "ca-east"},
-                        {key: "source", value: "publisher-ui"},
-                    ],
+                    properties: {
+                        region: "ca-east",
+                        source: "publisher-ui",
+                    },
                 },
             },
             {

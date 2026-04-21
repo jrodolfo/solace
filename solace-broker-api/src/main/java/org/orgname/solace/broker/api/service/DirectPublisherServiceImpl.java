@@ -1,5 +1,7 @@
 package org.orgname.solace.broker.api.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solace.messaging.MessagingService;
 import com.solace.messaging.config.SolaceProperties.MessageProperties;
 import com.solace.messaging.config.profile.ConfigurationProfile;
@@ -14,6 +16,7 @@ import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
@@ -31,6 +34,7 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
 
     private static final Logger logger = Logger.getLogger(DirectPublisherServiceImpl.class.getName());
     private static final int APPROX_MSG_RATE_PER_SEC = 100;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final AccessProperties accessProperties;
 
     public DirectPublisherServiceImpl(AccessProperties accessProperties) {
@@ -158,7 +162,14 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         }
     }
 
-    private String buildResponse(String topicName, String content) {
-        return "{\"destination\":\"" + topicName + "\",\"content\":\"" + content + "\"}";
+    String buildResponse(String topicName, String content) {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(Map.of(
+                    "destination", topicName,
+                    "content", content
+            ));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize publish response", e);
+        }
     }
 }
