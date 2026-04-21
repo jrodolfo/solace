@@ -8,6 +8,7 @@ import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
+import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.ApiExceptionHandler;
 import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.orgname.solace.broker.api.jpa.Message;
@@ -36,8 +37,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class MessageControllerTest {
-
-    private static final String MESSAGE_SENT = "{\"destination\":\"solace/java/direct/system-01\",\"content\":\"01001000 01100101 01101100\"}";
 
     private StubDatabase database;
     private StubDirectPublisherService directPublisherService;
@@ -159,13 +158,14 @@ class MessageControllerTest {
     @Test
     void shouldSendMessageSuccessfully() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        directPublisherService.response = MESSAGE_SENT;
+        directPublisherService.response = new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100");
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(wrapper)))
                 .andExpect(status().isCreated())
-                .andExpect(content().string(MESSAGE_SENT));
+                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
     }
 
     @Test
@@ -295,12 +295,12 @@ class MessageControllerTest {
     }
 
     private static final class StubDirectPublisherService implements DirectPublisherService {
-        private String response;
+        private PublishMessageResponseDTO response;
         private IllegalArgumentException illegalArgumentException;
         private RuntimeException exception;
 
         @Override
-        public String sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) {
+        public PublishMessageResponseDTO sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) {
             if (illegalArgumentException != null) {
                 throw illegalArgumentException;
             }

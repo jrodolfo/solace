@@ -7,6 +7,7 @@ import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
+import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.repository.MessageRepository;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,8 +41,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class MessageApiContractIntegrationTest {
 
-    private static final String PUBLISH_RESPONSE = "{\"destination\":\"solace/java/direct/system-01\",\"content\":\"01001000 01100101 01101100\"}";
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -66,13 +65,14 @@ class MessageApiContractIntegrationTest {
                 eq("solace/java/direct/system-01"),
                 eq("01001000 01100101 01101100"),
                 any(Optional.class)))
-                .thenReturn(PUBLISH_RESPONSE);
+                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(wrapper)))
                 .andExpect(status().isCreated())
-                .andExpect(content().string(PUBLISH_RESPONSE));
+                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
 
         mockMvc.perform(get("/api/v1/messages/all"))
                 .andExpect(status().isOk())

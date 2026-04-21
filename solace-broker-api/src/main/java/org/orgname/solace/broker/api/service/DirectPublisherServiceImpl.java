@@ -1,7 +1,5 @@
 package org.orgname.solace.broker.api.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solace.messaging.MessagingService;
 import com.solace.messaging.config.SolaceProperties.MessageProperties;
 import com.solace.messaging.config.profile.ConfigurationProfile;
@@ -10,13 +8,13 @@ import com.solace.messaging.publisher.OutboundMessage;
 import com.solace.messaging.publisher.OutboundMessageBuilder;
 import com.solace.messaging.resources.Topic;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
+import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
 import org.orgname.solace.broker.api.exception.BrokerConnectionException;
 import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
@@ -34,7 +32,6 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
 
     private static final Logger logger = Logger.getLogger(DirectPublisherServiceImpl.class.getName());
     private static final int APPROX_MSG_RATE_PER_SEC = 100;
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final AccessProperties accessProperties;
 
     public DirectPublisherServiceImpl(AccessProperties accessProperties) {
@@ -43,7 +40,7 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
 
 
     @Override
-    public String sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) {
+    public PublishMessageResponseDTO sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) {
         validateInput(topicName, content);
         Properties properties = resolveProperties(solaceParametersOptional);
         MessagingService messagingService = createMessagingService(properties);
@@ -55,7 +52,7 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
             OutboundMessage message = buildOutboundMessage(messagingService, content);
             publishMessage(publisher, topicName, message);
             pauseAfterPublish();
-            String returnMessage = buildResponse(topicName, content);
+            PublishMessageResponseDTO returnMessage = buildResponse(topicName, content);
             logger.log(Level.INFO, "Published message to topic {0}", topicName);
             return returnMessage;
         } finally {
@@ -162,14 +159,7 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         }
     }
 
-    String buildResponse(String topicName, String content) {
-        try {
-            return OBJECT_MAPPER.writeValueAsString(Map.of(
-                    "destination", topicName,
-                    "content", content
-            ));
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Failed to serialize publish response", e);
-        }
+    PublishMessageResponseDTO buildResponse(String topicName, String content) {
+        return new PublishMessageResponseDTO(topicName, content);
     }
 }

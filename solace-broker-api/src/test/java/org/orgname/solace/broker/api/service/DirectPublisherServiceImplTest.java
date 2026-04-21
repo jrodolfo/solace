@@ -1,11 +1,10 @@
 package org.orgname.solace.broker.api.service;
 
 import org.junit.jupiter.api.Test;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
+import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -15,7 +14,6 @@ import static org.orgname.solace.broker.api.constants.Constants.ERROR_EMPTY_MESS
 
 class DirectPublisherServiceImplTest {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final DirectPublisherServiceImpl directPublisherService = new DirectPublisherServiceImpl(new StubAccessProperties());
 
     @Test
@@ -51,16 +49,14 @@ class DirectPublisherServiceImplTest {
     }
 
     @Test
-    void buildResponseEscapesJsonContent() throws Exception {
-        String response = directPublisherService.buildResponse(
+    void buildResponseReturnsTypedPublishResponse() {
+        PublishMessageResponseDTO response = directPublisherService.buildResponse(
                 "solace/java/direct/system-01",
                 "message with \"quotes\" and newline\ncontent"
         );
 
-        Map<?, ?> parsed = OBJECT_MAPPER.readValue(response, Map.class);
-
-        assertEquals("solace/java/direct/system-01", parsed.get("destination"));
-        assertEquals("message with \"quotes\" and newline\ncontent", parsed.get("content"));
+        assertEquals("solace/java/direct/system-01", response.getDestination());
+        assertEquals("message with \"quotes\" and newline\ncontent", response.getContent());
     }
 
     private static final class StubAccessProperties implements AccessProperties {

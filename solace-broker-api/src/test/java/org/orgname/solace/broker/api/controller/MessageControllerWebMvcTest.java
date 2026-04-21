@@ -6,6 +6,7 @@ import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
+import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.ApiExceptionHandler;
 import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
 import org.orgname.solace.broker.api.exception.BrokerConnectionException;
@@ -40,8 +41,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = MessageController.class)
 @Import(ApiExceptionHandler.class)
 class MessageControllerWebMvcTest {
-
-    private static final String MESSAGE_SENT = "{\"destination\":\"solace/java/direct/system-01\",\"content\":\"01001000 01100101 01101100\"}";
 
     @Autowired
     private MockMvc mockMvc;
@@ -146,13 +145,14 @@ class MessageControllerWebMvcTest {
         MessageWrapperDTO wrapper = validWrapper();
         when(database.saveMessage(any(MessageWrapperDTO.class))).thenReturn(new Message());
         when(directPublisherService.sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any()))
-                .thenReturn(MESSAGE_SENT);
+                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(wrapper)))
                 .andExpect(status().isCreated())
-                .andExpect(content().string(MESSAGE_SENT));
+                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
     }
 
     @Test

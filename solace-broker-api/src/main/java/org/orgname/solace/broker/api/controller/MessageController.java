@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
+import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.BadRequestException;
 import org.orgname.solace.broker.api.exception.ErrorMessage;
 import org.orgname.solace.broker.api.service.Database;
@@ -148,7 +149,7 @@ public class MessageController {
                     description = "Message published successfully",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = String.class),
+                            schema = @Schema(implementation = PublishMessageResponseDTO.class),
                             examples = @ExampleObject(
                                     name = "publish-success",
                                     summary = "Successful publish response",
@@ -265,7 +266,7 @@ public class MessageController {
             )
     })
     @PostMapping(value = "/message", consumes = {"application/json", "application/xml", "application/x-www-form-urlencoded"})
-    public ResponseEntity<String> sendMessage(@Valid @RequestBody MessageWrapperDTO wrapper) {
+    public ResponseEntity<PublishMessageResponseDTO> sendMessage(@Valid @RequestBody MessageWrapperDTO wrapper) {
         if (wrapper == null || wrapper.getMessage() == null) {
             logger.log(Level.WARNING, "Rejected publish request with missing message payload");
             throw new BadRequestException("Message is null");
@@ -275,7 +276,7 @@ public class MessageController {
 
         String topicName = wrapper.getMessage().getDestination();
         String content = wrapper.getMessage().getPayload().getContent();
-        String responseMessage;
+        PublishMessageResponseDTO responseMessage;
 
         try {
             if (wrapper.parametersAreValid()) {
