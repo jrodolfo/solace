@@ -52,6 +52,7 @@ function App() {
     const [browserVariant, setBrowserVariant] = useState<"success" | "danger" | "info" | null>(null);
     const [browserStatusCode, setBrowserStatusCode] = useState<number | null>(null);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+    const [retryingMessageId, setRetryingMessageId] = useState<string | null>(null);
     const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
     const [hasLoadedMessages, setHasLoadedMessages] = useState(false);
     const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
@@ -181,6 +182,42 @@ function App() {
 
     const refreshBrowserResults = async () => {
         await fetchMessages();
+    };
+
+    const retryFailedMessage = async (message: PagedStoredMessagesResponse["items"][number]) => {
+        if (!message.id) {
+            setBrowserMessage("Only stored messages with ids can be retried.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+            return;
+        }
+
+        const messageKey = String(message.id ?? message.innerMessageId);
+        setRetryingMessageId(messageKey);
+        setBrowserMessage(null);
+        setBrowserVariant(null);
+        setBrowserStatusCode(null);
+
+        try {
+            const response = await axios.post<SolaceBrokerAPIResponse>(`${messagesApiUrl}/${message.id}/retry`);
+            await fetchMessages(messagesResponse ? {page: messagesResponse.page, size: messagesResponse.size} : undefined);
+            setBrowserMessage(`Retried message ${message.innerMessageId} successfully.`);
+            setBrowserVariant("success");
+            setBrowserStatusCode(response.status);
+        } catch (error) {
+            if (axios.isAxiosError<SolaceBrokerAPIError>(error) && error.response) {
+                setBrowserMessage(error.response.data?.message ?? "Failed to retry the stored message.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(error.response.status);
+            } else {
+                console.error("Failed to retry the stored message.", error);
+                setBrowserMessage("Failed to retry the stored message.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(500);
+            }
+        } finally {
+            setRetryingMessageId(null);
+        }
     };
 
     const copyToClipboard = async (label: string, value: string) => {
@@ -824,6 +861,16 @@ function App() {
                                                             </div>
                                                         </div>
                                                         <div className="message-browser-actions">
+                                                            {message.publishStatus === "FAILED" && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-sm btn-outline-danger"
+                                                                    onClick={() => retryFailedMessage(message)}
+                                                                    disabled={isLoadingMessages || retryingMessageId === messageKey}
+                                                                >
+                                                                    {retryingMessageId === messageKey ? "Retrying..." : "Retry Failed Message"}
+                                                                </button>
+                                                            )}
                                                             <button
                                                                 type="button"
                                                                 className="btn btn-sm btn-outline-primary"

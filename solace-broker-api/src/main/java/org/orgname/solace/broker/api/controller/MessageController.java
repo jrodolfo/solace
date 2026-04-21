@@ -16,6 +16,7 @@ import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.BadRequestException;
 import org.orgname.solace.broker.api.exception.ErrorMessage;
+import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
@@ -289,7 +290,7 @@ public class MessageController {
             throw new BadRequestException("Message is null");
         }
 
-        org.orgname.solace.broker.api.jpa.Message savedMessage = database.savePendingMessage(wrapper);
+        Message savedMessage = database.savePendingMessage(wrapper);
 
         String topicName = wrapper.getMessage().getDestination();
         String content = wrapper.getMessage().getPayload().getContent();
@@ -314,6 +315,35 @@ public class MessageController {
 
         logger.log(Level.INFO, "Accepted publish request for topic {0}", topicName);
         return ResponseEntity.status(201).body(responseMessage);
+    }
+
+    @PostMapping("/{messageId}/retry")
+    public ResponseEntity<PublishMessageResponseDTO> retryMessage(@PathVariable Long messageId) {
+        Message storedMessage = database.findMessageById(messageId);
+        if (storedMessage.getPublishStatus() != PublishStatus.FAILED) {
+            throw new BadRequestException("Only FAILED messages can be retried");
+        }
+
+        String topicName = storedMessage.getDestination();
+        String content = storedMessage.getPayload().getContent();
+        PublishMessageResponseDTO responseMessage;
+
+        database.markMessagePending(messageId);
+
+        try {
+            responseMessage = directPublisherService.sendMessage(topicName, content, Optional.empty());
+            database.markMessagePublished(messageId);
+        } catch (IllegalArgumentException e) {
+            database.markMessageFailed(messageId, e.getMessage());
+            logger.log(Level.WARNING, "Rejected retry request for stored message {0}: {1}", new Object[]{messageId, e.getMessage()});
+            throw new BadRequestException(e.getMessage(), e);
+        } catch (RuntimeException e) {
+            database.markMessageFailed(messageId, e.getMessage());
+            throw e;
+        }
+
+        logger.log(Level.INFO, "Retried stored message {0} for topic {1}", new Object[]{messageId, topicName});
+        return ResponseEntity.ok(responseMessage);
     }
 
     private static ParameterDTO getParameterDTO(MessageWrapperDTO wrapper) {

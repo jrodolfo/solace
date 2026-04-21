@@ -17,6 +17,10 @@ public interface MessageRepository extends JpaRepository<Message, Long>, JpaSpec
     int markPublished(@Param("messageId") Long messageId, @Param("publishStatus") PublishStatus publishStatus, @Param("publishedAt") LocalDateTime publishedAt);
 
     @Modifying
+    @Query("update Message m set m.publishStatus = :publishStatus, m.failureReason = null, m.publishedAt = null where m.id = :messageId")
+    int markPending(@Param("messageId") Long messageId, @Param("publishStatus") PublishStatus publishStatus);
+
+    @Modifying
     @Query("update Message m set m.publishStatus = :publishStatus, m.failureReason = :failureReason, m.publishedAt = null where m.id = :messageId")
     int markFailed(@Param("messageId") Long messageId, @Param("publishStatus") PublishStatus publishStatus, @Param("failureReason") String failureReason);
 }

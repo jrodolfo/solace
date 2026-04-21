@@ -9,6 +9,10 @@ public interface Database {
 
     Message savePendingMessage(MessageWrapperDTO wrapper);
 
+    Message findMessageById(Long messageId);
+
+    Message markMessagePending(Long messageId);
+
     Message markMessagePublished(Long messageId);
 
     Message markMessageFailed(Long messageId, String failureReason);

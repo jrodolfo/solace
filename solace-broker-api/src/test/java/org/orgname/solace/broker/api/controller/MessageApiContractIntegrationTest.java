@@ -116,6 +116,31 @@ class MessageApiContractIntegrationTest {
         org.junit.jupiter.api.Assertions.assertNull(storedMessage.getPublishedAt());
     }
 
+    @Test
+    void shouldRetryFailedMessageAndUpdateLifecycle() throws Exception {
+        MessageWrapperDTO wrapper = validWrapper();
+        doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
+                .doReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"))
+                .when(directPublisherService)
+                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any(Optional.class));
+
+        mockMvc.perform(post("/api/v1/messages/message")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrapper)))
+                .andExpect(status().isBadGateway());
+
+        org.orgname.solace.broker.api.jpa.Message failedMessage = messageRepository.findAll().getFirst();
+        mockMvc.perform(post("/api/v1/messages/{messageId}/retry", failedMessage.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
+
+        org.orgname.solace.broker.api.jpa.Message retriedMessage = messageRepository.findById(failedMessage.getId()).orElseThrow();
+        org.junit.jupiter.api.Assertions.assertEquals(PublishStatus.PUBLISHED, retriedMessage.getPublishStatus());
+        org.junit.jupiter.api.Assertions.assertNull(retriedMessage.getFailureReason());
+        org.junit.jupiter.api.Assertions.assertNotNull(retriedMessage.getPublishedAt());
+    }
+
     private static MessageWrapperDTO validWrapper() {
         PayloadDTO payload = new PayloadDTO();
         payload.setType("binary");

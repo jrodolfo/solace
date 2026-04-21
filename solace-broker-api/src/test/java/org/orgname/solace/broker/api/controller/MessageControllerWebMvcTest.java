@@ -254,6 +254,30 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.message").value("Failed to connect to Solace broker"));
     }
 
+    @Test
+    void shouldRetryFailedMessageSuccessfully() throws Exception {
+        Message failedMessage = failedStoredMessage("002", "solace/java/direct/system-02", "DIRECT", 1);
+        when(database.findMessageById(2L)).thenReturn(failedMessage);
+        when(database.markMessagePending(2L)).thenReturn(failedMessage);
+        when(database.markMessagePublished(2L)).thenReturn(failedMessage);
+        when(directPublisherService.sendMessage(eq("solace/java/direct/system-02"), eq("01001000 01100101 01101100"), any()))
+                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-02", "01001000 01100101 01101100"));
+
+        mockMvc.perform(post("/api/v1/messages/2/retry"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-02"))
+                .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
+    }
+
+    @Test
+    void shouldRejectRetryForNonFailedMessage() throws Exception {
+        when(database.findMessageById(1L)).thenReturn(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3));
+
+        mockMvc.perform(post("/api/v1/messages/1/retry"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Only FAILED messages can be retried"));
+    }
+
     private static MessageWrapperDTO validWrapper() {
         PayloadDTO payload = new PayloadDTO();
         payload.setType("binary");

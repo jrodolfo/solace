@@ -44,6 +44,12 @@ class DatabaseImplTest {
             savedMessageReference.setPublishedAt(invocation.getArgument(2));
             return 1;
         });
+        when(messageRepository.markPending(anyLong(), any(PublishStatus.class))).thenAnswer(invocation -> {
+            savedMessageReference.setPublishStatus(invocation.getArgument(1));
+            savedMessageReference.setFailureReason(null);
+            savedMessageReference.setPublishedAt(null);
+            return 1;
+        });
         when(messageRepository.markFailed(anyLong(), any(PublishStatus.class), anyString())).thenAnswer(invocation -> {
             savedMessageReference.setPublishStatus(invocation.getArgument(1));
             savedMessageReference.setFailureReason(invocation.getArgument(2));
@@ -92,6 +98,22 @@ class DatabaseImplTest {
         assertEquals(PublishStatus.PUBLISHED, updatedMessage.getPublishStatus());
         assertNull(updatedMessage.getFailureReason());
         assertNotNull(updatedMessage.getPublishedAt());
+    }
+
+    @Test
+    void shouldMarkMessageAsPendingForRetry() {
+        Message savedMessage = new Message();
+        savedMessage.setId(1L);
+        savedMessage.setPublishStatus(PublishStatus.FAILED);
+        savedMessage.setFailureReason("Failed to publish message to Solace broker");
+        savedMessage.setPublishedAt(LocalDateTime.now());
+        savedMessageReference = savedMessage;
+
+        Message updatedMessage = database.markMessagePending(1L);
+
+        assertEquals(PublishStatus.PENDING, updatedMessage.getPublishStatus());
+        assertNull(updatedMessage.getFailureReason());
+        assertNull(updatedMessage.getPublishedAt());
     }
 
     @Test

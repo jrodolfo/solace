@@ -251,6 +251,34 @@ class MessageControllerTest {
     }
 
     @Test
+    void shouldRetryFailedMessageSuccessfully() throws Exception {
+        Message failedMessage = storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1, "2026-04-19T10:00:00");
+        failedMessage.setPublishStatus(PublishStatus.FAILED);
+        failedMessage.setFailureReason("Failed to publish message to Solace broker");
+        failedMessage.setPublishedAt(null);
+        database.storedMessages.add(failedMessage);
+        directPublisherService.response = new PublishMessageResponseDTO("solace/java/direct/system-02", "01001000 01100101 01101100");
+
+        mockMvc.perform(post("/api/v1/messages/2/retry"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-02"))
+                .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
+
+        assertEquals(PublishStatus.PUBLISHED, failedMessage.getPublishStatus());
+        assertEquals(null, failedMessage.getFailureReason());
+        org.junit.jupiter.api.Assertions.assertNotNull(failedMessage.getPublishedAt());
+    }
+
+    @Test
+    void shouldRejectRetryForNonFailedMessage() throws Exception {
+        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, "2026-04-20T10:00:00"));
+
+        mockMvc.perform(post("/api/v1/messages/1/retry"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Only FAILED messages can be retried"));
+    }
+
+    @Test
     void shouldRejectMissingNestedMessageFields() throws Exception {
         MessageWrapperDTO wrapper = new MessageWrapperDTO();
         wrapper.setMessage(new InnerMessageDTO());
@@ -375,6 +403,20 @@ class MessageControllerTest {
             message.setPublishStatus(PublishStatus.PUBLISHED);
             message.setFailureReason(null);
             message.setPublishedAt(java.time.LocalDateTime.now());
+            return message;
+        }
+
+        @Override
+        public Message findMessageById(Long messageId) {
+            return getRequiredMessage(messageId);
+        }
+
+        @Override
+        public Message markMessagePending(Long messageId) {
+            Message message = getRequiredMessage(messageId);
+            message.setPublishStatus(PublishStatus.PENDING);
+            message.setFailureReason(null);
+            message.setPublishedAt(null);
             return message;
         }
 

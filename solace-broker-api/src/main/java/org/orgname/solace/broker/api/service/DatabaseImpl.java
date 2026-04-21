@@ -102,6 +102,18 @@ public class DatabaseImpl implements Database {
     }
 
     @Override
+    public Message findMessageById(Long messageId) {
+        return getRequiredMessage(messageId);
+    }
+
+    @Override
+    @Transactional
+    public Message markMessagePending(Long messageId) {
+        messageRepository.markPending(messageId, PublishStatus.PENDING);
+        return getRequiredMessage(messageId);
+    }
+
+    @Override
     @Transactional
     public Message markMessagePublished(Long messageId) {
         messageRepository.markPublished(messageId, PublishStatus.PUBLISHED, LocalDateTime.now());

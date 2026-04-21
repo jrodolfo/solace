@@ -651,6 +651,107 @@ describe("Stored Messages Browser", () => {
         expect(screen.getByText(/^publish status$/i, {selector: ".meta-label"})).toBeInTheDocument();
     });
 
+    test("Retries a failed stored message and refreshes the browser results", async () => {
+        mockedAxios.get
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    totalElements: 1,
+                    totalPages: 1,
+                    last: true,
+                    items: [
+                        buildStoredMessage({
+                            id: 7,
+                            publishStatus: "FAILED",
+                            failureReason: "Failed to publish message to Solace broker",
+                            publishedAt: null,
+                        }),
+                    ],
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            })
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    items: [],
+                    totalElements: 0,
+                    totalPages: 0,
+                    last: true,
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            });
+        mockedAxios.post.mockResolvedValue({
+            data: buildPublishSuccessResponse(),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        await userEvent.click(screen.getByRole("button", {name: /retry failed message/i}));
+
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledWith("http://localhost:8081/api/v1/messages/all/7/retry"));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
+        expect(await screen.findByRole("alert")).toHaveTextContent("Retried message 001 successfully.");
+    });
+
+    test("Shows a retry error when retrying a failed stored message fails", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+                items: [
+                    buildStoredMessage({
+                        id: 7,
+                        publishStatus: "FAILED",
+                        failureReason: "Failed to publish message to Solace broker",
+                        publishedAt: null,
+                    }),
+                ],
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+        mockedAxios.post.mockRejectedValue({
+            response: {
+                data: {
+                    status: 502,
+                    error: "Bad Gateway",
+                    message: "Failed to publish message to Solace broker",
+                    path: "/api/v1/messages/7/retry",
+                    validationErrors: null,
+                },
+                status: 502,
+                statusText: "Bad Gateway",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            },
+            isAxiosError: true,
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        await userEvent.click(screen.getByRole("button", {name: /retry failed message/i}));
+
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledWith("http://localhost:8081/api/v1/messages/all/7/retry"));
+        expect(await screen.findByRole("alert")).toHaveTextContent("Failed to publish message to Solace broker");
+    });
+
     test("Shows an improved empty state when no stored messages match the filters", async () => {
         mockedAxios.get.mockResolvedValue({
             data: buildMessagesPage(0, {
