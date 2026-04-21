@@ -1,345 +1,362 @@
 # Solace Broker API
 
-This repository contains a Spring Boot application that exposes RESTful APIs and integrates with OpenAPI for API documentation and testing using Swagger UI.
+`solace-broker-api` is a Spring Boot service that accepts publish requests, persists them with lifecycle state, sends them to Solace, and exposes a paginated read API for browsing stored messages.
 
-## Features
+## Stack
 
-- REST API endpoint for managing messages.
-- Integrated OpenAPI 3.1 documentation.
-- Swagger UI for testing and interacting with the API.
-- Configurable `application.yml` for flexibility in API and Swagger settings.
-- Actuator support for application monitoring.
-- All requests are persisted in a MySQL database running inside a Docker container
+- Java 21
+- Spring Boot 3.3
+- Spring Web
+- Spring Data JPA
+- SpringDoc OpenAPI / Swagger UI
+- Maven
+- MySQL for local runtime
+- H2 for tests
 
----
+## Runtime contract
 
-## Technology Stack
+- `POST /api/v1/messages/message` saves the request first as `PENDING`.
+- If publish succeeds, the stored record becomes `PUBLISHED` and `publishedAt` is set.
+- If publish fails, the stored record becomes `FAILED` and `failureReason` is set.
+- `POST /api/v1/messages/{messageId}/retry` retries only `FAILED` messages.
+- `GET /api/v1/messages/all` returns normalized DTOs, not raw JPA entities.
 
-- **Java 21**
-- **Spring Boot**
-    - Spring Web
-    - Spring Actuator
-    - Docker Compose
-- **SpringDoc OpenAPI** for API documentation and Swagger UI
-- **Maven** for dependency management
+## Publish lifecycle
 
----
+Each stored message has:
+
+- `publishStatus`: `PENDING`, `PUBLISHED`, or `FAILED`
+- `failureReason`: present when publish fails
+- `publishedAt`: present when publish succeeds
+
+This means the database represents publish attempts and their outcomes, not only successful publishes.
 
 ## Requirements
 
-- Java 21 or higher
-- Maven 3.9 or higher
-- Any IDE for development (e.g., IntelliJ IDEA)
-- A REST client (Postman, Swagger UI, JMeter, cURL, or a browser-based app)
+- Java 21+
+- Maven 3.9+
 - Docker
+- Solace broker access
 
----
+## Environment variables
 
-## Setting Up the Application Locally
+The service uses these server-side Solace settings when no per-request credentials are provided, and for retries of failed stored messages:
 
-Follow these steps to get the application up and running on your local machine:
+- `SOLACE_CLOUD_HOST`
+- `SOLACE_CLOUD_VPN`
+- `SOLACE_CLOUD_USERNAME`
+- `SOLACE_CLOUD_PASSWORD`
 
-### Prerequisites
+## Run locally
 
-1. **Install Java JDK 21**  
-   [Download JDK 21](https://www.oracle.com/java/technologies/downloads/#java21)
-
-2. **Set the JAVA_HOME System Variable**
-    - Register the `JAVA_HOME` system variable to point to the JDK installation directory.
-
-3. **Install Apache Maven 3.9.9**  
-   [Download Maven 3.9.9](https://maven.apache.org/download.cgi)
-
-4. **Set the MVN_HOME System Variable**
-    - Register the `MVN_HOME` system variable to point to the Maven installation directory.
-
-5. **Update the Path System Variable**
-    - Append the following to the `Path` system variable:
-        - `JAVA_HOME\bin`
-        - `MVN_HOME\bin`
-
-6. **Install IntelliJ IDEA Community Edition**  
-   [Download IntelliJ IDEA Community Edition](https://www.jetbrains.com/idea/)
-
-7. **Install Git Bash**  
-   [Download Git Bash](https://git-scm.com/downloads)
-
-8. **Install Docker**
-
-9. **Set Solace Environment Variables**
-    - Register the following **4 system variables**:
-        - `SOLACE_CLOUD_HOST`: The host URL of the Solace PubSub+ Broker (formatted as `host:port`)
-        - `SOLACE_CLOUD_VPN`: The Virtual Private Network (VPN) name
-        - `SOLACE_CLOUD_USERNAME`: The username for authentication
-        - `SOLACE_CLOUD_PASSWORD`: The password for authentication
-    - Ask the developer for the values of these variables
-    - Or read this document to learn how to configure the Solace Broker on the cloud and get the values of these 4 variables:
+From `solace-broker-api`:
 
 ```bash
-  ../solace/solace-broker-api/doc/how-to/01-using-solace-pubsubplus.txt
+mvn spring-boot:run
 ```
 
----
+The default port is `8081`.
 
-### Setup Instructions
+Swagger UI:
 
-1. **Clone the Repository**  
-   Run the following command to clone the repository:
+```text
+http://localhost:8081/swagger-ui/index.html
+```
 
-   ```bash
-   git clone https://github.com/jrodolfo/solace.git
-   cd solace
-   ```
-   or
-   ```bash
-   git clone https://github.ibm.com/roliveir/solace.git
-   cd solace
-   ```
+OpenAPI JSON:
 
-2. **Load the Project into IntelliJ**
-    - Open IntelliJ and load the cloned project.
+```text
+http://localhost:8081/api-docs
+```
 
-3. **Build and Run the Application**
-    - Use the Maven build tool:
-      ```bash
-      mvn clean install
-      mvn spring-boot:run
-      ```
+## Publish endpoint
 
-4. **Install Postman**  
-   [Download Postman](https://www.postman.com/downloads/)
+Base URL:
 
-5. **Load the Postman Collection**
-    - Import the Postman collection available in the repository:
-      ```
-      https://github.com/jrodolfo/solace/tree/main/solace-broker-api/doc/postman
-      or
-      https://github.ibm.com/roliveir/solace-broker-api/tree/main/doc/postman
-      ```
+```text
+http://localhost:8081/api/v1/messages
+```
 
-6. **Send a Request via Postman**
-    - Make sure the application is running before sending a request.
-    - Use the loaded Postman collection to test the API endpoints.
+### `POST /message`
 
-7. The application runs on port `8081` (default). You can change the port in `application.yml` if needed.
+Sends a message to Solace and stores the publish attempt.
 
----
+Sample request with explicit connection parameters:
 
-By following these steps, you'll have the application running and ready to consume API requests locally.
-
----
-
-## API Endpoints
-
-### Base URL
-
-[http://localhost:8081/api/v1/messages/](localhost:8081/api/v1/messages/)
-
-### Message Endpoint
-
-- **POST /message**  
-  Sends a message using `application/json`, `application/xml`, or `application/x-www-form-urlencoded`.
-
-  #### Sample Request (JSON):
-
-  - Message with parameters:
-    ```json
-      {
-          "userName": "solace-cloud-client",
-          "password": "super-difficult",
-          "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
-          "vpnName": "my-solace-broker-on-aws",
-          "message": {
-              "innerMessageId": "001",
-              "destination": "solace/java/direct/system-01",
-              "deliveryMode": "PERSISTENT",
-              "priority": 3,
-              "properties": {
-                "property01": "value01",
-                "property02": "value02"
-              },
-              "payload": {
-                "type": "binary",
-                "content": "01001000 01100101 01101100 01101100"
-              }
-          }
-      }
-    ```
-    
-    Message without parameters:
-    ```json
-      {
-          "message": {
-              "innerMessageId": "001",
-              "destination": "solace/java/direct/system-01",
-              "deliveryMode": "PERSISTENT",
-              "priority": 3,
-              "properties": {
-                "property01": "value01",
-                "property02": "value02"
-              },
-              "payload": {
-                "type": "binary",
-                "content": "01001000 01100101 01101100 01101100"
-              }
-          }
-      }
-    ```
-
-    #### Samples Response:
-  
-- Sample 1)
-
-  ```json
-  {
+```json
+{
+  "userName": "solace-cloud-client",
+  "password": "super-difficult",
+  "host": "wss://example.messaging.solace.cloud:443",
+  "vpnName": "my-solace-broker-on-aws",
+  "message": {
+    "innerMessageId": "001",
     "destination": "solace/java/direct/system-01",
-    "content": "01001000 01100101 01101100 01101100"
+    "deliveryMode": "PERSISTENT",
+    "priority": 3,
+    "properties": {
+      "property01": "value01",
+      "property02": "value02"
+    },
+    "payload": {
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+    }
   }
-  ```
-
-- Sample 2)
-
-  ```
-  com.solacesystems.jcsmp.InvalidPropertiesException: All hosts in the host list: 'wss://mr-connection-blahblahblah.messaging.solace.cloud:443' are not resolvable
-  ```
-
----
-
-## OpenAPI and Swagger UI
-
-To view the API documentation and interact with the endpointSs:
-
-1. Start the application.
-2. Open Swagger UI in your browser using the URL:
-   ```
-   http://localhost:8081/swagger-ui/index.html
-   ```
-
-### API Documentation (JSON)
-
-To view the raw OpenAPI spec, visit the `/api-docs` endpoint:
-    ```
-    http://localhost:8081/api-docs
-    ```
-
----
-
-## Configuration Details
-
-The application uses `application.yml` for configuration. Some key configurations include:
-
-### Server Settings
-```yaml
-server:
-  port: 8081
+}
 ```
 
-### Swagger Configuration
-```yaml
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    display-request-duration: true
-    operations-sorter: method
+Sample request using server-side Solace environment variables:
+
+```json
+{
+  "message": {
+    "innerMessageId": "001",
+    "destination": "solace/java/direct/system-01",
+    "deliveryMode": "PERSISTENT",
+    "priority": 3,
+    "properties": {
+      "property01": "value01"
+    },
+    "payload": {
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+    }
+  }
+}
 ```
 
-### Actuator Configuration
-```yaml
-management:
-  endpoints:
-    web:
-      base-path: /rest/actuator
-      exposure:
-        include: '*'
+Successful response, `201 Created`:
+
+```json
+{
+  "destination": "solace/java/direct/system-01",
+  "content": "01001000 01100101 01101100 01101100"
+}
 ```
 
----
+Validation failure, `400 Bad Request`:
 
-## Logging
-
-To enable debugging:
-1. Update `application.yml`:
-   ```yaml
-   logging:
-     level:
-       org.springframework: DEBUG
-       org.springdoc: DEBUG
-   ```
-2. Restart the server.
-
-Logs will be available in the console.
-
----
-
-## Development and Testing
-
-### Prerequisites
-Make sure Java 21 and Maven are installed. Verify by running:
-
-```bash
-java -version
-mvn -version
+```json
+{
+  "timestamp": "2026-04-20T19:55:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Request validation failed",
+  "path": "/api/v1/messages/message",
+  "validationErrors": {
+    "message.innerMessageId": "message.innerMessageId is required",
+    "message.payload": "message.payload is required"
+  }
+}
 ```
 
-### Running Unit Tests
-To execute tests, run:
+Publisher input rejection, `400 Bad Request`:
+
+```json
+{
+  "timestamp": "2026-04-20T19:55:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Topic name cannot be empty",
+  "path": "/api/v1/messages/message",
+  "validationErrors": null
+}
+```
+
+Missing server configuration, `500 Internal Server Error`:
+
+```json
+{
+  "timestamp": "2026-04-20T19:55:00Z",
+  "status": 500,
+  "error": "Internal Server Error",
+  "message": "System environment variables SOLACE_CLOUD_HOST, SOLACE_CLOUD_VPN, SOLACE_CLOUD_USERNAME, SOLACE_CLOUD_PASSWORD are not set.",
+  "path": "/api/v1/messages/message",
+  "validationErrors": null
+}
+```
+
+Connection failure, `503 Service Unavailable`:
+
+```json
+{
+  "timestamp": "2026-04-20T19:55:00Z",
+  "status": 503,
+  "error": "Service Unavailable",
+  "message": "Failed to connect to Solace broker",
+  "path": "/api/v1/messages/message",
+  "validationErrors": null
+}
+```
+
+Downstream publish failure, `502 Bad Gateway`:
+
+```json
+{
+  "timestamp": "2026-04-20T19:55:00Z",
+  "status": 502,
+  "error": "Bad Gateway",
+  "message": "Failed to publish message to Solace broker",
+  "path": "/api/v1/messages/message",
+  "validationErrors": null
+}
+```
+
+## Retry endpoint
+
+### `POST /{messageId}/retry`
+
+Retries a stored message only when its current `publishStatus` is `FAILED`.
+
+Contract:
+
+- loads the stored message by id
+- rejects retry unless the message is `FAILED`
+- sets the record to `PENDING`
+- republishes using the server-side Solace configuration
+- updates the same record to `PUBLISHED` or back to `FAILED`
+
+Successful response, `200 OK`:
+
+```json
+{
+  "destination": "solace/java/direct/system-02",
+  "content": "01001000 01100101 01101100"
+}
+```
+
+Rejected retry, `400 Bad Request`:
+
+```json
+{
+  "timestamp": "2026-04-20T19:55:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Only FAILED messages can be retried",
+  "path": "/api/v1/messages/2/retry",
+  "validationErrors": null
+}
+```
+
+## Read endpoint
+
+### `GET /all`
+
+Returns normalized stored-message DTOs with paging metadata.
+
+Supported query parameters:
+
+- `page`: zero-based page index, default `0`
+- `size`: page size, default `20`, max `100`
+- `destination`: case-insensitive contains filter
+- `deliveryMode`: case-insensitive contains filter
+- `innerMessageId`: case-insensitive contains filter
+- `publishStatus`: exact filter, one of `PENDING`, `PUBLISHED`, `FAILED`
+- `createdAtFrom`: ISO-8601 local date-time lower bound
+- `createdAtTo`: ISO-8601 local date-time upper bound
+- `publishedAtFrom`: ISO-8601 local date-time lower bound
+- `publishedAtTo`: ISO-8601 local date-time upper bound
+- `sortBy`: `createdAt`, `priority`, `destination`, or `innerMessageId`
+- `sortDirection`: `asc` or `desc`
+
+Example:
+
+```text
+GET /api/v1/messages/all?page=0&size=20&publishStatus=FAILED&createdAtFrom=2026-04-21T00:00:00&createdAtTo=2026-04-21T23:59:59&sortBy=createdAt&sortDirection=desc
+```
+
+Representative response:
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "innerMessageId": "001",
+      "destination": "solace/java/direct/system-01",
+      "deliveryMode": "PERSISTENT",
+      "priority": 3,
+      "publishStatus": "PUBLISHED",
+      "failureReason": null,
+      "publishedAt": "2026-04-20T19:55:10",
+      "properties": {
+        "property01": "value01"
+      },
+      "payload": {
+        "type": "binary",
+        "content": "01001000 01100101 01101100",
+        "createdAt": null,
+        "updatedAt": null
+      },
+      "createdAt": "2026-04-20T19:55:00",
+      "updatedAt": "2026-04-20T19:55:10"
+    },
+    {
+      "id": 2,
+      "innerMessageId": "002",
+      "destination": "solace/java/direct/system-02",
+      "deliveryMode": "DIRECT",
+      "priority": 1,
+      "publishStatus": "FAILED",
+      "failureReason": "Failed to publish message to Solace broker",
+      "publishedAt": null,
+      "properties": {},
+      "payload": {
+        "type": "binary",
+        "content": "01010111 01101111 01110010 01101100 01100100",
+        "createdAt": null,
+        "updatedAt": null
+      },
+      "createdAt": "2026-04-20T20:00:00",
+      "updatedAt": "2026-04-20T20:00:01"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 2,
+  "totalPages": 1,
+  "first": true,
+  "last": true
+}
+```
+
+Invalid date filter, `400 Bad Request`:
+
+```json
+{
+  "timestamp": "2026-04-20T19:55:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "createdAtFrom must be a valid ISO-8601 date-time",
+  "path": "/api/v1/messages/all",
+  "validationErrors": null
+}
+```
+
+Invalid publish status, `400 Bad Request`:
+
+```json
+{
+  "timestamp": "2026-04-20T19:55:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "publishStatus must be one of PENDING, PUBLISHED, FAILED",
+  "path": "/api/v1/messages/all",
+  "validationErrors": null
+}
+```
+
+## Development
+
+Run tests:
 
 ```bash
 mvn test
 ```
 
-### Running Smoke Tests
-To execute smoke tests, run the Postman collection available at the doc folder of this repository:
+## Notes
 
-```bash
-  ../solace-broker-api/doc/postman/solace-publisher-emulator.postman_collection.json
-```
-
-### Running Stress Tests
-To execute smoke tests, run the JMeter script available at the doc folder of this repository:
-
-```bash
-  ../solace-broker-api/doc/jmeter/solace-publisher-emulator.jmx
-```
----
-
-## Troubleshooting
-
-### Swagger UI Shows "No operations defined in spec!"
-- Ensure the controller uses correct annotations (`@RestController`, `@RequestMapping`).
-- Verify the `paths-to-match` in `application.yml` matches your API paths.
-- Check for logs with:
-  ```yaml
-  logging:
-    level:
-      org.springdoc: DEBUG
-  ```
-
-### API Not Detected in Swagger
-- Ensure all dependencies for `springdoc-openapi` are correctly configured.
-- Add OpenAPI annotations (`@Operation`, `@Tag`) for specific endpoints.
-
----
-
-## Future Improvements
-
-- Add more REST endpoints for additional use cases.
-- Enhance payload validations using `@Valid` and DTOs.
-- Add database integration for persistent storage.
-- Implement security using Spring Security and OAuth2.
-
----
-
-## Contact
-
-For issues or inquiries, feel free to contact the maintainer:
-
-- **Name:** Rod Oliveira
-- **Role:** Software Developer
-- **Emails:** jrodolfo@gmail.com & roliveir@ca.ibm.com 
-- **GitHub links:** https://github.com/jrodolfo & https://github.ibm.com/roliveir
-- **LinkedIn:** https://www.linkedin.com/in/rodoliveira
-- **Webpage:** https://jrodolfo.net
-
----
+- Stored connection parameters are not persisted with the message.
+- Retry uses server-side Solace configuration, not the original request credentials.
+- The read API returns normalized DTOs, including `properties` as a plain object map.
