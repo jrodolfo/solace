@@ -1,224 +1,97 @@
-# Solace Projects Overview
+# Solace Workspace
 
-Welcome to the Solace Suite! This repository provides everything you need to start working with the **Solace Broker API** and the accompanying **UI application**. Follow this guide to get started, test the API, and dive into the features. This suite was created in 2025.
+This repository contains a small Solace-focused workspace with three active modules:
 
-![Screenshot or Description](doc/solace.png)
+- [solace-broker-api](/Users/jrodolfo/workspace/solace/solace/solace-broker-api/README.md:1): Spring Boot backend for publishing and storing messages
+- [solace-publisher-ui](/Users/jrodolfo/workspace/solace/solace/solace-publisher-ui/README.md:1): React UI for publishing and browsing stored messages
+- [solace-subscriber](/Users/jrodolfo/workspace/solace/solace/solace-subscriber/README.md:1): Java command-line subscriber for direct topic traffic
 
----
+## Shared Solace Contract
 
-## Project Structure
+The backend and subscriber both use the same environment-variable names for broker connectivity:
 
-### 1. **Publisher Emulator (FrontEnd App)**
-The React-based application that provides a user-friendly interface for interacting with the broker and sending messages.
+- `SOLACE_CLOUD_HOST`
+- `SOLACE_CLOUD_VPN`
+- `SOLACE_CLOUD_USERNAME`
+- `SOLACE_CLOUD_PASSWORD`
 
-**Path:** `solace/solace-publisher-ui`
+The UI does not read those variables directly. It talks to `solace-broker-api`, which uses them on the server side.
 
-### 2. **Publisher Emulator (Postman)**
-A Postman Collection to send messages to the Solace Broker API.
-
-**Path:** `solace/solace-broker-api/doc/postman/solace-producer-emulator.postman_collection.json`
-
-### 3. **Publisher Emulator (JMeter)**
-A JMeter script to send messages to the Solace Broker API.
-
-**Path:** `solace/solace-broker-api/doc/jmeter/solace-producer-emulator.jmx`
-
-### 4. **Solace Broker API**
-The backend service that powers message exchanges. All integrations and API tests are managed here.
-
-**Path:** `solace/solace-broker-api`
-
-### 5. **Broker on Solace Cloud & AWS**
-Follow the instructions on the how-to folder to create a Solace Broker on the cloud.
-
-**Path:** `solace/solace-broker-api/how-to/01-using-solace-pubsubplus.txt`
-
-### 6. **Subscriber Emulator (Java App)**
-Use this app to receive the messages created by the publisher emulators.
-
-**Path:** `solace/solace-subscriber`
-
-
----
-
-## Running the UI Application
-
-The **Solace Publisher UI** uses the following technologies:
+Sample destinations across the workspace use values like:
 
 ```text
-React.........18.3.1
-React DOM.....18.3.1
-TypeScript....5.7.3
-Node..........23.6.0
-NPM...........11.0.0
-Axios.........1.7.9
-Bootstrap.....5.3.3
+solace/java/direct/system-01
 ```
 
-### Steps to Run the UI Application:
+The subscriber listens to the broader direct topic pattern:
 
-1. Open your terminal of choice.
-2. Navigate to the project directory:
-   ```bash
-   cd solace/solace-publisher-ui
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-5. Open your browser and go to:  
-   **[http://localhost:5173/](http://localhost:5173/)**
-
----
-
-## Prerequisites
-
-Before running the UI, **make sure the following are ready:**
-
-1. The Solace Broker API is up and running.
-2. You have the **four Solace Cloud credentials**:
-   - `SOLACE_CLOUD_USERNAME`
-   - `SOLACE_CLOUD_PASSWORD`
-   - `SOLACE_CLOUD_HOST`
-   - `SOLACE_CLOUD_VPN`
-
-   Learn how to get these credentials here:  
-   `solace/solace-broker-api/doc/how-to/01-using-solace-pubsubplus.txt`
-
----
-
-## Testing the Solace Broker API
-
-You can test the **Solace Broker API** in three different ways:
-
-### 1. **Using JMeter**
-- Import the JMeter script from:  
-  `../solace-broker-api/doc/jmeter`
-
-### 2. **Using Postman**
-- Import the Postman collection from:  
-  `../solace/solace-broker-api/doc/postman`
-
-### 3. **Using the UI Application**
-- Follow the steps described above to run the UI:  
-  `../solace/solace-publisher-ui`
-
----
-
-## Sending a Test Message
-
-Here is an example of a message format with parameters that you can use to test the application using Postman:
-
-```json
-{
-  "userName": "solace-cloud-client",
-  "password": "super-difficult",
-  "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
-  "vpnName": "my-solace-broker-on-aws",
-  "topicName": "solace/java/direct/system-01",
-  "message": {
-    "innerMessageId": "001",
-    "destination": "solace/java/direct/system-01",
-    "deliveryMode": "PERSISTENT",
-    "priority": 3,
-    "properties": {
-      "property01": "value01",
-      "property02": "value02"
-    },
-    "payload": {
-      "type": "binary",
-      "content": "01001000 01100101 01101100 01101100"
-    }
-  }
-}
+```text
+solace/java/direct/system-0*
 ```
 
-And here is an example of a message format without parameters that you can use to test the application using Postman:
+## Recommended Local Workflow
 
-```json
-{
-  "message": {
-    "innerMessageId": "001",
-    "destination": "solace/java/direct/system-01",
-    "deliveryMode": "PERSISTENT",
-    "priority": 3,
-    "properties": {
-      "property01": "value01",
-      "property02": "value02"
-    },
-    "payload": {
-      "type": "binary",
-      "content": "01001000 01100101 01101100 01101100"
-    }
-  }
-}
+### 1. Start the backend
+
+From `solace-broker-api`:
+
+```bash
+mvn spring-boot:run
 ```
 
-Use this format inside the field for the message in Solace Publisher UI:
-```json
-{
-    "innerMessageId": "001",
-    "destination": "solace/java/direct/system-01",
-    "deliveryMode": "PERSISTENT",
-    "priority": 3,
-    "properties": {
-      "property01": "value01",
-      "property02": "value02"
-    },
-    "payload": {
-      "type": "binary",
-      "content": "01001000 01100101 01101100 01101100"
-    }
-}
+The backend runs on `http://localhost:8081` by default.
+
+### 2. Start the UI
+
+From `solace-publisher-ui`:
+
+```bash
+npm install
+npm run dev
 ```
 
+Open `http://localhost:5173`.
 
-### Testing Topic:
-Use the following topic for your tests:  
-`solace/java/direct/system-01`
+### 3. Start the subscriber
 
----
+From `solace-subscriber`:
 
-## Additional Resources
+```bash
+mvn package
+java -jar target/solace-subscriber-1.0-SNAPSHOT.jar
+```
 
-- **How to Use Solace PubSub+**  
-  Documentation is available at:  
-  `solace/solace-broker-api/doc/how-to/01-using-solace-pubsubplus.txt`
+## Module Summary
 
-- For more details about the UI or API, check their respective **README.md** files.
+### `solace-broker-api`
 
----
+- typed API validation and error responses
+- paginated, filterable, sortable stored-message reads
+- documented OpenAPI responses and examples
+- no longer persists request connection credentials
 
-## Testing the Solace Broker API
+### `solace-publisher-ui`
 
-You can test the **Solace Broker API** in 3 ways:
+- typed publish form instead of a raw JSON textarea
+- optional property editing
+- paginated stored-message browser
+- detail expansion, friendly timestamps, refresh/reset, and copy actions
 
-1. **Using JMeter**  
-   Import the script from the following path:  
-   `../solace-broker-api/doc/jmeter`
+### `solace-subscriber`
 
-2. **Using Postman**  
-   Import the collection from the following path:  
-   `../solace/solace-broker-api/doc/postman`
+- instance-based connection-property access
+- typed configuration failure on missing environment variables
+- clearer lifecycle methods and standardized logging
+- unit tests for config and message-state behavior
 
-3. **Using the UI Application**  
-   Follow the steps described in this **README.md** file to run the application:  
-   `../solace/solace-publisher-ui/README.md`
+## Verification Commands
 
-Enjoy exploring the Solace Platform! 🚀
+- Backend: `cd solace-broker-api && mvn test`
+- UI: `cd solace-publisher-ui && npm test -- --run`
+- Subscriber: `cd solace-subscriber && mvn test`
 
-## Contact
+## Notes
 
-- Software Developer: Rod Oliveira
-- GitHub: https://github.com/jrodolfo
-- Webpage: https://jrodolfo.net
-
-## License
-
-- MIT License
-- Copyright (c) 2026 Rod Oliveira
-- See [LICENSE](./LICENSE)
+- Broker setup/how-to material lives under `solace-broker-api/doc/how-to/`.
+- Postman, curl, JMeter, and sample-message artifacts still live under `solace-broker-api/doc/`.
+- If you want details for one module, use that module’s README rather than relying on this root summary.
