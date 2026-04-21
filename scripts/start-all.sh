@@ -3,9 +3,16 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/common.sh"
+
 PIDS=()
 PROCESS_NAMES=()
 SHUTTING_DOWN=0
+
+require_env_var SOLACE_CLOUD_HOST
+require_env_var SOLACE_CLOUD_VPN
+require_env_var SOLACE_CLOUD_USERNAME
+require_env_var SOLACE_CLOUD_PASSWORD
 
 start_process() {
   local name="$1"

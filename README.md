@@ -62,7 +62,7 @@ Notes:
 
 - `start-broker-api.sh` and `start-subscriber.sh` require the shared Solace env vars.
 - `start-publisher-ui.sh` expects `solace-publisher-ui/node_modules` to already exist. If not, run `cd solace-publisher-ui && npm install` once first.
-- `start-all.sh` runs all three modules together in the current terminal, stops them on `ctrl-c`, and shuts the others down if any one module exits.
+- `start-all.sh` validates the shared Solace env vars before starting any child processes, runs all three modules together in the current terminal, stops them on `ctrl-c`, and shuts the others down if any one module exits.
 
 ### 1. Start the backend
 
