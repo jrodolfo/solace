@@ -6,6 +6,11 @@ import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
 import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
 
+type MessagePropertyFormRow = {
+    key: string;
+    value: string;
+};
+
 function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
 
@@ -20,10 +25,33 @@ function App() {
     const [priority, setPriority] = useState("0");
     const [payloadType, setPayloadType] = useState("");
     const [payloadContent, setPayloadContent] = useState("");
+    const [properties, setProperties] = useState<MessagePropertyFormRow[]>([{key: "", value: ""}]);
     const [response, setResponse] = useState<AxiosResponse<SolaceBrokerAPIResponse | SolaceBrokerAPIError> | null>(null);
     const [showResponse, setShowResponse] = useState(false);
     const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
     const [submissionVariant, setSubmissionVariant] = useState<"success" | "danger" | null>(null);
+
+    const updateProperty = (index: number, field: keyof MessagePropertyFormRow, value: string) => {
+        setProperties((currentProperties) =>
+            currentProperties.map((property, propertyIndex) =>
+                propertyIndex === index ? {...property, [field]: value} : property
+            )
+        );
+    };
+
+    const addPropertyRow = () => {
+        setProperties((currentProperties) => [...currentProperties, {key: "", value: ""}]);
+    };
+
+    const removePropertyRow = (index: number) => {
+        setProperties((currentProperties) => {
+            if (currentProperties.length === 1) {
+                return [{key: "", value: ""}];
+            }
+
+            return currentProperties.filter((_, propertyIndex) => propertyIndex !== index);
+        });
+    };
 
     // Submit handler
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -33,6 +61,12 @@ function App() {
         setSubmissionVariant(null);
 
         const parsedPriority = Number(priority);
+        const trimmedProperties = properties
+            .map((property) => ({
+                key: property.key.trim(),
+                value: property.value.trim()
+            }))
+            .filter((property) => property.key.length > 0 || property.value.length > 0);
         const messagePayload = {
             innerMessageId,
             destination,
@@ -41,7 +75,8 @@ function App() {
             payload: {
                 type: payloadType,
                 content: payloadContent
-            }
+            },
+            ...(trimmedProperties.length > 0 ? {properties: trimmedProperties} : {})
         };
 
         const validationErrors = validateMessagePayload(messagePayload);
@@ -285,6 +320,56 @@ function App() {
                     ></textarea>
                 </div>
 
+                <div className="col-lg-12">
+                    <label className="form-label">Message Properties</label>
+                    {properties.map((property, index) => (
+                        <div className="row g-2 align-items-end mt-1 mb-3" key={`property-row-${index}`}>
+                            <div className="col-md-5">
+                                <label htmlFor={`propertyKey-${index}`} className="form-label">
+                                    Property Key {index + 1}
+                                </label>
+                                <input
+                                    id={`propertyKey-${index}`}
+                                    type="text"
+                                    className="form-control"
+                                    value={property.key}
+                                    onChange={(e) => updateProperty(index, "key", e.target.value)}
+                                    placeholder="Enter property key"
+                                />
+                            </div>
+                            <div className="col-md-5">
+                                <label htmlFor={`propertyValue-${index}`} className="form-label">
+                                    Property Value {index + 1}
+                                </label>
+                                <input
+                                    id={`propertyValue-${index}`}
+                                    type="text"
+                                    className="form-control"
+                                    value={property.value}
+                                    onChange={(e) => updateProperty(index, "value", e.target.value)}
+                                    placeholder="Enter property value"
+                                />
+                            </div>
+                            <div className="col-md-2">
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary w-100"
+                                    onClick={() => removePropertyRow(index)}
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                    <button
+                        type="button"
+                        className="btn btn-outline-primary mb-4"
+                        onClick={addPropertyRow}
+                    >
+                        Add Property
+                    </button>
+                </div>
+
                 {/* Submit Button */}
                 <div className="text-center">
                     <button type="submit" className="btn btn-primary">
@@ -347,6 +432,32 @@ function validateMessagePayload(payload: unknown): MessagePayloadValidationError
     }
     if (!hasNonBlankString(payload.payload.content)) {
         validationErrors["message.payload.content"] = "payload.content is required";
+    }
+
+    if (payload.properties !== undefined) {
+        if (!Array.isArray(payload.properties)) {
+            validationErrors["message.properties"] = "message.properties must be an array";
+            return validationErrors;
+        }
+
+        payload.properties.forEach((property, index) => {
+            if (!isRecord(property)) {
+                validationErrors[`message.properties[${index}]`] = `message.properties[${index}] must be an object`;
+                return;
+            }
+
+            const hasKey = hasNonBlankString(property.key);
+            const hasValue = hasNonBlankString(property.value);
+
+            if (hasKey !== hasValue) {
+                if (!hasKey) {
+                    validationErrors[`message.properties[${index}].key`] = `message.properties[${index}].key is required`;
+                }
+                if (!hasValue) {
+                    validationErrors[`message.properties[${index}].value`] = `message.properties[${index}].value is required`;
+                }
+            }
+        });
     }
 
     return validationErrors;

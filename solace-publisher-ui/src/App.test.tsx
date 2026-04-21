@@ -12,10 +12,10 @@ test('it shows 5 inputs and 1 button', () => {
     render(<App/>);
     const textboxes = screen.getAllByRole('textbox');
     const spinbutton = screen.getByRole('spinbutton');
-    const button = screen.getByRole('button');
-    expect(textboxes).toHaveLength(8);
+    const buttons = screen.getAllByRole('button');
+    expect(textboxes).toHaveLength(10);
     expect(spinbutton).toBeInTheDocument();
-    expect(button).toBeInTheDocument();
+    expect(buttons).toHaveLength(3);
 });
 
 // Mock Axios
@@ -95,6 +95,59 @@ describe("Form Submission Tests", () => {
         expect(screen.getByText(/"content": "01001000 01100101 01101100"/i)).toBeInTheDocument();
     });
 
+    test("Submits form with message properties", async () => {
+        mockedAxios.post.mockResolvedValue({
+            data: {
+                destination: "solace/java/direct/system-01",
+                content: "01001000 01100101 01101100",
+            },
+            status: 201,
+            statusText: "Created",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await fillRequiredFormFields();
+        await userEvent.type(screen.getByLabelText(/Property Key 1/i), "region");
+        await userEvent.type(screen.getByLabelText(/Property Value 1/i), "ca-east");
+        await userEvent.click(screen.getByRole("button", {name: /add property/i}));
+        await userEvent.type(screen.getByLabelText(/Property Key 2/i), "source");
+        await userEvent.type(screen.getByLabelText(/Property Value 2/i), "publisher-ui");
+
+        await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
+
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(1));
+
+        expect(mockedAxios.post).toHaveBeenCalledWith(
+            "http://localhost:8081/api/v1/messages/message",
+            {
+                userName: "testUser",
+                password: "testPass",
+                host: "localhost",
+                vpnName: "testVPN",
+                message: {
+                    innerMessageId: "001",
+                    destination: "solace/java/direct/system-01",
+                    deliveryMode: "PERSISTENT",
+                    priority: 3,
+                    payload: {
+                        type: "binary",
+                        content: "01001000 01100101 01101100",
+                    },
+                    properties: [
+                        {key: "region", value: "ca-east"},
+                        {key: "source", value: "publisher-ui"},
+                    ],
+                },
+            },
+            {
+                headers: {"Content-Type": "application/json"},
+            }
+        );
+    });
+
     test("Handles typed validation failure returned by the backend", async () => {
         mockedAxios.post.mockRejectedValue({
             response: {
@@ -149,6 +202,20 @@ describe("Form Submission Tests", () => {
         expect(screen.getByText(/message\.innermessageid is required/i)).toBeInTheDocument();
         expect(screen.getByText(/message\.deliverymode is required/i)).toBeInTheDocument();
         expect(screen.getByText(/payload\.type is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
+    });
+
+    test("Handles incomplete message property rows before calling the api", async () => {
+        render(<App/>);
+
+        await fillRequiredFormFields();
+        await userEvent.type(screen.getByLabelText(/Property Key 1/i), "region");
+
+        await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
+
+        expect(mockedAxios.post).not.toHaveBeenCalled();
+        expect(await screen.findByRole("alert")).toHaveTextContent("Request validation failed");
+        expect(screen.getByText(/message\.properties\[0\]\.value is required/i)).toBeInTheDocument();
         expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
     });
 });
