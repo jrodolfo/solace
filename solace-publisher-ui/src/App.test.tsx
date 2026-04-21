@@ -82,6 +82,7 @@ function buildStoredMessage(overrides?: Partial<StoredMessage>): StoredMessage {
         deliveryMode: "PERSISTENT",
         priority: 3,
         publishStatus: "PUBLISHED",
+        stalePending: false,
         failureReason: null,
         publishedAt: "2026-04-21T08:00:00Z",
         retrySupported: true,
@@ -697,6 +698,37 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /show details/i}));
         expect(screen.getByText(/Retries are supported only for messages published with server-side broker configuration\./i)).toBeInTheDocument();
+    });
+
+    test("Highlights stale pending messages in the browser", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+                items: [
+                    buildStoredMessage({
+                        publishStatus: "PENDING",
+                        stalePending: true,
+                        publishedAt: null,
+                        createdAt: "2026-04-21T07:30:00Z",
+                    }),
+                ],
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+        expect(screen.getByText(/stale pending/i)).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole("button", {name: /show details/i}));
+        expect(screen.getByText("This pending message is older than the stale threshold and may need review.")).toBeInTheDocument();
     });
 
     test("Retries a failed stored message and refreshes the browser results", async () => {

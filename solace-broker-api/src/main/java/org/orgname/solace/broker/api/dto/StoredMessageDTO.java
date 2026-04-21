@@ -4,6 +4,7 @@ import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,12 +12,15 @@ import java.util.Map;
 
 public class StoredMessageDTO {
 
+    private static final Duration STALE_PENDING_THRESHOLD = Duration.ofMinutes(5);
+
     private final Long id;
     private final String innerMessageId;
     private final String destination;
     private final String deliveryMode;
     private final Integer priority;
     private final PublishStatus publishStatus;
+    private final boolean stalePending;
     private final String failureReason;
     private final LocalDateTime publishedAt;
     private final boolean retrySupported;
@@ -33,6 +37,7 @@ public class StoredMessageDTO {
         this.deliveryMode = message.getDeliveryMode();
         this.priority = message.getPriority();
         this.publishStatus = message.getPublishStatus();
+        this.stalePending = isStalePending(message);
         this.failureReason = message.getFailureReason();
         this.publishedAt = message.getPublishedAt();
         this.retrySupported = message.isRetrySupported();
@@ -79,6 +84,10 @@ public class StoredMessageDTO {
         return publishStatus;
     }
 
+    public boolean isStalePending() {
+        return stalePending;
+    }
+
     public String getFailureReason() {
         return failureReason;
     }
@@ -109,5 +118,13 @@ public class StoredMessageDTO {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    private static boolean isStalePending(Message message) {
+        if (message.getPublishStatus() != PublishStatus.PENDING || message.getCreatedAt() == null) {
+            return false;
+        }
+
+        return message.getCreatedAt().isBefore(LocalDateTime.now().minus(STALE_PENDING_THRESHOLD));
     }
 }

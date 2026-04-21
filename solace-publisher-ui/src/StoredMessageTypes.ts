@@ -12,6 +12,7 @@ export interface StoredMessage {
     deliveryMode: string;
     priority: number;
     publishStatus: "PENDING" | "PUBLISHED" | "FAILED";
+    stalePending: boolean;
     failureReason?: string | null;
     publishedAt?: string | null;
     retrySupported: boolean;

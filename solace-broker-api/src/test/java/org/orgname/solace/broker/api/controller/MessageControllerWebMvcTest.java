@@ -71,10 +71,22 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.items[0].deliveryMode").value("PERSISTENT"))
                 .andExpect(jsonPath("$.items[0].priority").value(3))
                 .andExpect(jsonPath("$.items[0].publishStatus").value("PUBLISHED"))
+                .andExpect(jsonPath("$.items[0].stalePending").value(false))
                 .andExpect(jsonPath("$.items[0].retrySupported").value(true))
                 .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
                 .andExpect(jsonPath("$.items[0].payload.content").value("01001000 01100101 01101100"))
                 .andExpect(jsonPath("$.items[0].properties.property01").value("value01"));
+    }
+
+    @Test
+    void shouldExposeStalePendingMessagesInReadResponse() throws Exception {
+        when(database.getAllMessages(0, 20, null, null, null, PublishStatus.PENDING, null, null, null, null, "createdAt", "desc"))
+                .thenReturn(messagePageResponse(List.of(stalePendingStoredMessage("003", "solace/java/direct/system-03", "DIRECT", 2)), 0, 20, 1));
+
+        mockMvc.perform(get("/api/v1/messages/all?publishStatus=PENDING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].publishStatus").value("PENDING"))
+                .andExpect(jsonPath("$.items[0].stalePending").value(true));
     }
 
     @Test
@@ -393,6 +405,17 @@ class MessageControllerWebMvcTest {
         message.setPublishStatus(PublishStatus.FAILED);
         message.setFailureReason("Failed to publish message to Solace broker");
         message.setPublishedAt(null);
+        return message;
+    }
+
+    private static Message stalePendingStoredMessage(String innerMessageId, String destination, String deliveryMode, int priority) {
+        Message message = storedMessage(innerMessageId, destination, deliveryMode, priority);
+        LocalDateTime staleCreatedAt = LocalDateTime.now().minusMinutes(10);
+        message.setPublishStatus(PublishStatus.PENDING);
+        message.setFailureReason(null);
+        message.setPublishedAt(null);
+        message.setCreatedAt(staleCreatedAt);
+        message.setUpdatedAt(staleCreatedAt);
         return message;
     }
 

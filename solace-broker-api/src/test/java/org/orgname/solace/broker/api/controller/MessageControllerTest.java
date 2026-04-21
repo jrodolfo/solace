@@ -83,6 +83,7 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.last").value(true))
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("001"))
                 .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.items[0].stalePending").value(false))
                 .andExpect(jsonPath("$.items[0].retrySupported").value(true))
                 .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
                 .andExpect(jsonPath("$.items[0].properties.property01").value("value01"))
@@ -132,6 +133,20 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("002"))
                 .andExpect(jsonPath("$.items[0].publishStatus").value("FAILED"));
+    }
+
+    @Test
+    void shouldExposeStalePendingMessagesInReadResponse() throws Exception {
+        Message stalePendingMessage = storedMessage("003", "solace/java/direct/system-03", "DIRECT", 2, "2026-04-19T10:00:00");
+        stalePendingMessage.setPublishStatus(PublishStatus.PENDING);
+        stalePendingMessage.setFailureReason(null);
+        stalePendingMessage.setPublishedAt(null);
+        database.storedMessages.add(stalePendingMessage);
+
+        mockMvc.perform(get("/api/v1/messages/all?publishStatus=PENDING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].publishStatus").value("PENDING"))
+                .andExpect(jsonPath("$.items[0].stalePending").value(true));
     }
 
     @Test

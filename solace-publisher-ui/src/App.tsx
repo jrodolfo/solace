@@ -1035,6 +1035,9 @@ function App() {
                                                                 <span className="badge text-bg-secondary">{message.deliveryMode}</span>
                                                                 <span className="badge text-bg-light">priority {message.priority}</span>
                                                                 <span className={`badge text-bg-${publishStatusVariant(message.publishStatus)}`}>{message.publishStatus}</span>
+                                                                {message.stalePending && (
+                                                                    <span className="badge text-bg-dark">stale pending</span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                         <div className="message-browser-copy-actions">
@@ -1115,6 +1118,12 @@ function App() {
                                                                     <span className="meta-label">publish status</span>
                                                                     <p className="mb-0">{message.publishStatus}</p>
                                                                 </div>
+                                                                {message.stalePending && (
+                                                                    <div className="message-browser-content">
+                                                                        <span className="meta-label">pending state</span>
+                                                                        <p className="mb-0">This pending message is older than the stale threshold and may need review.</p>
+                                                                    </div>
+                                                                )}
                                                                 {message.failureReason && (
                                                                     <div className="message-browser-content">
                                                                         <span className="meta-label">failure reason</span>
