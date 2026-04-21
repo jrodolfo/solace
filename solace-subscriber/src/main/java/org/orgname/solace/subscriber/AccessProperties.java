@@ -5,6 +5,7 @@ import com.solace.messaging.config.SolaceProperties.AuthenticationProperties;
 import com.solace.messaging.config.SolaceProperties.TransportLayerProperties;
 
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,14 +17,23 @@ import java.util.logging.Logger;
 public class AccessProperties {
 
     private static final Logger logger = Logger.getLogger(AccessProperties.class.getName());
+    private final Function<String, String> environmentProvider;
 
-    private static Properties getProperties() throws Exception {
+    public AccessProperties() {
+        this(System::getenv);
+    }
+
+    AccessProperties(Function<String, String> environmentProvider) {
+        this.environmentProvider = environmentProvider;
+    }
+
+    private Properties getProperties() {
 
         // Retrieve environment variables
-        String host = System.getenv("SOLACE_CLOUD_HOST");
-        String vpnName = System.getenv("SOLACE_CLOUD_VPN");
-        String userName = System.getenv("SOLACE_CLOUD_USERNAME");
-        String password = System.getenv("SOLACE_CLOUD_PASSWORD");
+        String host = environmentProvider.apply("SOLACE_CLOUD_HOST");
+        String vpnName = environmentProvider.apply("SOLACE_CLOUD_VPN");
+        String userName = environmentProvider.apply("SOLACE_CLOUD_USERNAME");
+        String password = environmentProvider.apply("SOLACE_CLOUD_PASSWORD");
 
         // Check if they are good
         if (host == null || host.trim().isEmpty() ||
@@ -34,7 +44,7 @@ public class AccessProperties {
             String errorMessage = "System environment variables SOLACE_CLOUD_HOST, " +
                     "SOLACE_CLOUD_VPN, SOLACE_CLOUD_USERNAME, SOLACE_CLOUD_PASSWORD are not set.";
             logger.log(Level.SEVERE, errorMessage);
-            throw new Exception(errorMessage); // instead of System.exit(-1);
+            throw new SubscriberConfigurationException(errorMessage);
         }
 
         // Set the properties using the values from the environment variables
@@ -49,11 +59,11 @@ public class AccessProperties {
         return properties;
     }
 
-    public static Properties getPropertiesPublisher() throws Exception {
+    public Properties getPropertiesPublisher() {
         return getProperties();
     }
 
-    public static Properties getPropertiesReceiver() throws Exception {
+    public Properties getPropertiesReceiver() {
         final Properties properties = getProperties();
         properties.setProperty(SolaceProperties.ServiceProperties.RECEIVER_DIRECT_SUBSCRIPTION_REAPPLY, "true");  // subscribe Direct subs after reconnect
         return properties;

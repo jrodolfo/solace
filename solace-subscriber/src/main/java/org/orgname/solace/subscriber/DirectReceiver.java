@@ -6,6 +6,7 @@ import com.solace.messaging.receiver.DirectMessageReceiver;
 import com.solace.messaging.receiver.MessageReceiver.MessageHandler;
 import com.solace.messaging.resources.TopicSubscription;
 
+import java.io.IOException;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,17 +20,36 @@ import static org.orgname.solace.subscriber.Constants.TOPIC_NAME;
 public class DirectReceiver {
 
     private static final Logger logger = Logger.getLogger(DirectReceiver.class.getName());
-    
+
     private static volatile int msgRecvCounter = 0;              // num messages received
     private static volatile boolean hasDetectedDiscard = false;  // detected any discards yet?
     private static volatile boolean isShutdown = false;          // are we done yet?
+    private final AccessProperties accessProperties;
+
+    public DirectReceiver() {
+        this(new AccessProperties());
+    }
+
+    DirectReceiver(AccessProperties accessProperties) {
+        this.accessProperties = accessProperties;
+    }
 
     /** Main method. */
-    public static void main(String... args) throws Exception {
+    public static void main(String... args) {
+        try {
+            new DirectReceiver().run();
+        } catch (SubscriberConfigurationException e) {
+            logger.log(Level.SEVERE, "Subscriber configuration error: {0}", e.getMessage());
+        } catch (RuntimeException e) {
+            logger.log(Level.SEVERE, "Subscriber failed to start or run.", e);
+        }
+    }
+
+    void run() {
 
         logger.log(Level.INFO, "Initializing...");
 
-        final Properties properties = AccessProperties.getPropertiesReceiver();
+        final Properties properties = accessProperties.getPropertiesReceiver();
 
         final MessagingService messagingService = MessagingService.builder(ConfigurationProfile.V1)
                 .fromProperties(properties)
@@ -91,7 +111,7 @@ public class DirectReceiver {
                     hasDetectedDiscard = false;  // only show the error once per second
                 }
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | IOException e) {
             // Thread.sleep() interrupted... probably getting shut down
         }
 
