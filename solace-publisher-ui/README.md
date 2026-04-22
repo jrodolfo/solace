@@ -94,6 +94,8 @@ Saved browser views are client-side only:
 - saved-view import merges by name, so matching names update existing user-defined views
 - invalid saved-view import entries are skipped instead of stopping the whole import
 - saved-view import feedback reports how many views were added, updated, and skipped
+- saved-view import feedback also lists which views were added, updated, or skipped
+- skipped invalid entries use fallback labels such as `entry 3` when no usable view name is present
 - they live in the browser's `localStorage`
 - they are not stored in `solace-broker-api`
 - JSON export/import is the intended sharing path between browsers or operators

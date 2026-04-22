@@ -216,6 +216,7 @@ Important distinction:
 - save and rename now ask for confirmation before a user-defined saved view overwrite is applied
 - saved-view import merges by name, so imported user-defined views can add new entries or update existing ones
 - invalid saved-view import entries are skipped, and the UI reports added, updated, and skipped counts after import
+- the import feedback also lists which user-defined views were added, updated, or skipped, using fallback entry labels when needed
 - saved browser views are client-side state only and are not stored by the backend
 
 ## Subscriber Role
