@@ -220,6 +220,7 @@ Important distinction:
 - the UI keeps a short local history of recent save, rename, delete, and import actions for saved views
 - that short saved-view history can also be cleared explicitly from the UI
 - the history is intentionally capped to the 5 most recent saved-view actions
+- those recent saved-view history entries are displayed with relative timestamps for quick scanning
 - saved browser views are client-side state only and are not stored by the backend
 
 ## Subscriber Role
