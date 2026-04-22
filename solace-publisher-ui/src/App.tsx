@@ -235,7 +235,7 @@ function App() {
         }, 30_000);
 
         return () => window.clearInterval(intervalId);
-    }, [savedViewActionHistory.length]);
+    }, [savedViewActionHistory[0]?.id]);
 
     const currentBrowserQuery = (overrides?: Partial<BrowserQueryState>): BrowserQueryState => ({
         page: overrides?.page ?? Number(browserPage),

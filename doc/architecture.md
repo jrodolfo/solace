@@ -212,8 +212,8 @@ Important distinction:
 - JSON preserves the full normalized response shape more naturally, while CSV is flattened client-side for spreadsheet-style inspection
 - CSV flattening turns nested payload fields into explicit columns and serializes `properties` into a single field
 - built-in browser views are shipped UI defaults, while saved browser views are user-defined local state
-- save and rename intentionally overwrite existing user-defined saved views by name
-- save and rename now ask for confirmation before a user-defined saved view overwrite is applied
+- save and rename still replace existing user-defined saved views by name when confirmed
+- save and rename now ask for confirmation before that user-defined saved view overwrite is applied
 - saved-view import merges by name, so imported user-defined views can add new entries or update existing ones
 - invalid saved-view import entries are skipped, and the UI reports added, updated, and skipped counts after import
 - the import feedback also lists which user-defined views were added, updated, or skipped, using fallback entry labels when needed
