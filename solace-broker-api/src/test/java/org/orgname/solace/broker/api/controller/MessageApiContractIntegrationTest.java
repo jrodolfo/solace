@@ -149,6 +149,42 @@ class MessageApiContractIntegrationTest {
     }
 
     @Test
+    void shouldBulkRetryMessagesAndReturnMixedResults() throws Exception {
+        MessageWrapperDTO wrapper = validWrapper();
+        doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
+                .doReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"))
+                .when(directPublisherService)
+                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any(Optional.class));
+
+        mockMvc.perform(post("/api/v1/messages/message")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrapper)))
+                .andExpect(status().isBadGateway());
+
+        org.orgname.solace.broker.api.jpa.Message failedMessage = messageRepository.findAll().getFirst();
+
+        mockMvc.perform(post("/api/v1/messages/retry")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"messageIds":[%d,999999]}
+                                """.formatted(failedMessage.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalRequested").value(2))
+                .andExpect(jsonPath("$.retriedSuccessfully").value(1))
+                .andExpect(jsonPath("$.failedToRetry").value(1))
+                .andExpect(jsonPath("$.skipped").value(0))
+                .andExpect(jsonPath("$.results[0].messageId").value(failedMessage.getId()))
+                .andExpect(jsonPath("$.results[0].outcome").value("RETRIED"))
+                .andExpect(jsonPath("$.results[1].messageId").value(999999))
+                .andExpect(jsonPath("$.results[1].outcome").value("FAILED"));
+
+        org.orgname.solace.broker.api.jpa.Message retriedMessage = messageRepository.findById(failedMessage.getId()).orElseThrow();
+        org.junit.jupiter.api.Assertions.assertEquals(PublishStatus.PUBLISHED, retriedMessage.getPublishStatus());
+        org.junit.jupiter.api.Assertions.assertNull(retriedMessage.getFailureReason());
+        org.junit.jupiter.api.Assertions.assertNotNull(retriedMessage.getPublishedAt());
+    }
+
+    @Test
     void shouldReconcileStalePendingMessageAndPersistFailureReason() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
         when(directPublisherService.sendMessage(

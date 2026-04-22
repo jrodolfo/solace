@@ -353,6 +353,48 @@ class MessageControllerWebMvcTest {
     }
 
     @Test
+    void shouldBulkRetryMessagesWithMixedResults() throws Exception {
+        Message retryableFailedMessage = failedStoredMessage("002", "solace/java/direct/system-02", "DIRECT", 1);
+        Message nonFailedMessage = storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3);
+        Message nonRetryableFailedMessage = failedStoredMessage("003", "solace/java/direct/system-03", "DIRECT", 2);
+        nonRetryableFailedMessage.setRetrySupported(false);
+        nonRetryableFailedMessage.setRetryBlockedReason("Retries are supported only for messages published with server-side broker configuration.");
+
+        when(database.findMessageById(2L)).thenReturn(retryableFailedMessage);
+        when(database.findMessageById(1L)).thenReturn(nonFailedMessage);
+        when(database.findMessageById(3L)).thenReturn(nonRetryableFailedMessage);
+        when(database.markMessagePending(2L)).thenReturn(retryableFailedMessage);
+        when(database.markMessagePublished(2L)).thenReturn(retryableFailedMessage);
+        when(directPublisherService.sendMessage(eq("solace/java/direct/system-02"), eq("01001000 01100101 01101100"), any()))
+                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-02", "01001000 01100101 01101100"));
+
+        mockMvc.perform(post("/api/v1/messages/retry")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"messageIds":[2,1,3]}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalRequested").value(3))
+                .andExpect(jsonPath("$.retriedSuccessfully").value(1))
+                .andExpect(jsonPath("$.failedToRetry").value(0))
+                .andExpect(jsonPath("$.skipped").value(2))
+                .andExpect(jsonPath("$.results[0].outcome").value("RETRIED"))
+                .andExpect(jsonPath("$.results[1].outcome").value("SKIPPED"))
+                .andExpect(jsonPath("$.results[2].outcome").value("SKIPPED"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenBulkRetryRequestIsEmpty() throws Exception {
+        mockMvc.perform(post("/api/v1/messages/retry")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"messageIds":[]}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("messageIds must contain at least one id"));
+    }
+
+    @Test
     void shouldReconcileStalePendingMessage() throws Exception {
         Message pendingMessage = stalePendingStoredMessage("003", "solace/java/direct/system-03", "DIRECT", 2);
         pendingMessage.setId(3L);

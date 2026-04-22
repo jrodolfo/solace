@@ -11,6 +11,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
+import org.orgname.solace.broker.api.dto.BulkRetryRequestDTO;
+import org.orgname.solace.broker.api.dto.BulkRetryResponseDTO;
+import org.orgname.solace.broker.api.dto.BulkRetryResultItemDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
@@ -28,6 +31,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -341,35 +346,56 @@ public class MessageController {
 
     @PostMapping("/{messageId}/retry")
     public ResponseEntity<PublishMessageResponseDTO> retryMessage(@PathVariable Long messageId) {
-        Message storedMessage = database.findMessageById(messageId);
-        if (storedMessage.getPublishStatus() != PublishStatus.FAILED) {
-            throw new BadRequestException("Only FAILED messages can be retried");
-        }
-        if (!storedMessage.isRetrySupported()) {
-            throw new BadRequestException(RETRY_BLOCKED_MESSAGE);
-        }
+        RetryExecutionResult retryResult = executeRetry(messageId);
+        return ResponseEntity.ok(retryResult.response());
+    }
 
-        String topicName = storedMessage.getDestination();
-        String content = storedMessage.getPayload().getContent();
-        PublishMessageResponseDTO responseMessage;
-
-        database.markMessagePending(messageId);
-
-        try {
-            responseMessage = directPublisherService.sendMessage(topicName, content, Optional.empty());
-        } catch (IllegalArgumentException e) {
-            markFailedSafely(messageId, topicName, e.getMessage());
-            logger.log(Level.WARNING, "Rejected retry request for stored message {0}: {1}", new Object[]{messageId, e.getMessage()});
-            throw new BadRequestException(e.getMessage(), e);
-        } catch (RuntimeException e) {
-            markFailedSafely(messageId, topicName, e.getMessage());
-            throw e;
+    @PostMapping("/retry")
+    public ResponseEntity<BulkRetryResponseDTO> bulkRetryMessages(@RequestBody BulkRetryRequestDTO request) {
+        if (request == null || request.getMessageIds() == null || request.getMessageIds().isEmpty()) {
+            throw new BadRequestException("messageIds must contain at least one id");
         }
 
-        markPublishedOrThrow(messageId, topicName);
+        List<BulkRetryResultItemDTO> results = new ArrayList<>();
+        int retriedSuccessfully = 0;
+        int failedToRetry = 0;
+        int skipped = 0;
 
-        logger.log(Level.INFO, "Retried stored message {0} for topic {1}", new Object[]{messageId, topicName});
-        return ResponseEntity.ok(responseMessage);
+        for (Long messageId : request.getMessageIds()) {
+            if (messageId == null) {
+                results.add(new BulkRetryResultItemDTO(null, "SKIPPED", "messageId cannot be null", null, null));
+                skipped++;
+                continue;
+            }
+
+            try {
+                RetryExecutionResult retryResult = executeRetry(messageId);
+                results.add(new BulkRetryResultItemDTO(
+                        messageId,
+                        "RETRIED",
+                        "Message retried successfully",
+                        PublishStatus.PUBLISHED,
+                        retryResult.response()
+                ));
+                retriedSuccessfully++;
+            } catch (BadRequestException e) {
+                PublishStatus currentStatus = getCurrentPublishStatus(messageId);
+                results.add(new BulkRetryResultItemDTO(messageId, "SKIPPED", e.getMessage(), currentStatus, null));
+                skipped++;
+            } catch (RuntimeException e) {
+                PublishStatus currentStatus = getCurrentPublishStatus(messageId);
+                results.add(new BulkRetryResultItemDTO(messageId, "FAILED", e.getMessage(), currentStatus, null));
+                failedToRetry++;
+            }
+        }
+
+        return ResponseEntity.ok(new BulkRetryResponseDTO(
+                request.getMessageIds().size(),
+                retriedSuccessfully,
+                failedToRetry,
+                skipped,
+                results
+        ));
     }
 
     @PostMapping("/{messageId}/reconcile-stale-pending")
@@ -443,5 +469,48 @@ public class MessageController {
                     new Object[]{messageId, topicName, updateException.getMessage()}
             );
         }
+    }
+
+    private RetryExecutionResult executeRetry(Long messageId) {
+        Message storedMessage = database.findMessageById(messageId);
+        if (storedMessage.getPublishStatus() != PublishStatus.FAILED) {
+            throw new BadRequestException("Only FAILED messages can be retried");
+        }
+        if (!storedMessage.isRetrySupported()) {
+            throw new BadRequestException(RETRY_BLOCKED_MESSAGE);
+        }
+
+        String topicName = storedMessage.getDestination();
+        String content = storedMessage.getPayload().getContent();
+        PublishMessageResponseDTO responseMessage;
+
+        database.markMessagePending(messageId);
+
+        try {
+            responseMessage = directPublisherService.sendMessage(topicName, content, Optional.empty());
+        } catch (IllegalArgumentException e) {
+            markFailedSafely(messageId, topicName, e.getMessage());
+            logger.log(Level.WARNING, "Rejected retry request for stored message {0}: {1}", new Object[]{messageId, e.getMessage()});
+            throw new BadRequestException(e.getMessage(), e);
+        } catch (RuntimeException e) {
+            markFailedSafely(messageId, topicName, e.getMessage());
+            throw e;
+        }
+
+        markPublishedOrThrow(messageId, topicName);
+
+        logger.log(Level.INFO, "Retried stored message {0} for topic {1}", new Object[]{messageId, topicName});
+        return new RetryExecutionResult(responseMessage);
+    }
+
+    private PublishStatus getCurrentPublishStatus(Long messageId) {
+        try {
+            return database.findMessageById(messageId).getPublishStatus();
+        } catch (RuntimeException ignored) {
+            return null;
+        }
+    }
+
+    private record RetryExecutionResult(PublishMessageResponseDTO response) {
     }
 }

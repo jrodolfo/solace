@@ -351,6 +351,63 @@ class MessageControllerTest {
     }
 
     @Test
+    void shouldBulkRetryMessagesWithMixedResults() throws Exception {
+        Message retryableFailedMessage = storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1, "2026-04-19T10:00:00");
+        retryableFailedMessage.setId(2L);
+        retryableFailedMessage.setPublishStatus(PublishStatus.FAILED);
+        retryableFailedMessage.setFailureReason("Failed to publish message to Solace broker");
+        retryableFailedMessage.setPublishedAt(null);
+
+        Message nonFailedMessage = storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, "2026-04-20T10:00:00");
+        nonFailedMessage.setId(1L);
+
+        Message nonRetryableFailedMessage = storedMessage("003", "solace/java/direct/system-03", "DIRECT", 2, "2026-04-19T10:00:00");
+        nonRetryableFailedMessage.setId(3L);
+        nonRetryableFailedMessage.setPublishStatus(PublishStatus.FAILED);
+        nonRetryableFailedMessage.setFailureReason("Failed to publish message to Solace broker");
+        nonRetryableFailedMessage.setPublishedAt(null);
+        nonRetryableFailedMessage.setRetrySupported(false);
+        nonRetryableFailedMessage.setRetryBlockedReason("Retries are supported only for messages published with server-side broker configuration.");
+
+        database.storedMessages.add(retryableFailedMessage);
+        database.storedMessages.add(nonFailedMessage);
+        database.storedMessages.add(nonRetryableFailedMessage);
+        directPublisherService.response = new PublishMessageResponseDTO("solace/java/direct/system-02", "01001000 01100101 01101100");
+
+        mockMvc.perform(post("/api/v1/messages/retry")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"messageIds":[2,1,3]}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalRequested").value(3))
+                .andExpect(jsonPath("$.retriedSuccessfully").value(1))
+                .andExpect(jsonPath("$.failedToRetry").value(0))
+                .andExpect(jsonPath("$.skipped").value(2))
+                .andExpect(jsonPath("$.results[0].messageId").value(2))
+                .andExpect(jsonPath("$.results[0].outcome").value("RETRIED"))
+                .andExpect(jsonPath("$.results[1].messageId").value(1))
+                .andExpect(jsonPath("$.results[1].outcome").value("SKIPPED"))
+                .andExpect(jsonPath("$.results[1].detail").value("Only FAILED messages can be retried"))
+                .andExpect(jsonPath("$.results[2].messageId").value(3))
+                .andExpect(jsonPath("$.results[2].outcome").value("SKIPPED"))
+                .andExpect(jsonPath("$.results[2].detail").value("Only messages published with server-side broker configuration can be retried"));
+
+        assertEquals(PublishStatus.PUBLISHED, retryableFailedMessage.getPublishStatus());
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenBulkRetryRequestIsEmpty() throws Exception {
+        mockMvc.perform(post("/api/v1/messages/retry")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"messageIds":[]}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("messageIds must contain at least one id"));
+    }
+
+    @Test
     void shouldReconcileStalePendingMessage() throws Exception {
         Message stalePendingMessage = storedMessage("003", "solace/java/direct/system-03", "DIRECT", 2, "2026-04-19T10:00:00");
         stalePendingMessage.setId(3L);
