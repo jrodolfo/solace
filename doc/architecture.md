@@ -26,6 +26,7 @@ Owns:
 - typed publish form
 - client-side validation
 - stored-message browser
+- browser-local saved views for query state
 - lifecycle/date filter presets
 - single-message and bulk retry actions for failed rows
 - manual reconciliation action for stale pending rows
@@ -190,6 +191,8 @@ The UI layers on:
 - quick presets such as `failed today`
 - clickable lifecycle summary pills for `published`, `failed`, `pending`, and stale pending
 - page-level lifecycle counts derived from the currently loaded items
+- saved browser views stored in browser `localStorage`
+- saved-view JSON import/export for sharing browser query state
 - refresh/reset behavior
 - detail expansion
 - copy actions
@@ -199,6 +202,7 @@ Important distinction:
 - backend `lifecycleCounts` describe the full filtered result set across all pages
 - backend retryability counts describe how many failed rows are retryable versus blocked
 - UI page counts describe only the items currently loaded in `items`
+- saved browser views are client-side state only and are not stored by the backend
 
 ## Subscriber Role
 

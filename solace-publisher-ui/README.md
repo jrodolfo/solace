@@ -70,8 +70,18 @@ The browser loads `GET /api/v1/messages/all` from `solace-broker-api` and suppor
 - copy actions for destination, payload content, and properties
 - bulk retry for currently visible failed messages
 - manual reconciliation for stale `PENDING` messages
+- saving the current browser view in local storage
+- loading and deleting saved browser views
+- exporting saved browser views to JSON
+- importing saved browser views from JSON
 
 Bulk retry now calls the backend batch retry endpoint (`POST /api/v1/messages/retry`) instead of sending one browser request per failed row.
+
+Saved browser views are client-side only:
+
+- they live in the browser's `localStorage`
+- they are not stored in `solace-broker-api`
+- JSON export/import is the intended sharing path between browsers or operators
 
 ## Notes
 
