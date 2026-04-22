@@ -763,6 +763,24 @@ describe("Stored Messages Browser", () => {
         ]);
     });
 
+    test("Shows recent saved view action history for save rename and delete", async () => {
+        render(<App/>);
+
+        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
+        await userEvent.click(screen.getByRole("button", {name: /save current view/i}));
+        expect(await screen.findByText(/Recent Saved View Actions/i)).toBeInTheDocument();
+        expect(screen.getByText('Saved "Failed Priority View"')).toBeInTheDocument();
+
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
+        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Renamed Failed View");
+        await userEvent.click(screen.getByRole("button", {name: /rename saved view/i}));
+        expect(await screen.findByText('Renamed "Failed Priority View" to "Renamed Failed View"')).toBeInTheDocument();
+
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Renamed Failed View");
+        await userEvent.click(screen.getByRole("button", {name: /delete saved view/i}));
+        expect(await screen.findByText('Deleted "Renamed Failed View"')).toBeInTheDocument();
+    });
+
     test("Shows built-in browser views separately from local saved views", () => {
         render(<App/>);
 
@@ -1403,6 +1421,60 @@ describe("Stored Messages Browser", () => {
         expect(alert).toHaveTextContent("Skipped: entry 1, Missing Query");
         expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("");
         expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([]);
+    });
+
+    test("Shows recent saved view action history for imports", async () => {
+        render(<App/>);
+
+        const importFile = new File(
+            [JSON.stringify({
+                savedViews: [
+                    {
+                        name: "Published Today Review",
+                        query: {
+                            page: 0,
+                            size: 30,
+                            destination: "",
+                            deliveryMode: "DIRECT",
+                            innerMessageId: "",
+                            publishStatus: "PUBLISHED",
+                            stalePendingOnly: false,
+                            createdAtFrom: "",
+                            createdAtTo: "",
+                            publishedAtFrom: "2026-04-21T07:00",
+                            publishedAtTo: "2026-04-21T08:15",
+                            sortBy: "priority",
+                            sortDirection: "asc",
+                        },
+                    },
+                    {
+                        name: "Failed Direct Review",
+                        query: {
+                            page: 0,
+                            size: 10,
+                            destination: "system-02",
+                            deliveryMode: "DIRECT",
+                            innerMessageId: "",
+                            publishStatus: "FAILED",
+                            stalePendingOnly: false,
+                            createdAtFrom: "",
+                            createdAtTo: "",
+                            publishedAtFrom: "",
+                            publishedAtTo: "",
+                            sortBy: "priority",
+                            sortDirection: "desc",
+                        },
+                    },
+                ],
+            })],
+            "saved-views.json",
+            {type: "application/json"}
+        );
+
+        await userEvent.upload(screen.getByLabelText(/Import Saved Views File/i), importFile);
+
+        expect(await screen.findByText(/Recent Saved View Actions/i)).toBeInTheDocument();
+        expect(screen.getByText("Imported 2 views")).toBeInTheDocument();
     });
 
     test("Loads the next page when pagination advances", async () => {

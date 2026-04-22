@@ -184,6 +184,41 @@
     margin-bottom: 0.25rem;
 }
 
+.saved-view-history {
+    padding: 0.85rem 1rem;
+    border-radius: 0.9rem;
+    background: #f8fbfd;
+    border: 1px solid rgba(21, 48, 71, 0.08);
+}
+
+.saved-view-history-title {
+    color: #51697c;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.saved-view-history-list {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.saved-view-history-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: baseline;
+    color: #456176;
+    font-size: 0.95rem;
+}
+
+.saved-view-history-item time {
+    color: #6d879a;
+    white-space: nowrap;
+    font-size: 0.88rem;
+}
+
 .saved-view-field {
     min-width: 13rem;
     flex: 1 1 13rem;

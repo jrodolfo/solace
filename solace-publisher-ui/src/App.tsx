@@ -36,6 +36,8 @@ const DEFAULT_BROWSER_PUBLISHED_AT_FROM = "";
 const DEFAULT_BROWSER_PUBLISHED_AT_TO = "";
 const DEFAULT_BROWSER_STALE_PENDING_ONLY = false;
 const SAVED_BROWSER_VIEWS_STORAGE_KEY = "solace.publisher-ui.saved-browser-views";
+const SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY = "solace.publisher-ui.saved-view-action-history";
+const MAX_SAVED_VIEW_ACTION_HISTORY = 5;
 
 type BrowserQueryState = {
     page: number;
@@ -70,6 +72,13 @@ type BrowserFeedbackDetails = {
     skipped?: string[];
 };
 
+type SavedViewActionHistoryEntry = {
+    id: string;
+    action: "saved" | "renamed" | "deleted" | "imported";
+    label: string;
+    timestamp: string;
+};
+
 const sortSavedViews = (savedViews: SavedBrowserView[]) =>
     [...savedViews].sort((left, right) => left.name.localeCompare(right.name));
 
@@ -80,6 +89,27 @@ const readFileAsText = (file: File) =>
         reader.onerror = () => reject(reader.error ?? new Error("Failed to read file."));
         reader.readAsText(file);
     });
+
+const formatSavedViewAction = (entry: SavedViewActionHistoryEntry) => {
+    if (entry.action === "saved") {
+        return `Saved "${entry.label}"`;
+    }
+    if (entry.action === "renamed") {
+        return `Renamed ${entry.label}`;
+    }
+    if (entry.action === "deleted") {
+        return `Deleted "${entry.label}"`;
+    }
+    return `Imported ${entry.label}`;
+};
+
+const formatSavedViewActionTimestamp = (value: string) =>
+    new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+    }).format(new Date(value));
 
 function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
@@ -133,6 +163,7 @@ function App() {
     const [selectedBuiltInViewKey, setSelectedBuiltInViewKey] = useState("");
     const [selectedSavedViewName, setSelectedSavedViewName] = useState("");
     const [savedViews, setSavedViews] = useState<SavedBrowserView[]>([]);
+    const [savedViewActionHistory, setSavedViewActionHistory] = useState<SavedViewActionHistoryEntry[]>([]);
     const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
@@ -150,6 +181,24 @@ function App() {
             setSavedViews(sortSavedViews(parsedSavedViews));
         } catch (error) {
             console.error("Failed to load saved browser views.", error);
+        }
+    }, []);
+
+    useEffect(() => {
+        try {
+            const historyJson = window.localStorage.getItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY);
+            if (!historyJson) {
+                return;
+            }
+
+            const parsedHistory = JSON.parse(historyJson) as SavedViewActionHistoryEntry[];
+            if (!Array.isArray(parsedHistory)) {
+                return;
+            }
+
+            setSavedViewActionHistory(parsedHistory);
+        } catch (error) {
+            console.error("Failed to load saved-view action history.", error);
         }
     }, []);
 
@@ -176,6 +225,21 @@ function App() {
         setSavedViews(sortedSavedViews);
         window.localStorage.setItem(SAVED_BROWSER_VIEWS_STORAGE_KEY, JSON.stringify(sortedSavedViews));
         return sortedSavedViews;
+    };
+
+    const recordSavedViewAction = (action: SavedViewActionHistoryEntry["action"], label: string) => {
+        const nextHistory = [
+            {
+                id: `${action}-${label}-${Date.now()}`,
+                action,
+                label,
+                timestamp: new Date().toISOString(),
+            },
+            ...savedViewActionHistory,
+        ].slice(0, MAX_SAVED_VIEW_ACTION_HISTORY);
+
+        setSavedViewActionHistory(nextHistory);
+        window.localStorage.setItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
     };
 
     const applyBrowserQueryState = (query: BrowserQueryState) => {
@@ -367,6 +431,7 @@ function App() {
             persistSavedViews([...existingSavedViews, savedView]);
             setSelectedSavedViewName(normalizedName);
             setSavedViewName("");
+            recordSavedViewAction("saved", normalizedName);
             setBrowserMessage(`Saved browser view "${normalizedName}".`);
             setBrowserVariant("success");
             setBrowserStatusCode(null);
@@ -411,6 +476,7 @@ function App() {
         try {
             const nextSavedViews = savedViews.filter((view) => view.name !== selectedSavedViewName);
             persistSavedViews(nextSavedViews);
+            recordSavedViewAction("deleted", selectedSavedViewName);
             setBrowserMessage(`Deleted saved browser view "${selectedSavedViewName}".`);
             setBrowserVariant("info");
             setBrowserStatusCode(null);
@@ -471,6 +537,7 @@ function App() {
             ]);
             setSelectedSavedViewName(normalizedName);
             setSavedViewName("");
+            recordSavedViewAction("renamed", `"${selectedSavedViewName}" to "${normalizedName}"`);
             setBrowserMessage(`Renamed saved browser view "${selectedSavedViewName}" to "${normalizedName}".`);
             setBrowserVariant("success");
             setBrowserStatusCode(null);
@@ -612,6 +679,7 @@ function App() {
                 ...(updatedNames.length > 0 ? {updated: updatedNames} : {}),
                 ...(skippedNames.length > 0 ? {skipped: skippedNames} : {}),
             });
+            recordSavedViewAction("imported", `${addedCount + updatedCount} view${addedCount + updatedCount === 1 ? "" : "s"}`);
         } catch (error) {
             console.error("Failed to import saved browser views.", error);
             setBrowserMessage("Failed to import saved browser views.");
@@ -1769,6 +1837,19 @@ function App() {
                                                 aria-label="Import Saved Views File"
                                             />
                                         </div>
+                                        {savedViewActionHistory.length > 0 && (
+                                            <div className="saved-view-history w-100">
+                                                <p className="saved-view-history-title mb-2">Recent Saved View Actions</p>
+                                                <div className="saved-view-history-list">
+                                                    {savedViewActionHistory.map((entry) => (
+                                                        <div key={entry.id} className="saved-view-history-item">
+                                                            <span>{formatSavedViewAction(entry)}</span>
+                                                            <time dateTime={entry.timestamp}>{formatSavedViewActionTimestamp(entry.timestamp)}</time>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                         {messagesResponse && messagesResponse.items.some((message) => message.publishStatus === "FAILED" && message.retrySupported) && (
                                             <button
                                                 type="button"
