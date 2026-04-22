@@ -221,6 +221,7 @@ Important distinction:
 - that short saved-view history can also be cleared explicitly from the UI
 - the history is intentionally capped to the 5 most recent saved-view actions
 - those recent saved-view history entries are displayed with relative timestamps for quick scanning
+- those relative history timestamps refresh automatically while the browser page stays open
 - saved browser views are client-side state only and are not stored by the backend
 
 ## Subscriber Role

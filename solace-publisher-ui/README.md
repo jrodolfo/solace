@@ -100,6 +100,7 @@ Saved browser views are client-side only:
 - that recent saved-view history can be cleared explicitly from the UI
 - only the 5 most recent saved-view actions are kept in that history
 - recent saved-view history timestamps are shown in relative form such as `just now` or `2 minutes ago`
+- those relative saved-view history labels refresh automatically while the page remains open
 - they live in the browser's `localStorage`
 - they are not stored in `solace-broker-api`
 - JSON export/import is the intended sharing path between browsers or operators
