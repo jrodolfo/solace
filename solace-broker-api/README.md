@@ -369,7 +369,7 @@ Rejected reconciliation for a fresh `PENDING` message, `400 Bad Request`:
 
 ### `GET /all`
 
-Returns normalized stored-message DTOs with paging metadata.
+Returns normalized stored-message DTOs with paging metadata and lifecycle aggregates for the full filtered result set.
 
 Supported query parameters:
 
@@ -403,6 +403,12 @@ Representative response:
 
 ```json
 {
+  "lifecycleCounts": {
+    "publishedCount": 8,
+    "failedCount": 2,
+    "pendingCount": 1,
+    "stalePendingCount": 1
+  },
   "items": [
     {
       "id": 1,
@@ -455,6 +461,8 @@ Representative response:
   "last": true
 }
 ```
+
+`lifecycleCounts` reflects the full filtered result set that matches the current query, not just the messages in the current page. The `items` array still contains only the current page content.
 
 Invalid date filter, `400 Bad Request`:
 

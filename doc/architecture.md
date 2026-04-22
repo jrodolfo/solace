@@ -183,14 +183,21 @@ The broker API supports:
 - `stalePendingOnly=true` filtering for stale `PENDING` rows
 - date-range filtering on `createdAt`
 - date-range filtering on `publishedAt`
+- lifecycle aggregate counts for the full filtered result set
 
 The UI layers on:
 
 - quick presets such as `failed today`
 - clickable lifecycle summary pills for `published`, `failed`, `pending`, and stale pending
+- page-level lifecycle counts derived from the currently loaded items
 - refresh/reset behavior
 - detail expansion
 - copy actions
+
+Important distinction:
+
+- backend `lifecycleCounts` describe the full filtered result set across all pages
+- UI page counts describe only the items currently loaded in `items`
 
 ## Subscriber Role
 
