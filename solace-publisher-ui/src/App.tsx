@@ -406,6 +406,54 @@ function App() {
         }
     };
 
+    const renameSavedView = () => {
+        if (!selectedSavedViewName) {
+            setBrowserMessage("Select a saved browser view to rename.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+            return;
+        }
+
+        const normalizedName = savedViewName.trim();
+        if (!normalizedName) {
+            setBrowserMessage("Saved view name is required.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+            return;
+        }
+
+        try {
+            const selectedSavedView = savedViews.find((view) => view.name === selectedSavedViewName);
+            if (!selectedSavedView) {
+                setBrowserMessage(`Saved browser view "${selectedSavedViewName}" was not found.`);
+                setBrowserVariant("danger");
+                setBrowserStatusCode(404);
+                return;
+            }
+
+            const renamedViews = savedViews
+                .filter((view) => view.name !== selectedSavedViewName && view.name !== normalizedName);
+
+            persistSavedViews([
+                ...renamedViews,
+                {
+                    ...selectedSavedView,
+                    name: normalizedName,
+                }
+            ]);
+            setSelectedSavedViewName(normalizedName);
+            setSavedViewName("");
+            setBrowserMessage(`Renamed saved browser view "${selectedSavedViewName}" to "${normalizedName}".`);
+            setBrowserVariant("success");
+            setBrowserStatusCode(null);
+        } catch (error) {
+            console.error("Failed to rename the browser view.", error);
+            setBrowserMessage("Failed to rename the browser view.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(500);
+        }
+    };
+
     const applyBuiltInView = async () => {
         if (!selectedBuiltInViewKey) {
             setBrowserMessage("Select a built-in browser view to apply.");
@@ -1536,6 +1584,14 @@ function App() {
                                                 disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
                                             >
                                                 Load Saved View
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-warning"
+                                                onClick={renameSavedView}
+                                                disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Rename Saved View
                                             </button>
                                             <button
                                                 type="button"

@@ -781,6 +781,94 @@ describe("Stored Messages Browser", () => {
         );
     });
 
+    test("Renames a saved browser view in local storage", async () => {
+        window.localStorage.setItem(
+            "solace.publisher-ui.saved-browser-views",
+            JSON.stringify([
+                {
+                    name: "Failed Priority View",
+                    query: {
+                        page: 0,
+                        size: 20,
+                        destination: "system-02",
+                        deliveryMode: "",
+                        innerMessageId: "",
+                        publishStatus: "FAILED",
+                        stalePendingOnly: false,
+                        createdAtFrom: "",
+                        createdAtTo: "",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "createdAt",
+                        sortDirection: "desc",
+                    },
+                },
+            ])
+        );
+
+        render(<App/>);
+
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
+        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Renamed Failed View");
+        await userEvent.click(screen.getByRole("button", {name: /rename saved view/i}));
+
+        expect(await screen.findByText(/Renamed saved browser view "Failed Priority View" to "Renamed Failed View"\./i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("Renamed Failed View");
+        expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
+            {
+                name: "Renamed Failed View",
+                query: {
+                    page: 0,
+                    size: 20,
+                    destination: "system-02",
+                    deliveryMode: "",
+                    innerMessageId: "",
+                    publishStatus: "FAILED",
+                    stalePendingOnly: false,
+                    createdAtFrom: "",
+                    createdAtTo: "",
+                    publishedAtFrom: "",
+                    publishedAtTo: "",
+                    sortBy: "createdAt",
+                    sortDirection: "desc",
+                },
+            },
+        ]);
+    });
+
+    test("Rejects renaming a saved browser view when the new name is blank", async () => {
+        window.localStorage.setItem(
+            "solace.publisher-ui.saved-browser-views",
+            JSON.stringify([
+                {
+                    name: "Failed Priority View",
+                    query: {
+                        page: 0,
+                        size: 20,
+                        destination: "system-02",
+                        deliveryMode: "",
+                        innerMessageId: "",
+                        publishStatus: "FAILED",
+                        stalePendingOnly: false,
+                        createdAtFrom: "",
+                        createdAtTo: "",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "createdAt",
+                        sortDirection: "desc",
+                    },
+                },
+            ])
+        );
+
+        render(<App/>);
+
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
+        await userEvent.click(screen.getByRole("button", {name: /rename saved view/i}));
+
+        expect(await screen.findByText(/Saved view name is required\./i)).toBeInTheDocument();
+    });
+
     test("Deletes a saved browser view from local storage", async () => {
         window.localStorage.setItem(
             "solace.publisher-ui.saved-browser-views",
