@@ -88,6 +88,9 @@ Saved browser views are client-side only:
 - built-in views reuse the normal browser query/load path and update the visible controls
 - rename applies only to user-defined saved views
 - save and rename intentionally overwrite by name when the target name already exists
+- save asks for confirmation before replacing an existing saved view with the same name
+- rename asks for confirmation before overwriting a different existing saved view
+- cancelling the confirmation keeps the existing saved view unchanged
 - saved-view import merges by name, so matching names update existing user-defined views
 - invalid saved-view import entries are skipped instead of stopping the whole import
 - saved-view import feedback reports how many views were added, updated, and skipped
