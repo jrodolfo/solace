@@ -1,6 +1,6 @@
 import App from "./App";
 import '@testing-library/jest-dom';
-import {render, screen, waitFor} from "@testing-library/react";
+import {render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import axios from "axios";
@@ -766,6 +766,61 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /show details/i}));
         expect(screen.getByText("This pending message is older than the stale threshold and may need review.")).toBeInTheDocument();
+    });
+
+    test("Shows page-level lifecycle counts for the current browser results", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 4,
+                totalPages: 1,
+                last: true,
+                items: [
+                    buildStoredMessage({
+                        id: 1,
+                        publishStatus: "PUBLISHED",
+                        stalePending: false,
+                    }),
+                    buildStoredMessage({
+                        id: 2,
+                        publishStatus: "FAILED",
+                        publishedAt: null,
+                        stalePending: false,
+                    }),
+                    buildStoredMessage({
+                        id: 3,
+                        publishStatus: "PENDING",
+                        publishedAt: null,
+                        stalePending: false,
+                    }),
+                    buildStoredMessage({
+                        id: 4,
+                        publishStatus: "PENDING",
+                        publishedAt: null,
+                        stalePending: true,
+                    }),
+                ],
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        const lifecycleSummary = screen.getByTestId("browser-lifecycle-summary");
+        const publishedLabel = within(lifecycleSummary).getByText(/^published$/i, {selector: ".meta-label"});
+        const failedLabel = within(lifecycleSummary).getByText(/^failed$/i, {selector: ".meta-label"});
+        const pendingLabel = within(lifecycleSummary).getByText(/^pending$/i, {selector: ".meta-label"});
+        const stalePendingLabel = within(lifecycleSummary).getByText(/^stale pending$/i, {selector: ".meta-label"});
+
+        expect(publishedLabel.nextElementSibling).toHaveTextContent("1");
+        expect(failedLabel.nextElementSibling).toHaveTextContent("1");
+        expect(pendingLabel.nextElementSibling).toHaveTextContent("2");
+        expect(stalePendingLabel.nextElementSibling).toHaveTextContent("1");
     });
 
     test("Reconciles a stale pending message and refreshes the browser results", async () => {

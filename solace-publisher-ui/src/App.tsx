@@ -397,6 +397,23 @@ function App() {
         }
     };
 
+    const pageLifecycleCounts = (messagesResponse?.items ?? []).reduce(
+        (counts, message) => {
+            if (message.publishStatus === "PUBLISHED") {
+                counts.published += 1;
+            } else if (message.publishStatus === "FAILED") {
+                counts.failed += 1;
+            } else if (message.publishStatus === "PENDING") {
+                counts.pending += 1;
+                if (message.stalePending) {
+                    counts.stalePending += 1;
+                }
+            }
+            return counts;
+        },
+        {published: 0, failed: 0, pending: 0, stalePending: 0}
+    );
+
     // Submit handler
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault(); // Stop browser refresh
@@ -1089,6 +1106,24 @@ function App() {
                                         <span>
                                             {messagesResponse.totalElements} stored messages total, page size {messagesResponse.size}
                                         </span>
+                                    </div>
+                                    <div className="browser-lifecycle-summary mb-3" data-testid="browser-lifecycle-summary">
+                                        <div className="browser-lifecycle-pill">
+                                            <span className="meta-label">published</span>
+                                            <strong>{pageLifecycleCounts.published}</strong>
+                                        </div>
+                                        <div className="browser-lifecycle-pill">
+                                            <span className="meta-label">failed</span>
+                                            <strong>{pageLifecycleCounts.failed}</strong>
+                                        </div>
+                                        <div className="browser-lifecycle-pill">
+                                            <span className="meta-label">pending</span>
+                                            <strong>{pageLifecycleCounts.pending}</strong>
+                                        </div>
+                                        <div className="browser-lifecycle-pill">
+                                            <span className="meta-label">stale pending</span>
+                                            <strong>{pageLifecycleCounts.stalePending}</strong>
+                                        </div>
                                     </div>
 
                                     {messagesResponse.items.length === 0 ? (
