@@ -1198,6 +1198,9 @@ function App() {
                                             {messagesResponse.totalElements} stored messages total, page size {messagesResponse.size}
                                         </span>
                                     </div>
+                                    <p className="browser-summary-caption mb-2">
+                                        Filtered totals cover the full matching result set. Page counts cover only the messages shown below.
+                                    </p>
                                     <div className="browser-lifecycle-summary browser-lifecycle-summary-aggregate mb-2" data-testid="browser-lifecycle-summary-aggregate">
                                         <div className="browser-lifecycle-pill">
                                             <span className="meta-label">filtered published</span>

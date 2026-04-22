@@ -109,6 +109,11 @@
     gap: 0.75rem;
 }
 
+.browser-summary-caption {
+    color: #51697c;
+    font-size: 0.95rem;
+}
+
 .browser-lifecycle-summary-aggregate .browser-lifecycle-pill {
     background: #eef5f9;
 }
