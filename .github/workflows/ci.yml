@@ -33,6 +33,9 @@ jobs:
         working-directory: solace-broker-api
         run: mvn test
 
+      - name: Build broker api
+        run: make build-api
+
   publisher-ui-tests:
     runs-on: ubuntu-latest
 
@@ -55,6 +58,9 @@ jobs:
         working-directory: solace-publisher-ui
         run: npm test -- --run
 
+      - name: Build publisher ui
+        run: make build-ui
+
   subscriber-tests:
     runs-on: ubuntu-latest
 
@@ -72,3 +78,6 @@ jobs:
       - name: Run subscriber tests
         working-directory: solace-subscriber
         run: mvn test
+
+      - name: Build subscriber
+        run: make build-subscriber

@@ -147,8 +147,11 @@ The workflow currently covers:
 
 - root script smoke tests
 - `solace-broker-api` tests
+- `solace-broker-api` build
 - `solace-publisher-ui` tests with `npm ci`
+- `solace-publisher-ui` build
 - `solace-subscriber` tests
+- `solace-subscriber` build
 
 ## Notes
 
