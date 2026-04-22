@@ -116,6 +116,30 @@
     border: 1px solid rgba(21, 48, 71, 0.08);
 }
 
+.browser-lifecycle-pill-button {
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.browser-lifecycle-pill-button:hover:not(:disabled),
+.browser-lifecycle-pill-button:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(21, 48, 71, 0.2);
+    box-shadow: 0 10px 24px rgba(21, 48, 71, 0.08);
+}
+
+.browser-lifecycle-pill-button.is-active {
+    background: #e7f1f8;
+    border-color: rgba(21, 48, 71, 0.28);
+}
+
+.browser-lifecycle-pill-button:disabled {
+    cursor: wait;
+    opacity: 0.72;
+}
+
 .browser-feedback-card {
     display: flex;
     flex-direction: column;

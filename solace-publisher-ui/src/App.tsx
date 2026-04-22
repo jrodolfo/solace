@@ -29,6 +29,21 @@ const DEFAULT_BROWSER_CREATED_AT_TO = "";
 const DEFAULT_BROWSER_PUBLISHED_AT_FROM = "";
 const DEFAULT_BROWSER_PUBLISHED_AT_TO = "";
 
+type BrowserQueryState = {
+    page: number;
+    size: number;
+    destination: string;
+    deliveryMode: string;
+    innerMessageId: string;
+    publishStatus: string;
+    createdAtFrom: string;
+    createdAtTo: string;
+    publishedAtFrom: string;
+    publishedAtTo: string;
+    sortBy: string;
+    sortDirection: string;
+};
+
 function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
     const messagesBaseUrl = "http://localhost:8081/api/v1/messages";
@@ -75,6 +90,21 @@ function App() {
     const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
     const [bulkRetryResults, setBulkRetryResults] = useState<BulkRetryResultItem[] | null>(null);
 
+    const currentBrowserQuery = (overrides?: Partial<BrowserQueryState>): BrowserQueryState => ({
+        page: overrides?.page ?? Number(browserPage),
+        size: overrides?.size ?? Number(browserSize),
+        destination: overrides?.destination ?? filterDestination.trim(),
+        deliveryMode: overrides?.deliveryMode ?? filterDeliveryMode.trim(),
+        innerMessageId: overrides?.innerMessageId ?? filterInnerMessageId.trim(),
+        publishStatus: overrides?.publishStatus ?? filterPublishStatus,
+        createdAtFrom: overrides?.createdAtFrom ?? filterCreatedAtFrom,
+        createdAtTo: overrides?.createdAtTo ?? filterCreatedAtTo,
+        publishedAtFrom: overrides?.publishedAtFrom ?? filterPublishedAtFrom,
+        publishedAtTo: overrides?.publishedAtTo ?? filterPublishedAtTo,
+        sortBy: overrides?.sortBy ?? browserSortBy,
+        sortDirection: overrides?.sortDirection ?? browserSortDirection
+    });
+
     const updateProperty = (index: number, field: keyof MessagePropertyFormRow, value: string) => {
         setProperties((currentProperties) =>
             currentProperties.map((property, propertyIndex) =>
@@ -97,9 +127,10 @@ function App() {
         });
     };
 
-    const fetchMessages = async (overrides?: { page?: number; size?: number }) => {
-        const nextPage = overrides?.page ?? Number(browserPage);
-        const nextSize = overrides?.size ?? Number(browserSize);
+    const fetchMessages = async (overrides?: Partial<BrowserQueryState>) => {
+        const query = currentBrowserQuery(overrides);
+        const nextPage = query.page;
+        const nextSize = query.size;
 
         if (!Number.isInteger(nextPage) || nextPage < 0) {
             setBrowserMessage("Page must be greater than or equal to 0.");
@@ -126,16 +157,16 @@ function App() {
                 params: {
                     page: nextPage,
                     size: nextSize,
-                    ...(filterDestination.trim() ? {destination: filterDestination.trim()} : {}),
-                    ...(filterDeliveryMode.trim() ? {deliveryMode: filterDeliveryMode.trim()} : {}),
-                    ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
-                    ...(filterPublishStatus ? {publishStatus: filterPublishStatus} : {}),
-                    ...(filterCreatedAtFrom ? {createdAtFrom: toIsoLocalDateTime(filterCreatedAtFrom)} : {}),
-                    ...(filterCreatedAtTo ? {createdAtTo: toIsoLocalDateTime(filterCreatedAtTo)} : {}),
-                    ...(filterPublishedAtFrom ? {publishedAtFrom: toIsoLocalDateTime(filterPublishedAtFrom)} : {}),
-                    ...(filterPublishedAtTo ? {publishedAtTo: toIsoLocalDateTime(filterPublishedAtTo)} : {}),
-                    sortBy: browserSortBy,
-                    sortDirection: browserSortDirection
+                    ...(query.destination ? {destination: query.destination} : {}),
+                    ...(query.deliveryMode ? {deliveryMode: query.deliveryMode} : {}),
+                    ...(query.innerMessageId ? {innerMessageId: query.innerMessageId} : {}),
+                    ...(query.publishStatus ? {publishStatus: query.publishStatus} : {}),
+                    ...(query.createdAtFrom ? {createdAtFrom: toIsoLocalDateTime(query.createdAtFrom)} : {}),
+                    ...(query.createdAtTo ? {createdAtTo: toIsoLocalDateTime(query.createdAtTo)} : {}),
+                    ...(query.publishedAtFrom ? {publishedAtFrom: toIsoLocalDateTime(query.publishedAtFrom)} : {}),
+                    ...(query.publishedAtTo ? {publishedAtTo: toIsoLocalDateTime(query.publishedAtTo)} : {}),
+                    sortBy: query.sortBy,
+                    sortDirection: query.sortDirection
                 }
             });
 
@@ -413,6 +444,17 @@ function App() {
         },
         {published: 0, failed: 0, pending: 0, stalePending: 0}
     );
+
+    const applyLifecycleQuickFilter = async (publishStatus: "PUBLISHED" | "FAILED" | "PENDING") => {
+        setFilterPublishStatus(publishStatus);
+        setBrowserPage(DEFAULT_BROWSER_PAGE);
+        setExpandedMessageId(null);
+        setBrowserMessage(null);
+        setBrowserVariant(null);
+        setBrowserStatusCode(null);
+        setBulkRetryResults(null);
+        await fetchMessages({page: Number(DEFAULT_BROWSER_PAGE), publishStatus});
+    };
 
     // Submit handler
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -1108,18 +1150,33 @@ function App() {
                                         </span>
                                     </div>
                                     <div className="browser-lifecycle-summary mb-3" data-testid="browser-lifecycle-summary">
-                                        <div className="browser-lifecycle-pill">
+                                        <button
+                                            type="button"
+                                            className={`browser-lifecycle-pill browser-lifecycle-pill-button${filterPublishStatus === "PUBLISHED" ? " is-active" : ""}`}
+                                            onClick={() => applyLifecycleQuickFilter("PUBLISHED")}
+                                            disabled={isLoadingMessages || isBulkRetrying || retryingMessageId !== null || reconcilingMessageId !== null}
+                                        >
                                             <span className="meta-label">published</span>
                                             <strong>{pageLifecycleCounts.published}</strong>
-                                        </div>
-                                        <div className="browser-lifecycle-pill">
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`browser-lifecycle-pill browser-lifecycle-pill-button${filterPublishStatus === "FAILED" ? " is-active" : ""}`}
+                                            onClick={() => applyLifecycleQuickFilter("FAILED")}
+                                            disabled={isLoadingMessages || isBulkRetrying || retryingMessageId !== null || reconcilingMessageId !== null}
+                                        >
                                             <span className="meta-label">failed</span>
                                             <strong>{pageLifecycleCounts.failed}</strong>
-                                        </div>
-                                        <div className="browser-lifecycle-pill">
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`browser-lifecycle-pill browser-lifecycle-pill-button${filterPublishStatus === "PENDING" ? " is-active" : ""}`}
+                                            onClick={() => applyLifecycleQuickFilter("PENDING")}
+                                            disabled={isLoadingMessages || isBulkRetrying || retryingMessageId !== null || reconcilingMessageId !== null}
+                                        >
                                             <span className="meta-label">pending</span>
                                             <strong>{pageLifecycleCounts.pending}</strong>
-                                        </div>
+                                        </button>
                                         <div className="browser-lifecycle-pill">
                                             <span className="meta-label">stale pending</span>
                                             <strong>{pageLifecycleCounts.stalePending}</strong>

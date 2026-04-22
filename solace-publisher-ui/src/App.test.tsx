@@ -823,6 +823,65 @@ describe("Stored Messages Browser", () => {
         expect(stalePendingLabel.nextElementSibling).toHaveTextContent("1");
     });
 
+    test("Applies the lifecycle quick filter and reloads browser results", async () => {
+        mockedAxios.get
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    totalElements: 3,
+                    totalPages: 1,
+                    last: true,
+                    items: [
+                        buildStoredMessage({id: 1, publishStatus: "PUBLISHED"}),
+                        buildStoredMessage({id: 2, publishStatus: "FAILED", publishedAt: null}),
+                        buildStoredMessage({id: 3, publishStatus: "PENDING", publishedAt: null}),
+                    ],
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            })
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    totalElements: 1,
+                    totalPages: 1,
+                    last: true,
+                    items: [
+                        buildStoredMessage({id: 2, publishStatus: "FAILED", publishedAt: null}),
+                    ],
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        const lifecycleSummary = screen.getByTestId("browser-lifecycle-summary");
+        const failedQuickFilter = within(lifecycleSummary).getByText(/^failed$/i, {selector: ".meta-label"}).closest("button");
+        expect(failedQuickFilter).not.toBeNull();
+
+        await userEvent.click(failedQuickFilter!);
+
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
+        expect(mockedAxios.get).toHaveBeenLastCalledWith(
+            "http://localhost:8081/api/v1/messages/all",
+            expect.objectContaining({
+                params: expect.objectContaining({
+                    page: 0,
+                    publishStatus: "FAILED",
+                    sortBy: "createdAt",
+                    sortDirection: "desc",
+                }),
+            }),
+        );
+        expect(screen.getByLabelText(/filter publish status/i)).toHaveValue("FAILED");
+    });
+
     test("Reconciles a stale pending message and refreshes the browser results", async () => {
         mockedAxios.get
             .mockResolvedValueOnce({
