@@ -1462,7 +1462,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
 
-        await userEvent.click(screen.getByRole("button", {name: /export current page/i}));
+        await userEvent.click(screen.getByRole("button", {name: /export current page json/i}));
 
         expect(createObjectUrlMock).toHaveBeenCalledTimes(1);
         const exportBlob = createObjectUrlMock.mock.calls[0][0] as MockBlob;
@@ -1474,6 +1474,60 @@ describe("Stored Messages Browser", () => {
         expect(anchorClickMock).toHaveBeenCalledTimes(1);
         expect(revokeObjectUrlMock).toHaveBeenCalledWith("blob:test-export");
         expect(screen.getByRole("alert")).toHaveTextContent("Exported 2 messages from the current page.");
+    });
+
+    test("Exports the currently loaded page as csv with escaped nested content", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 1,
+                totalPages: 1,
+                last: true,
+                items: [
+                    buildStoredMessage({
+                        id: 2,
+                        innerMessageId: "002",
+                        destination: "solace/java/direct/system-02",
+                        deliveryMode: "DIRECT",
+                        publishStatus: "FAILED",
+                        stalePending: true,
+                        retrySupported: false,
+                        retryBlockedReason: "blocked by policy",
+                        failureReason: "Line 1, \"quoted\"",
+                        publishedAt: null,
+                        payload: {
+                            type: "text",
+                            content: "hello,\n\"world\"",
+                        },
+                        properties: {
+                            region: "ca-east",
+                            note: "comma,value",
+                        },
+                    }),
+                ],
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        await userEvent.click(screen.getByRole("button", {name: /export current page csv/i}));
+
+        const exportBlob = createObjectUrlMock.mock.calls[0][0] as MockBlob;
+        expect(exportBlob.type).toBe("text/csv;charset=utf-8");
+        const csvContent = String(exportBlob.parts[0]);
+        expect(csvContent).toContain("\"id\",\"innerMessageId\",\"destination\"");
+        expect(csvContent).toContain("\"002\",\"solace/java/direct/system-02\",\"DIRECT\"");
+        expect(csvContent).toContain("\"Line 1, \"\"quoted\"\"\"");
+        expect(csvContent).toContain("\"hello,\n\"\"world\"\"\"");
+        expect(csvContent).toContain("\"{\"\"region\"\":\"\"ca-east\"\",\"\"note\"\":\"\"comma,value\"\"}\"");
+        expect(anchorClickMock).toHaveBeenCalledTimes(1);
+        expect(screen.getByRole("alert")).toHaveTextContent("Exported 1 messages from the current page as CSV.");
     });
 
     test("Exports the full filtered result set through the backend export endpoint", async () => {
@@ -1533,7 +1587,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.type(screen.getByLabelText(/Published At To/i), "2026-04-21T08:15");
         await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
         await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
-        await userEvent.click(screen.getByRole("button", {name: /export filtered results/i}));
+        await userEvent.click(screen.getByRole("button", {name: /export filtered results json/i}));
 
         expect(mockedAxios.get).toHaveBeenCalledWith(
             "http://localhost:8081/api/v1/messages/export",
@@ -1559,6 +1613,80 @@ describe("Stored Messages Browser", () => {
         expect(exportJson.items[0].innerMessageId).toBe("002");
         expect(anchorClickMock).toHaveBeenCalledTimes(1);
         expect(screen.getByRole("alert")).toHaveTextContent("Exported 1 filtered messages.");
+    });
+
+    test("Exports the full filtered result set as csv through the backend export endpoint", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: {
+                exportedAt: "2026-04-22T13:45:00",
+                filters: {
+                    destination: "",
+                    deliveryMode: "",
+                    innerMessageId: "",
+                    publishStatus: "FAILED",
+                    stalePendingOnly: false,
+                    createdAtFrom: null,
+                    createdAtTo: null,
+                    publishedAtFrom: null,
+                    publishedAtTo: null,
+                    sortBy: "createdAt",
+                    sortDirection: "desc",
+                },
+                totalElements: 1,
+                lifecycleCounts: {
+                    publishedCount: 0,
+                    failedCount: 1,
+                    pendingCount: 0,
+                    stalePendingCount: 0,
+                    retryableFailedCount: 1,
+                    nonRetryableFailedCount: 0,
+                },
+                items: [
+                    buildStoredMessage({
+                        id: 2,
+                        innerMessageId: "002",
+                        destination: "solace/java/direct/system-02",
+                        deliveryMode: "DIRECT",
+                        publishStatus: "FAILED",
+                        payload: {
+                            type: "text",
+                            content: "csv content",
+                        },
+                        properties: {
+                            source: "filtered-export",
+                        },
+                    }),
+                ],
+            },
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
+        await userEvent.click(screen.getByRole("button", {name: /export filtered results csv/i}));
+
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+            "http://localhost:8081/api/v1/messages/export",
+            {
+                params: {
+                    publishStatus: "FAILED",
+                    sortBy: "createdAt",
+                    sortDirection: "desc",
+                },
+            }
+        );
+        const exportBlob = createObjectUrlMock.mock.calls[0][0] as MockBlob;
+        expect(exportBlob.type).toBe("text/csv;charset=utf-8");
+        const csvContent = String(exportBlob.parts[0]);
+        expect(csvContent).toContain("\"002\",\"solace/java/direct/system-02\",\"DIRECT\"");
+        expect(csvContent).toContain("\"csv content\"");
+        expect(csvContent).toContain("\"{\"\"source\"\":\"\"filtered-export\"\"}\"");
+        expect(anchorClickMock).toHaveBeenCalledTimes(1);
+        expect(screen.getByRole("alert")).toHaveTextContent("Exported 1 filtered messages as CSV.");
     });
 
     test("Reconciles a stale pending message and refreshes the browser results", async () => {

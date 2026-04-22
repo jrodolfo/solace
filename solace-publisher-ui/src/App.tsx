@@ -6,7 +6,7 @@ import ShowOutput from "./ShowOutput.tsx";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
 import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
-import type {BulkRetryResponse, BulkRetryResultItem, FilteredMessagesExportResponse, PagedStoredMessagesResponse} from "./StoredMessageTypes.ts";
+import type {BulkRetryResponse, BulkRetryResultItem, FilteredMessagesExportResponse, PagedStoredMessagesResponse, StoredMessage} from "./StoredMessageTypes.ts";
 
 type MessagePropertyFormRow = {
     key: string;
@@ -794,16 +794,28 @@ function App() {
             items: messagesResponse.items,
         };
 
-        const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {type: "application/json"});
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = `stored-messages-page-${messagesResponse.page + 1}-${timestamp}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
+        downloadFile(
+            JSON.stringify(exportPayload, null, 2),
+            "application/json",
+            `stored-messages-page-${messagesResponse.page + 1}-${timestamp}.json`
+        );
         setBrowserMessage(`Exported ${messagesResponse.items.length} messages from the current page.`);
+        setBrowserVariant("info");
+        setBrowserStatusCode(null);
+    };
+
+    const exportCurrentPageCsv = () => {
+        if (!messagesResponse) {
+            return;
+        }
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        downloadFile(
+            buildStoredMessagesCsv(messagesResponse.items),
+            "text/csv;charset=utf-8",
+            `stored-messages-page-${messagesResponse.page + 1}-${timestamp}.csv`
+        );
+        setBrowserMessage(`Exported ${messagesResponse.items.length} messages from the current page as CSV.`);
         setBrowserVariant("info");
         setBrowserStatusCode(null);
     };
@@ -827,15 +839,11 @@ function App() {
             });
 
             const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-            const blob = new Blob([JSON.stringify(response.data, null, 2)], {type: "application/json"});
-            const blobUrl = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = blobUrl;
-            link.download = `stored-messages-filtered-export-${timestamp}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(blobUrl);
+            downloadFile(
+                JSON.stringify(response.data, null, 2),
+                "application/json",
+                `stored-messages-filtered-export-${timestamp}.json`
+            );
             setBrowserMessage(`Exported ${response.data.items.length} filtered messages.`);
             setBrowserVariant("info");
             setBrowserStatusCode(response.status);
@@ -847,6 +855,47 @@ function App() {
             } else {
                 console.error("Failed to export filtered messages.", error);
                 setBrowserMessage("Failed to export filtered messages.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(500);
+            }
+        }
+    };
+
+    const exportFilteredResultsCsv = async () => {
+        try {
+            const response = await axios.get<FilteredMessagesExportResponse>(messagesExportApiUrl, {
+                params: {
+                    ...(filterDestination.trim() ? {destination: filterDestination.trim()} : {}),
+                    ...(filterDeliveryMode.trim() ? {deliveryMode: filterDeliveryMode.trim()} : {}),
+                    ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
+                    ...(filterPublishStatus ? {publishStatus: filterPublishStatus} : {}),
+                    ...(filterStalePendingOnly ? {stalePendingOnly: true} : {}),
+                    ...(filterCreatedAtFrom ? {createdAtFrom: toIsoLocalDateTime(filterCreatedAtFrom)} : {}),
+                    ...(filterCreatedAtTo ? {createdAtTo: toIsoLocalDateTime(filterCreatedAtTo)} : {}),
+                    ...(filterPublishedAtFrom ? {publishedAtFrom: toIsoLocalDateTime(filterPublishedAtFrom)} : {}),
+                    ...(filterPublishedAtTo ? {publishedAtTo: toIsoLocalDateTime(filterPublishedAtTo)} : {}),
+                    sortBy: browserSortBy,
+                    sortDirection: browserSortDirection,
+                }
+            });
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            downloadFile(
+                buildStoredMessagesCsv(response.data.items),
+                "text/csv;charset=utf-8",
+                `stored-messages-filtered-export-${timestamp}.csv`
+            );
+            setBrowserMessage(`Exported ${response.data.items.length} filtered messages as CSV.`);
+            setBrowserVariant("info");
+            setBrowserStatusCode(response.status);
+        } catch (error) {
+            if (axios.isAxiosError<SolaceBrokerAPIError>(error) && error.response) {
+                setBrowserMessage(error.response.data?.message ?? "Failed to export filtered messages as CSV.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(error.response.status);
+            } else {
+                console.error("Failed to export filtered messages as CSV.", error);
+                setBrowserMessage("Failed to export filtered messages as CSV.");
                 setBrowserVariant("danger");
                 setBrowserStatusCode(500);
             }
@@ -1709,7 +1758,15 @@ function App() {
                                             onClick={exportFilteredResults}
                                             disabled={isLoadingMessages || isBulkRetrying}
                                         >
-                                            Export Filtered Results
+                                            Export Filtered Results JSON
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-info"
+                                            onClick={exportFilteredResultsCsv}
+                                            disabled={isLoadingMessages || isBulkRetrying}
+                                        >
+                                            Export Filtered Results CSV
                                         </button>
                                         <button
                                             type="button"
@@ -1717,7 +1774,15 @@ function App() {
                                             onClick={exportCurrentPage}
                                             disabled={!messagesResponse || isLoadingMessages || isBulkRetrying}
                                         >
-                                            Export Current Page
+                                            Export Current Page JSON
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-info"
+                                            onClick={exportCurrentPageCsv}
+                                            disabled={!messagesResponse || isLoadingMessages || isBulkRetrying}
+                                        >
+                                            Export Current Page CSV
                                         </button>
                                         <button
                                             type="button"
@@ -2111,6 +2176,67 @@ function publishStatusVariant(status: "PENDING" | "PUBLISHED" | "FAILED"): strin
         return "danger";
     }
     return "warning";
+}
+
+function downloadFile(content: string, type: string, filename: string) {
+    const blob = new Blob([content], {type});
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+}
+
+function buildStoredMessagesCsv(messages: StoredMessage[]): string {
+    const headers = [
+        "id",
+        "innerMessageId",
+        "destination",
+        "deliveryMode",
+        "priority",
+        "publishStatus",
+        "stalePending",
+        "retrySupported",
+        "retryBlockedReason",
+        "failureReason",
+        "publishedAt",
+        "createdAt",
+        "updatedAt",
+        "payloadType",
+        "payloadContent",
+        "properties",
+    ];
+
+    const rows = messages.map((message) => [
+        message.id,
+        message.innerMessageId,
+        message.destination,
+        message.deliveryMode,
+        message.priority,
+        message.publishStatus,
+        message.stalePending,
+        message.retrySupported,
+        message.retryBlockedReason ?? "",
+        message.failureReason ?? "",
+        message.publishedAt ?? "",
+        message.createdAt ?? "",
+        message.updatedAt ?? "",
+        message.payload.type,
+        message.payload.content,
+        JSON.stringify(message.properties),
+    ]);
+
+    return [headers, ...rows]
+        .map((row) => row.map(csvEscape).join(","))
+        .join("\n");
+}
+
+function csvEscape(value: unknown): string {
+    const normalizedValue = String(value ?? "");
+    return `"${normalizedValue.replace(/"/g, "\"\"")}"`;
 }
 
 function toIsoLocalDateTime(value: string): string {
