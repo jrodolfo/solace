@@ -8,6 +8,7 @@ import com.solace.messaging.resources.TopicSubscription;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,6 +25,7 @@ public class DirectReceiver {
 
     private static final Logger logger = Logger.getLogger(DirectReceiver.class.getName());
     private final AccessProperties accessProperties;
+    private final AtomicBoolean shutdownTriggered = new AtomicBoolean(false);
     private volatile int msgRecvCounter = 0;              // num messages received
     private volatile boolean hasDetectedDiscard = false;  // detected any discards yet?
     private volatile boolean isShutdown = false;          // are we done yet?
@@ -61,10 +63,12 @@ public class DirectReceiver {
         configureMessagingServiceListeners(messagingService);
 
         final DirectMessageReceiver receiver = createAndStartReceiver(messagingService);
+        Thread shutdownHook = registerShutdownHook(receiver, messagingService);
         receiver.receiveAsync(createMessageHandler());
 
         waitForShutdownSignal();
         shutdown(receiver, messagingService);
+        removeShutdownHook(shutdownHook);
     }
 
     /**
@@ -160,10 +164,43 @@ public class DirectReceiver {
      * Terminates receiver resources and disconnects from the broker.
      */
     void shutdown(DirectMessageReceiver receiver, MessagingService messagingService) {
+        if (!shutdownTriggered.compareAndSet(false, true)) {
+            return;
+        }
+
         isShutdown = true;
-        receiver.terminate(500);
-        messagingService.disconnect();
+        try {
+            receiver.terminate(500);
+        } catch (RuntimeException e) {
+            logger.log(Level.WARNING, "Failed to terminate subscriber receiver cleanly.", e);
+        }
+        try {
+            messagingService.disconnect();
+        } catch (RuntimeException e) {
+            logger.log(Level.WARNING, "Failed to disconnect subscriber messaging service cleanly.", e);
+        }
         logger.log(Level.INFO, "Subscriber shutdown complete.");
+    }
+
+    /**
+     * Registers a JVM shutdown hook so SIGTERM and normal JVM shutdown paths use
+     * the same cleanup sequence as interactive shutdown.
+     */
+    Thread registerShutdownHook(DirectMessageReceiver receiver, MessagingService messagingService) {
+        Thread shutdownHook = new Thread(
+                () -> shutdown(receiver, messagingService),
+                "solace-subscriber-shutdown-hook"
+        );
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+        return shutdownHook;
+    }
+
+    void removeShutdownHook(Thread shutdownHook) {
+        try {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+        } catch (IllegalStateException ignored) {
+            // JVM shutdown is already in progress.
+        }
     }
 
     int getMsgRecvCounter() {
@@ -172,5 +209,9 @@ public class DirectReceiver {
 
     boolean hasDetectedDiscard() {
         return hasDetectedDiscard;
+    }
+
+    boolean isShutdown() {
+        return isShutdown;
     }
 }
