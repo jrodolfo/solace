@@ -631,7 +631,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.click(screen.getByRole("button", {name: /save current view/i}));
 
         expect(await screen.findByText(/Saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/Saved Views/i)).toHaveValue("Failed Priority View");
+        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("Failed Priority View");
 
         expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
             {
@@ -695,7 +695,7 @@ describe("Stored Messages Browser", () => {
 
         render(<App/>);
 
-        await userEvent.selectOptions(screen.getByLabelText(/Saved Views/i), "Stale Pending Review");
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Stale Pending Review");
         await userEvent.click(screen.getByRole("button", {name: /load saved view/i}));
 
         expect(screen.getByLabelText(/Filter Destination/i)).toHaveValue("system-03");
@@ -758,13 +758,116 @@ describe("Stored Messages Browser", () => {
 
         render(<App/>);
 
-        await userEvent.selectOptions(screen.getByLabelText(/Saved Views/i), "Failed Priority View");
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
         await userEvent.click(screen.getByRole("button", {name: /delete saved view/i}));
 
         expect(await screen.findByText(/Deleted saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/Saved Views/i)).toHaveValue("");
+        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("");
         expect(screen.queryByRole("option", {name: "Failed Priority View"})).not.toBeInTheDocument();
         expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([]);
+    });
+
+    test("Exports saved browser views as json", async () => {
+        window.localStorage.setItem(
+            "solace.publisher-ui.saved-browser-views",
+            JSON.stringify([
+                {
+                    name: "Failed Priority View",
+                    query: {
+                        page: 0,
+                        size: 20,
+                        destination: "system-02",
+                        deliveryMode: "",
+                        innerMessageId: "",
+                        publishStatus: "FAILED",
+                        stalePendingOnly: false,
+                        createdAtFrom: "",
+                        createdAtTo: "",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "createdAt",
+                        sortDirection: "desc",
+                    },
+                },
+            ])
+        );
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /export saved views/i}));
+
+        expect(createObjectUrlMock).toHaveBeenCalledTimes(1);
+        const exportedBlob = createObjectUrlMock.mock.calls[0]?.[0] as MockBlob;
+        expect(exportedBlob.type).toBe("application/json");
+        expect(JSON.parse(String(exportedBlob.parts[0]))).toMatchObject({
+            savedViews: [
+                {
+                    name: "Failed Priority View",
+                    query: {
+                        destination: "system-02",
+                        publishStatus: "FAILED",
+                    },
+                },
+            ],
+        });
+        expect(anchorClickMock).toHaveBeenCalledTimes(1);
+        expect(await screen.findByText(/Exported 1 saved browser view\./i)).toBeInTheDocument();
+    });
+
+    test("Imports saved browser views from json", async () => {
+        render(<App/>);
+
+        const importFile = new File(
+            [JSON.stringify({
+                savedViews: [
+                    {
+                        name: "Published Today Review",
+                        query: {
+                            page: 0,
+                            size: 30,
+                            destination: "",
+                            deliveryMode: "DIRECT",
+                            innerMessageId: "",
+                            publishStatus: "PUBLISHED",
+                            stalePendingOnly: false,
+                            createdAtFrom: "",
+                            createdAtTo: "",
+                            publishedAtFrom: "2026-04-21T07:00",
+                            publishedAtTo: "2026-04-21T08:15",
+                            sortBy: "priority",
+                            sortDirection: "asc",
+                        },
+                    },
+                ],
+            })],
+            "saved-views.json",
+            {type: "application/json"}
+        );
+
+        await userEvent.upload(screen.getByLabelText(/Import Saved Views File/i), importFile);
+
+        expect(await screen.findByText(/Imported 1 saved browser view\./i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("Published Today Review");
+        expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
+            {
+                name: "Published Today Review",
+                query: {
+                    page: 0,
+                    size: 30,
+                    destination: "",
+                    deliveryMode: "DIRECT",
+                    innerMessageId: "",
+                    publishStatus: "PUBLISHED",
+                    stalePendingOnly: false,
+                    createdAtFrom: "",
+                    createdAtTo: "",
+                    publishedAtFrom: "2026-04-21T07:00",
+                    publishedAtTo: "2026-04-21T08:15",
+                    sortBy: "priority",
+                    sortDirection: "asc",
+                },
+            },
+        ]);
     });
 
     test("Loads the next page when pagination advances", async () => {

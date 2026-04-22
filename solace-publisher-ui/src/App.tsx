@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import axios, {AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig} from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
@@ -55,6 +55,14 @@ type SavedBrowserView = {
 const sortSavedViews = (savedViews: SavedBrowserView[]) =>
     [...savedViews].sort((left, right) => left.name.localeCompare(right.name));
 
+const readFileAsText = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result ?? ""));
+        reader.onerror = () => reject(reader.error ?? new Error("Failed to read file."));
+        reader.readAsText(file);
+    });
+
 function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
     const messagesBaseUrl = "http://localhost:8081/api/v1/messages";
@@ -104,6 +112,7 @@ function App() {
     const [savedViewName, setSavedViewName] = useState("");
     const [selectedSavedViewName, setSelectedSavedViewName] = useState("");
     const [savedViews, setSavedViews] = useState<SavedBrowserView[]>([]);
+    const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         try {
@@ -377,6 +386,77 @@ function App() {
             setBrowserMessage("Failed to delete the browser view.");
             setBrowserVariant("danger");
             setBrowserStatusCode(500);
+        }
+    };
+
+    const exportSavedViews = () => {
+        if (savedViews.length === 0) {
+            setBrowserMessage("No saved browser views are available to export.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+            return;
+        }
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const exportPayload = {
+            exportedAt: new Date().toISOString(),
+            savedViews,
+        };
+
+        const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {type: "application/json"});
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = `stored-message-browser-views-${timestamp}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+        setBrowserMessage(`Exported ${savedViews.length} saved browser view${savedViews.length === 1 ? "" : "s"}.`);
+        setBrowserVariant("info");
+        setBrowserStatusCode(null);
+    };
+
+    const openSavedViewsImport = () => {
+        savedViewsImportInputRef.current?.click();
+    };
+
+    const importSavedViews = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) {
+            return;
+        }
+
+        try {
+            const fileContents = await readFileAsText(file);
+            const parsedImport = JSON.parse(fileContents) as {savedViews?: SavedBrowserView[]};
+            if (!Array.isArray(parsedImport.savedViews)) {
+                setBrowserMessage("Imported saved views file is invalid.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(400);
+                return;
+            }
+
+            const mergedViewsByName = new Map(savedViews.map((view) => [view.name, view]));
+            parsedImport.savedViews.forEach((view) => {
+                if (view && typeof view.name === "string" && view.query) {
+                    mergedViewsByName.set(view.name, view);
+                }
+            });
+
+            const mergedViews = persistSavedViews(Array.from(mergedViewsByName.values()));
+            setSelectedSavedViewName(mergedViews[0]?.name ?? "");
+            setSavedViewName("");
+            setBrowserMessage(`Imported ${parsedImport.savedViews.length} saved browser view${parsedImport.savedViews.length === 1 ? "" : "s"}.`);
+            setBrowserVariant("success");
+            setBrowserStatusCode(null);
+        } catch (error) {
+            console.error("Failed to import saved browser views.", error);
+            setBrowserMessage("Failed to import saved browser views.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+        } finally {
+            event.target.value = "";
         }
     };
 
@@ -1350,6 +1430,30 @@ function App() {
                                             >
                                                 Delete Saved View
                                             </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-info"
+                                                onClick={exportSavedViews}
+                                                disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Export Saved Views
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-secondary"
+                                                onClick={openSavedViewsImport}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Import Saved Views
+                                            </button>
+                                            <input
+                                                ref={savedViewsImportInputRef}
+                                                type="file"
+                                                accept="application/json"
+                                                className="d-none"
+                                                onChange={importSavedViews}
+                                                aria-label="Import Saved Views File"
+                                            />
                                         </div>
                                         {messagesResponse && messagesResponse.items.some((message) => message.publishStatus === "FAILED" && message.retrySupported) && (
                                             <button
