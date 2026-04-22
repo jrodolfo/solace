@@ -655,6 +655,56 @@ describe("Stored Messages Browser", () => {
         ]);
     });
 
+    test("Shows built-in browser views separately from local saved views", () => {
+        render(<App/>);
+
+        const builtInViews = screen.getByLabelText(/^Built-In Views$/i);
+        expect(within(builtInViews).getByRole("option", {name: "failed today"})).toBeInTheDocument();
+        expect(within(builtInViews).getByRole("option", {name: "stale pending only"})).toBeInTheDocument();
+        expect(within(builtInViews).getByRole("option", {name: "published today"})).toBeInTheDocument();
+        expect(within(builtInViews).getByRole("option", {name: "pending now"})).toBeInTheDocument();
+    });
+
+    test("Applies a built-in browser view and refreshes with its query", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 0,
+                totalPages: 0,
+                items: [],
+                last: true,
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.selectOptions(screen.getByLabelText(/^Built-In Views$/i), "STALE_PENDING_ONLY");
+        await userEvent.click(screen.getByRole("button", {name: /apply built-in view/i}));
+
+        expect(screen.getByLabelText(/Filter Publish Status/i)).toHaveValue("PENDING");
+        expect(screen.getByLabelText(/only stale pending/i)).toBeChecked();
+        expect(screen.getByLabelText(/^Page$/i)).toHaveValue(0);
+        expect(screen.getByLabelText(/^Size$/i)).toHaveValue(20);
+
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+            "http://localhost:8081/api/v1/messages/all",
+            {
+                params: {
+                    page: 0,
+                    size: 20,
+                    publishStatus: "PENDING",
+                    stalePendingOnly: true,
+                    sortBy: "createdAt",
+                    sortDirection: "desc",
+                },
+            }
+        );
+    });
+
     test("Loads a saved browser view and refreshes with its query", async () => {
         window.localStorage.setItem(
             "solace.publisher-ui.saved-browser-views",

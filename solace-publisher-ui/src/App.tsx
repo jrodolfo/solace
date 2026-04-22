@@ -19,6 +19,12 @@ type BrowserPreset =
     | "PENDING_NOW"
     | "FAILED_LAST_24H";
 
+type BuiltInBrowserViewKey =
+    | "FAILED_TODAY"
+    | "STALE_PENDING_ONLY"
+    | "PUBLISHED_TODAY"
+    | "PENDING_NOW";
+
 const DEFAULT_BROWSER_SORT_BY = "createdAt";
 const DEFAULT_BROWSER_SORT_DIRECTION = "desc";
 const DEFAULT_BROWSER_PAGE = "0";
@@ -48,6 +54,12 @@ type BrowserQueryState = {
 };
 
 type SavedBrowserView = {
+    name: string;
+    query: BrowserQueryState;
+};
+
+type BuiltInBrowserView = {
+    key: BuiltInBrowserViewKey;
     name: string;
     query: BrowserQueryState;
 };
@@ -111,6 +123,7 @@ function App() {
     const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
     const [bulkRetryResults, setBulkRetryResults] = useState<BulkRetryResultItem[] | null>(null);
     const [savedViewName, setSavedViewName] = useState("");
+    const [selectedBuiltInViewKey, setSelectedBuiltInViewKey] = useState("");
     const [selectedSavedViewName, setSelectedSavedViewName] = useState("");
     const [savedViews, setSavedViews] = useState<SavedBrowserView[]>([]);
     const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
@@ -148,6 +161,8 @@ function App() {
         sortBy: overrides?.sortBy ?? browserSortBy,
         sortDirection: overrides?.sortDirection ?? browserSortDirection
     });
+
+    const builtInBrowserViews = getBuiltInBrowserViews();
 
     const persistSavedViews = (nextSavedViews: SavedBrowserView[]) => {
         const sortedSavedViews = sortSavedViews(nextSavedViews);
@@ -308,6 +323,7 @@ function App() {
         setHasLoadedMessages(false);
         setBulkRetryResults(null);
         setSavedViewName("");
+        setSelectedBuiltInViewKey("");
         setSelectedSavedViewName("");
     };
 
@@ -388,6 +404,28 @@ function App() {
             setBrowserVariant("danger");
             setBrowserStatusCode(500);
         }
+    };
+
+    const applyBuiltInView = async () => {
+        if (!selectedBuiltInViewKey) {
+            setBrowserMessage("Select a built-in browser view to apply.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+            return;
+        }
+
+        const selectedBuiltInView = builtInBrowserViews.find((view) => view.key === selectedBuiltInViewKey);
+        if (!selectedBuiltInView) {
+            setBrowserMessage(`Built-in browser view "${selectedBuiltInViewKey}" was not found.`);
+            setBrowserVariant("danger");
+            setBrowserStatusCode(404);
+            return;
+        }
+
+        applyBrowserQueryState(selectedBuiltInView.query);
+        setSavedViewName("");
+        setSelectedSavedViewName("");
+        await fetchMessages(selectedBuiltInView.query);
     };
 
     const exportSavedViews = () => {
@@ -1425,6 +1463,33 @@ function App() {
                                     <div className="d-flex gap-2 mt-3 flex-wrap">
                                         <div className="saved-view-controls d-flex gap-2 flex-wrap align-items-end w-100">
                                             <div className="saved-view-field">
+                                                <label htmlFor="builtInBrowserViews" className="form-label">
+                                                    Built-In Views
+                                                </label>
+                                                <select
+                                                    id="builtInBrowserViews"
+                                                    className="form-select"
+                                                    value={selectedBuiltInViewKey}
+                                                    onChange={(e) => setSelectedBuiltInViewKey(e.target.value)}
+                                                    disabled={isLoadingMessages || isBulkRetrying}
+                                                >
+                                                    <option value="">select a built-in view</option>
+                                                    {builtInBrowserViews.map((view) => (
+                                                        <option key={view.key} value={view.key}>
+                                                            {view.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-secondary"
+                                                onClick={applyBuiltInView}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Apply Built-In View
+                                            </button>
+                                            <div className="saved-view-field">
                                                 <label htmlFor="savedViewName" className="form-label">
                                                     Saved View Name
                                                 </label>
@@ -2015,6 +2080,90 @@ function endOfDay(value: Date): Date {
     const nextValue = new Date(value);
     nextValue.setHours(23, 59, 0, 0);
     return nextValue;
+}
+
+function getBuiltInBrowserViews(now: Date = new Date()): BuiltInBrowserView[] {
+    const todayStart = startOfDay(now);
+    const todayEnd = endOfDay(now);
+
+    return [
+        {
+            key: "FAILED_TODAY",
+            name: "failed today",
+            query: {
+                page: Number(DEFAULT_BROWSER_PAGE),
+                size: Number(DEFAULT_BROWSER_SIZE),
+                destination: "",
+                deliveryMode: "",
+                innerMessageId: "",
+                publishStatus: "FAILED",
+                stalePendingOnly: false,
+                createdAtFrom: toDateTimeLocalValue(todayStart),
+                createdAtTo: toDateTimeLocalValue(todayEnd),
+                publishedAtFrom: "",
+                publishedAtTo: "",
+                sortBy: DEFAULT_BROWSER_SORT_BY,
+                sortDirection: DEFAULT_BROWSER_SORT_DIRECTION,
+            }
+        },
+        {
+            key: "STALE_PENDING_ONLY",
+            name: "stale pending only",
+            query: {
+                page: Number(DEFAULT_BROWSER_PAGE),
+                size: Number(DEFAULT_BROWSER_SIZE),
+                destination: "",
+                deliveryMode: "",
+                innerMessageId: "",
+                publishStatus: "PENDING",
+                stalePendingOnly: true,
+                createdAtFrom: "",
+                createdAtTo: "",
+                publishedAtFrom: "",
+                publishedAtTo: "",
+                sortBy: DEFAULT_BROWSER_SORT_BY,
+                sortDirection: DEFAULT_BROWSER_SORT_DIRECTION,
+            }
+        },
+        {
+            key: "PUBLISHED_TODAY",
+            name: "published today",
+            query: {
+                page: Number(DEFAULT_BROWSER_PAGE),
+                size: Number(DEFAULT_BROWSER_SIZE),
+                destination: "",
+                deliveryMode: "",
+                innerMessageId: "",
+                publishStatus: "PUBLISHED",
+                stalePendingOnly: false,
+                createdAtFrom: "",
+                createdAtTo: "",
+                publishedAtFrom: toDateTimeLocalValue(todayStart),
+                publishedAtTo: toDateTimeLocalValue(todayEnd),
+                sortBy: DEFAULT_BROWSER_SORT_BY,
+                sortDirection: DEFAULT_BROWSER_SORT_DIRECTION,
+            }
+        },
+        {
+            key: "PENDING_NOW",
+            name: "pending now",
+            query: {
+                page: Number(DEFAULT_BROWSER_PAGE),
+                size: Number(DEFAULT_BROWSER_SIZE),
+                destination: "",
+                deliveryMode: "",
+                innerMessageId: "",
+                publishStatus: "PENDING",
+                stalePendingOnly: false,
+                createdAtFrom: "",
+                createdAtTo: "",
+                publishedAtFrom: "",
+                publishedAtTo: "",
+                sortBy: DEFAULT_BROWSER_SORT_BY,
+                sortDirection: DEFAULT_BROWSER_SORT_DIRECTION,
+            }
+        }
+    ];
 }
 
 function formatTimestamp(value?: string | null): string {
