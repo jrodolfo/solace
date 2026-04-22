@@ -222,6 +222,7 @@ Important distinction:
 - the history is intentionally capped to the 5 most recent saved-view actions
 - those recent saved-view history entries are displayed with relative timestamps for quick scanning
 - those relative history timestamps refresh automatically while the browser page stays open
+- that saved-view history remains browser-local and is not part of saved-view import/export
 - saved browser views are client-side state only and are not stored by the backend
 
 ## Subscriber Role
