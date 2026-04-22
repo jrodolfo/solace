@@ -4,6 +4,7 @@ package org.orgname.solace.broker.api.controller;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -310,7 +311,7 @@ public class MessageController {
             )
     })
     @PostMapping(value = "/message", consumes = {"application/json", "application/xml", "application/x-www-form-urlencoded"})
-    public ResponseEntity<PublishMessageResponseDTO> sendMessage(@Valid @RequestBody MessageWrapperDTO wrapper) {
+    public ResponseEntity<PublishMessageResponseDTO> sendMessage(@Valid @org.springframework.web.bind.annotation.RequestBody MessageWrapperDTO wrapper) {
         if (wrapper == null || wrapper.getMessage() == null) {
             logger.log(Level.WARNING, "Rejected publish request with missing message payload");
             throw new BadRequestException("Message is null");
@@ -350,8 +351,100 @@ public class MessageController {
         return ResponseEntity.ok(retryResult.response());
     }
 
+    @Operation(
+            summary = "Retry multiple stored messages",
+            description = "Retry multiple stored messages by id using the same eligibility rules as single-message retry",
+            tags = {"messages"},
+            requestBody = @RequestBody(
+                    required = true,
+                    description = "List of stored message ids to retry",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = BulkRetryRequestDTO.class),
+                            examples = @ExampleObject(
+                                    name = "bulk-retry-request",
+                                    summary = "Retry three stored messages",
+                                    value = """
+                                            {
+                                              "messageIds": [2, 7, 8]
+                                            }
+                                            """
+                            )
+                    )
+            )
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Batch retry completed with per-message outcomes",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = BulkRetryResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "bulk-retry-mixed-results",
+                                    summary = "Mixed batch retry results",
+                                    value = """
+                                            {
+                                              "totalRequested": 3,
+                                              "retriedSuccessfully": 1,
+                                              "failedToRetry": 1,
+                                              "skipped": 1,
+                                              "results": [
+                                                {
+                                                  "messageId": 2,
+                                                  "outcome": "RETRIED",
+                                                  "detail": "Message retried successfully",
+                                                  "publishStatus": "PUBLISHED",
+                                                  "response": {
+                                                    "destination": "solace/java/direct/system-02",
+                                                    "content": "01001000 01100101 01101100"
+                                                  }
+                                                },
+                                                {
+                                                  "messageId": 1,
+                                                  "outcome": "SKIPPED",
+                                                  "detail": "Only FAILED messages can be retried",
+                                                  "publishStatus": "PUBLISHED",
+                                                  "response": null
+                                                },
+                                                {
+                                                  "messageId": 999999,
+                                                  "outcome": "FAILED",
+                                                  "detail": "Message not found for id 999999",
+                                                  "publishStatus": null,
+                                                  "response": null
+                                                }
+                                              ]
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Request body did not contain any ids",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorMessage.class),
+                            examples = @ExampleObject(
+                                    name = "bulk-retry-empty-request",
+                                    summary = "Rejected empty batch retry request",
+                                    value = """
+                                            {
+                                              "timestamp": "2026-04-22T09:35:00Z",
+                                              "status": 400,
+                                              "error": "Bad Request",
+                                              "message": "messageIds must contain at least one id",
+                                              "path": "/api/v1/messages/retry",
+                                              "validationErrors": null
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
     @PostMapping("/retry")
-    public ResponseEntity<BulkRetryResponseDTO> bulkRetryMessages(@RequestBody BulkRetryRequestDTO request) {
+    public ResponseEntity<BulkRetryResponseDTO> bulkRetryMessages(@org.springframework.web.bind.annotation.RequestBody BulkRetryRequestDTO request) {
         if (request == null || request.getMessageIds() == null || request.getMessageIds().isEmpty()) {
             throw new BadRequestException("messageIds must contain at least one id");
         }
