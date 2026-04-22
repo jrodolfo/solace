@@ -2,14 +2,18 @@ package org.orgname.solace.broker.api.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.orgname.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.repository.MessageRepository;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -134,6 +138,52 @@ class DatabaseImplTest {
         assertEquals(PublishStatus.FAILED, updatedMessage.getPublishStatus());
         assertEquals("Failed to publish message to Solace broker", updatedMessage.getFailureReason());
         assertNull(updatedMessage.getPublishedAt());
+    }
+
+    @Test
+    void shouldExportFilteredMessagesUsingReadContractFilters() {
+        Message failedMessage = new Message();
+        failedMessage.setId(2L);
+        failedMessage.setInnerMessageId("002");
+        failedMessage.setDestination("solace/java/direct/system-02");
+        failedMessage.setDeliveryMode("DIRECT");
+        failedMessage.setPriority(1);
+        failedMessage.setPublishStatus(PublishStatus.FAILED);
+        failedMessage.setFailureReason("Failed to publish message to Solace broker");
+        failedMessage.setRetrySupported(true);
+        failedMessage.setRetryBlockedReason(null);
+        failedMessage.setCreatedAt(LocalDateTime.parse("2026-04-22T10:00:00"));
+        failedMessage.setUpdatedAt(LocalDateTime.parse("2026-04-22T10:00:00"));
+        failedMessage.setPublishedAt(null);
+        failedMessage.setPayload(new org.orgname.solace.broker.api.jpa.Payload() {{
+            setType("binary");
+            setContent("01010111 01101111 01110010 01101100 01100100");
+        }});
+
+        when(messageRepository.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of(failedMessage));
+        when(messageRepository.count(any(Specification.class))).thenReturn(0L, 1L, 0L, 0L, 1L, 0L);
+
+        FilteredMessagesExportResponseDTO exportResponse = database.exportMessages(
+                "system-02",
+                null,
+                null,
+                PublishStatus.FAILED,
+                false,
+                null,
+                null,
+                null,
+                null,
+                "createdAt",
+                "desc"
+        );
+
+        assertEquals("system-02", exportResponse.getFilters().destination());
+        assertEquals(PublishStatus.FAILED, exportResponse.getFilters().publishStatus());
+        assertEquals(1L, exportResponse.getTotalElements());
+        assertEquals(1L, exportResponse.getLifecycleCounts().failedCount());
+        assertEquals(1L, exportResponse.getLifecycleCounts().retryableFailedCount());
+        assertEquals(1, exportResponse.getItems().size());
+        assertEquals("002", exportResponse.getItems().getFirst().getInnerMessageId());
     }
 
     private static MessageWrapperDTO validWrapper() {

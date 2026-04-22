@@ -185,6 +185,7 @@ The broker API supports:
 - date-range filtering on `createdAt`
 - date-range filtering on `publishedAt`
 - lifecycle aggregate counts for the full filtered result set
+- full filtered export through `GET /api/v1/messages/export`
 
 The UI layers on:
 
@@ -193,6 +194,7 @@ The UI layers on:
 - page-level lifecycle counts derived from the currently loaded items
 - saved browser views stored in browser `localStorage`
 - saved-view JSON import/export for sharing browser query state
+- full filtered export delegated to the backend export endpoint
 - refresh/reset behavior
 - detail expansion
 - copy actions

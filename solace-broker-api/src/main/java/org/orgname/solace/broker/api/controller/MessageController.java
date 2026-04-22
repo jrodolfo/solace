@@ -15,6 +15,7 @@ import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.BulkRetryRequestDTO;
 import org.orgname.solace.broker.api.dto.BulkRetryResponseDTO;
 import org.orgname.solace.broker.api.dto.BulkRetryResultItemDTO;
+import org.orgname.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
@@ -166,21 +167,7 @@ public class MessageController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @Parameter(description = "Sort direction. Allowed values: asc, desc", example = "desc")
             @RequestParam(defaultValue = "desc") String sortDirection) {
-        if (page < 0) {
-            throw new BadRequestException("page must be greater than or equal to 0");
-        }
-        if (size < 1) {
-            throw new BadRequestException("size must be greater than or equal to 1");
-        }
-        if (size > MAX_PAGE_SIZE) {
-            throw new BadRequestException("size must be less than or equal to 100");
-        }
-        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
-            throw new BadRequestException("sortBy must be one of createdAt, priority, destination, innerMessageId");
-        }
-        if (!"asc".equalsIgnoreCase(sortDirection) && !"desc".equalsIgnoreCase(sortDirection)) {
-            throw new BadRequestException("sortDirection must be asc or desc");
-        }
+        validateReadParameters(page, size, sortBy, sortDirection);
         return database.getAllMessages(
                 page,
                 size,
@@ -195,6 +182,112 @@ public class MessageController {
                 parseDateTime("publishedAtTo", publishedAtTo),
                 sortBy,
                 sortDirection);
+    }
+
+    @Operation(summary = "Export filtered stored messages", description = "Return all stored messages matching the active filters as one JSON export payload", tags = {"messages"})
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Filtered stored messages exported successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = FilteredMessagesExportResponseDTO.class),
+                            examples = @ExampleObject(
+                                    name = "stored-messages-export",
+                                    summary = "Representative filtered export response",
+                                    value = """
+                                            {
+                                              "exportedAt": "2026-04-22T13:45:00",
+                                              "filters": {
+                                                "destination": "system-02",
+                                                "deliveryMode": null,
+                                                "innerMessageId": null,
+                                                "publishStatus": "FAILED",
+                                                "stalePendingOnly": false,
+                                                "createdAtFrom": null,
+                                                "createdAtTo": null,
+                                                "publishedAtFrom": null,
+                                                "publishedAtTo": null,
+                                                "sortBy": "createdAt",
+                                                "sortDirection": "desc"
+                                              },
+                                              "totalElements": 1,
+                                              "lifecycleCounts": {
+                                                "publishedCount": 0,
+                                                "failedCount": 1,
+                                                "pendingCount": 0,
+                                                "stalePendingCount": 0,
+                                                "retryableFailedCount": 1,
+                                                "nonRetryableFailedCount": 0
+                                              },
+                                              "items": [
+                                                {
+                                                  "id": 2,
+                                                  "innerMessageId": "002",
+                                                  "destination": "solace/java/direct/system-02",
+                                                  "deliveryMode": "PERSISTENT",
+                                                  "priority": 1,
+                                                  "publishStatus": "FAILED",
+                                                  "stalePending": false,
+                                                  "failureReason": "Failed to publish message to Solace broker",
+                                                  "publishedAt": null,
+                                                  "retrySupported": true,
+                                                  "retryBlockedReason": null,
+                                                  "properties": {},
+                                                  "payload": {
+                                                    "type": "binary",
+                                                    "content": "01010111 01101111 01110010 01101100 01100100",
+                                                    "createdAt": null,
+                                                    "updatedAt": null
+                                                  },
+                                                  "createdAt": null,
+                                                  "updatedAt": null
+                                                }
+                                              ]
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
+    @GetMapping("/export")
+    public FilteredMessagesExportResponseDTO exportMessages(
+            @Parameter(description = "Optional case-insensitive filter for destination", example = "solace/java/direct/system-01")
+            @RequestParam(required = false) String destination,
+            @Parameter(description = "Optional case-insensitive filter for delivery mode", example = "PERSISTENT")
+            @RequestParam(required = false) String deliveryMode,
+            @Parameter(description = "Optional case-insensitive filter for the inner message id", example = "001")
+            @RequestParam(required = false) String innerMessageId,
+            @Parameter(description = "Optional exact filter for publish status. Allowed values: PENDING, PUBLISHED, FAILED", example = "FAILED")
+            @RequestParam(required = false) String publishStatus,
+            @Parameter(description = "When true, return only stale pending messages older than the stale threshold", example = "true")
+            @RequestParam(defaultValue = "false") boolean stalePendingOnly,
+            @Parameter(description = "Optional lower bound for createdAt using ISO-8601 local date-time", example = "2026-04-21T00:00:00")
+            @RequestParam(required = false) String createdAtFrom,
+            @Parameter(description = "Optional upper bound for createdAt using ISO-8601 local date-time", example = "2026-04-21T23:59:59")
+            @RequestParam(required = false) String createdAtTo,
+            @Parameter(description = "Optional lower bound for publishedAt using ISO-8601 local date-time", example = "2026-04-21T00:00:00")
+            @RequestParam(required = false) String publishedAtFrom,
+            @Parameter(description = "Optional upper bound for publishedAt using ISO-8601 local date-time", example = "2026-04-21T23:59:59")
+            @RequestParam(required = false) String publishedAtTo,
+            @Parameter(description = "Field to sort by. Allowed values: createdAt, priority, destination, innerMessageId", example = "createdAt")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction. Allowed values: asc, desc", example = "desc")
+            @RequestParam(defaultValue = "desc") String sortDirection) {
+        validateReadParameters(0, 1, sortBy, sortDirection);
+        return database.exportMessages(
+                destination,
+                deliveryMode,
+                innerMessageId,
+                parsePublishStatus(publishStatus),
+                stalePendingOnly,
+                parseDateTime("createdAtFrom", createdAtFrom),
+                parseDateTime("createdAtTo", createdAtTo),
+                parseDateTime("publishedAtFrom", publishedAtFrom),
+                parseDateTime("publishedAtTo", publishedAtTo),
+                sortBy,
+                sortDirection
+        );
     }
 
     @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}) // Allow React app origin
@@ -547,6 +640,24 @@ public class MessageController {
             return LocalDateTime.parse(value.trim());
         } catch (DateTimeParseException e) {
             throw new BadRequestException(fieldName + " must be a valid ISO-8601 date-time", e);
+        }
+    }
+
+    private static void validateReadParameters(int page, int size, String sortBy, String sortDirection) {
+        if (page < 0) {
+            throw new BadRequestException("page must be greater than or equal to 0");
+        }
+        if (size < 1) {
+            throw new BadRequestException("size must be greater than or equal to 1");
+        }
+        if (size > MAX_PAGE_SIZE) {
+            throw new BadRequestException("size must be less than or equal to 100");
+        }
+        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
+            throw new BadRequestException("sortBy must be one of createdAt, priority, destination, innerMessageId");
+        }
+        if (!"asc".equalsIgnoreCase(sortDirection) && !"desc".equalsIgnoreCase(sortDirection)) {
+            throw new BadRequestException("sortDirection must be asc or desc");
         }
     }
 

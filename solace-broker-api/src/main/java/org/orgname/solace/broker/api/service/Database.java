@@ -1,6 +1,7 @@
 package org.orgname.solace.broker.api.service;
 
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
+import org.orgname.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
@@ -60,6 +61,25 @@ public interface Database {
     PagedMessagesResponseDTO getAllMessages(
             int page,
             int size,
+            String destination,
+            String deliveryMode,
+            String innerMessageId,
+            PublishStatus publishStatus,
+            boolean stalePendingOnly,
+            LocalDateTime createdAtFrom,
+            LocalDateTime createdAtTo,
+            LocalDateTime publishedAtFrom,
+            LocalDateTime publishedAtTo,
+            String sortBy,
+            String sortDirection);
+
+    /**
+     * Returns all stored messages matching the read filters in one export payload.
+     *
+     * <p>This uses the same filter and sort semantics as the paginated read
+     * endpoint but does not apply paging.
+     */
+    FilteredMessagesExportResponseDTO exportMessages(
             String destination,
             String deliveryMode,
             String innerMessageId,

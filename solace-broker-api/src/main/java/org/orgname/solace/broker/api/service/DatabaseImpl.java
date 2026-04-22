@@ -1,6 +1,7 @@
 package org.orgname.solace.broker.api.service;
 
 import org.orgname.solace.broker.api.dto.InnerMessageDTO;
+import org.orgname.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
@@ -66,47 +67,65 @@ public class DatabaseImpl implements Database {
             LocalDateTime publishedAtTo,
             String sortBy,
             String sortDirection) {
-        Specification<Message> specification = Specification.where(null);
-
-        if (hasText(destination)) {
-            specification = specification.and(stringContains("destination", destination));
-        }
-        if (hasText(deliveryMode)) {
-            specification = specification.and(stringContains("deliveryMode", deliveryMode));
-        }
-        if (hasText(innerMessageId)) {
-            specification = specification.and(stringContains("innerMessageId", innerMessageId));
-        }
-        if (publishStatus != null) {
-            specification = specification.and(enumEquals("publishStatus", publishStatus));
-        }
-        if (stalePendingOnly) {
-            specification = specification.and(stalePendingOnly());
-        }
-        if (createdAtFrom != null) {
-            specification = specification.and(dateTimeOnOrAfter("createdAt", createdAtFrom));
-        }
-        if (createdAtTo != null) {
-            specification = specification.and(dateTimeOnOrBefore("createdAt", createdAtTo));
-        }
-        if (publishedAtFrom != null) {
-            specification = specification.and(dateTimeOnOrAfter("publishedAt", publishedAtFrom));
-        }
-        if (publishedAtTo != null) {
-            specification = specification.and(dateTimeOnOrBefore("publishedAt", publishedAtTo));
-        }
-
-        Sort.Direction direction = Sort.Direction.fromString(sortDirection);
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
-        PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts = new PagedMessagesResponseDTO.LifecycleCountsDTO(
-                countByStatus(specification, PublishStatus.PUBLISHED),
-                countByStatus(specification, PublishStatus.FAILED),
-                countByStatus(specification, PublishStatus.PENDING),
-                countStalePending(specification),
-                countFailedByRetrySupport(specification, true),
-                countFailedByRetrySupport(specification, false)
+        Specification<Message> specification = buildReadSpecification(
+                destination,
+                deliveryMode,
+                innerMessageId,
+                publishStatus,
+                stalePendingOnly,
+                createdAtFrom,
+                createdAtTo,
+                publishedAtFrom,
+                publishedAtTo
         );
+        PageRequest pageRequest = PageRequest.of(page, size, buildSort(sortBy, sortDirection));
+        PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts = lifecycleCounts(specification);
         return PagedMessagesResponseDTO.fromMessages(messageRepository.findAll(specification, pageRequest), lifecycleCounts);
+    }
+
+    @Override
+    public FilteredMessagesExportResponseDTO exportMessages(
+            String destination,
+            String deliveryMode,
+            String innerMessageId,
+            PublishStatus publishStatus,
+            boolean stalePendingOnly,
+            LocalDateTime createdAtFrom,
+            LocalDateTime createdAtTo,
+            LocalDateTime publishedAtFrom,
+            LocalDateTime publishedAtTo,
+            String sortBy,
+            String sortDirection) {
+        Specification<Message> specification = buildReadSpecification(
+                destination,
+                deliveryMode,
+                innerMessageId,
+                publishStatus,
+                stalePendingOnly,
+                createdAtFrom,
+                createdAtTo,
+                publishedAtFrom,
+                publishedAtTo
+        );
+        List<Message> messages = messageRepository.findAll(specification, buildSort(sortBy, sortDirection));
+        return FilteredMessagesExportResponseDTO.fromMessages(
+                LocalDateTime.now(),
+                new FilteredMessagesExportResponseDTO.FiltersDTO(
+                        destination,
+                        deliveryMode,
+                        innerMessageId,
+                        publishStatus,
+                        stalePendingOnly,
+                        createdAtFrom,
+                        createdAtTo,
+                        publishedAtFrom,
+                        publishedAtTo,
+                        sortBy,
+                        sortDirection
+                ),
+                lifecycleCounts(specification),
+                messages
+        );
     }
 
     @Override
@@ -254,6 +273,65 @@ public class DatabaseImpl implements Database {
                         .and(enumEquals("publishStatus", PublishStatus.FAILED))
                         .and(booleanEquals("retrySupported", retrySupported))
         );
+    }
+
+    private Specification<Message> buildReadSpecification(
+            String destination,
+            String deliveryMode,
+            String innerMessageId,
+            PublishStatus publishStatus,
+            boolean stalePendingOnly,
+            LocalDateTime createdAtFrom,
+            LocalDateTime createdAtTo,
+            LocalDateTime publishedAtFrom,
+            LocalDateTime publishedAtTo) {
+        Specification<Message> specification = Specification.where(null);
+
+        if (hasText(destination)) {
+            specification = specification.and(stringContains("destination", destination));
+        }
+        if (hasText(deliveryMode)) {
+            specification = specification.and(stringContains("deliveryMode", deliveryMode));
+        }
+        if (hasText(innerMessageId)) {
+            specification = specification.and(stringContains("innerMessageId", innerMessageId));
+        }
+        if (publishStatus != null) {
+            specification = specification.and(enumEquals("publishStatus", publishStatus));
+        }
+        if (stalePendingOnly) {
+            specification = specification.and(stalePendingOnly());
+        }
+        if (createdAtFrom != null) {
+            specification = specification.and(dateTimeOnOrAfter("createdAt", createdAtFrom));
+        }
+        if (createdAtTo != null) {
+            specification = specification.and(dateTimeOnOrBefore("createdAt", createdAtTo));
+        }
+        if (publishedAtFrom != null) {
+            specification = specification.and(dateTimeOnOrAfter("publishedAt", publishedAtFrom));
+        }
+        if (publishedAtTo != null) {
+            specification = specification.and(dateTimeOnOrBefore("publishedAt", publishedAtTo));
+        }
+
+        return specification;
+    }
+
+    private PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts(Specification<Message> specification) {
+        return new PagedMessagesResponseDTO.LifecycleCountsDTO(
+                countByStatus(specification, PublishStatus.PUBLISHED),
+                countByStatus(specification, PublishStatus.FAILED),
+                countByStatus(specification, PublishStatus.PENDING),
+                countStalePending(specification),
+                countFailedByRetrySupport(specification, true),
+                countFailedByRetrySupport(specification, false)
+        );
+    }
+
+    private Sort buildSort(String sortBy, String sortDirection) {
+        Sort.Direction direction = Sort.Direction.fromString(sortDirection);
+        return Sort.by(direction, sortBy);
     }
 
     /**

@@ -74,6 +74,7 @@ The browser loads `GET /api/v1/messages/all` from `solace-broker-api` and suppor
 - loading and deleting saved browser views
 - exporting saved browser views to JSON
 - importing saved browser views from JSON
+- exporting the full filtered result set through the backend export endpoint
 
 Bulk retry now calls the backend batch retry endpoint (`POST /api/v1/messages/retry`) instead of sending one browser request per failed row.
 

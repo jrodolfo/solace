@@ -22,6 +22,7 @@ For the repo-level module relationships and flow, see [../doc/architecture.md](.
 - If publish fails, the stored record becomes `FAILED` and `failureReason` is set.
 - `POST /api/v1/messages/{messageId}/retry` retries only `FAILED` messages.
 - `POST /api/v1/messages/retry` retries multiple stored messages in one request using the same eligibility rules.
+- `GET /api/v1/messages/export` exports the full filtered stored-message result set as JSON.
 - `POST /api/v1/messages/{messageId}/reconcile-stale-pending` manually reclassifies stale `PENDING` messages as `FAILED`.
 - `GET /api/v1/messages/all` returns normalized DTOs, not raw JPA entities.
 
@@ -397,6 +398,74 @@ Stale pending example:
 
 ```text
 GET /api/v1/messages/all?page=0&size=20&publishStatus=PENDING&stalePendingOnly=true&sortBy=createdAt&sortDirection=desc
+```
+
+## Export endpoint
+
+### `GET /export`
+
+Exports the full filtered stored-message result set as JSON.
+
+Supported query parameters are the same as `GET /all`, except paging is not used.
+
+Example:
+
+```text
+GET /api/v1/messages/export?destination=system-02&publishStatus=FAILED&sortBy=createdAt&sortDirection=desc
+```
+
+Representative response:
+
+```json
+{
+  "exportedAt": "2026-04-22T13:45:00",
+  "filters": {
+    "destination": "system-02",
+    "deliveryMode": null,
+    "innerMessageId": null,
+    "publishStatus": "FAILED",
+    "stalePendingOnly": false,
+    "createdAtFrom": null,
+    "createdAtTo": null,
+    "publishedAtFrom": null,
+    "publishedAtTo": null,
+    "sortBy": "createdAt",
+    "sortDirection": "desc"
+  },
+  "totalElements": 1,
+  "lifecycleCounts": {
+    "publishedCount": 0,
+    "failedCount": 1,
+    "pendingCount": 0,
+    "stalePendingCount": 0,
+    "retryableFailedCount": 1,
+    "nonRetryableFailedCount": 0
+  },
+  "items": [
+    {
+      "id": 2,
+      "innerMessageId": "002",
+      "destination": "solace/java/direct/system-02",
+      "deliveryMode": "PERSISTENT",
+      "priority": 1,
+      "publishStatus": "FAILED",
+      "stalePending": false,
+      "failureReason": "Failed to publish message to Solace broker",
+      "publishedAt": null,
+      "retrySupported": true,
+      "retryBlockedReason": null,
+      "properties": {},
+      "payload": {
+        "type": "binary",
+        "content": "01010111 01101111 01110010 01101100 01100100",
+        "createdAt": null,
+        "updatedAt": null
+      },
+      "createdAt": null,
+      "updatedAt": null
+    }
+  ]
+}
 ```
 
 Representative response:

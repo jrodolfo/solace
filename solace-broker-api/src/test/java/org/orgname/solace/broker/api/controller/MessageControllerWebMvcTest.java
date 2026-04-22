@@ -2,6 +2,7 @@ package org.orgname.solace.broker.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.orgname.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
@@ -172,6 +173,21 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.items[0].publishStatus").value("PENDING"))
                 .andExpect(jsonPath("$.items[0].stalePending").value(true));
+    }
+
+    @Test
+    void shouldExportFilteredStoredMessagesJsonContract() throws Exception {
+        when(database.exportMessages("system-02", null, null, PublishStatus.FAILED, false, null, null, null, null, "createdAt", "desc"))
+                .thenReturn(filteredMessagesExportResponse(List.of(failedStoredMessage("002", "solace/java/direct/system-02", "DIRECT", 1))));
+
+        mockMvc.perform(get("/api/v1/messages/export?destination=system-02&publishStatus=FAILED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.filters.destination").value("system-02"))
+                .andExpect(jsonPath("$.filters.publishStatus").value("FAILED"))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.lifecycleCounts.failedCount").value(1))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("002"))
+                .andExpect(jsonPath("$.items[0].publishStatus").value("FAILED"));
     }
 
     @Test
@@ -529,6 +545,27 @@ class MessageControllerWebMvcTest {
         return PagedMessagesResponseDTO.fromMessages(
                 new PageImpl<>(messages, PageRequest.of(page, size), totalElements),
                 lifecycleCounts(messages)
+        );
+    }
+
+    private static FilteredMessagesExportResponseDTO filteredMessagesExportResponse(List<Message> messages) {
+        return FilteredMessagesExportResponseDTO.fromMessages(
+                LocalDateTime.parse("2026-04-22T13:45:00"),
+                new FilteredMessagesExportResponseDTO.FiltersDTO(
+                        "system-02",
+                        null,
+                        null,
+                        PublishStatus.FAILED,
+                        false,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "createdAt",
+                        "desc"
+                ),
+                lifecycleCounts(messages),
+                messages
         );
     }
 

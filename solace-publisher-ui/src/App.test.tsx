@@ -1338,6 +1338,91 @@ describe("Stored Messages Browser", () => {
         expect(screen.getByRole("alert")).toHaveTextContent("Exported 2 messages from the current page.");
     });
 
+    test("Exports the full filtered result set through the backend export endpoint", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: {
+                exportedAt: "2026-04-22T13:45:00",
+                filters: {
+                    destination: "system-02",
+                    deliveryMode: "DIRECT",
+                    innerMessageId: "002",
+                    publishStatus: "PENDING",
+                    stalePendingOnly: true,
+                    createdAtFrom: "2026-04-20T09:30:00",
+                    createdAtTo: "2026-04-20T18:45:00",
+                    publishedAtFrom: "2026-04-21T07:00:00",
+                    publishedAtTo: "2026-04-21T08:15:00",
+                    sortBy: "priority",
+                    sortDirection: "asc",
+                },
+                totalElements: 1,
+                lifecycleCounts: {
+                    publishedCount: 0,
+                    failedCount: 1,
+                    pendingCount: 0,
+                    stalePendingCount: 0,
+                    retryableFailedCount: 1,
+                    nonRetryableFailedCount: 0,
+                },
+                items: [
+                    buildStoredMessage({
+                        id: 2,
+                        innerMessageId: "002",
+                        destination: "solace/java/direct/system-02",
+                        deliveryMode: "DIRECT",
+                        publishStatus: "FAILED",
+                        stalePending: false,
+                        publishedAt: null,
+                    }),
+                ],
+            },
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
+        await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
+        await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "002");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
+        await userEvent.click(screen.getByLabelText(/only stale pending/i));
+        await userEvent.type(screen.getByLabelText(/Created At From/i), "2026-04-20T09:30");
+        await userEvent.type(screen.getByLabelText(/Created At To/i), "2026-04-20T18:45");
+        await userEvent.type(screen.getByLabelText(/Published At From/i), "2026-04-21T07:00");
+        await userEvent.type(screen.getByLabelText(/Published At To/i), "2026-04-21T08:15");
+        await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
+        await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
+        await userEvent.click(screen.getByRole("button", {name: /export filtered results/i}));
+
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+            "http://localhost:8081/api/v1/messages/export",
+            {
+                params: {
+                    destination: "system-02",
+                    deliveryMode: "DIRECT",
+                    innerMessageId: "002",
+                    publishStatus: "PENDING",
+                    stalePendingOnly: true,
+                    createdAtFrom: "2026-04-20T09:30:00",
+                    createdAtTo: "2026-04-20T18:45:00",
+                    publishedAtFrom: "2026-04-21T07:00:00",
+                    publishedAtTo: "2026-04-21T08:15:00",
+                    sortBy: "priority",
+                    sortDirection: "asc",
+                },
+            }
+        );
+        const exportBlob = createObjectUrlMock.mock.calls[0][0] as MockBlob;
+        const exportJson = JSON.parse(String(exportBlob.parts[0]));
+        expect(exportJson.totalElements).toBe(1);
+        expect(exportJson.items[0].innerMessageId).toBe("002");
+        expect(anchorClickMock).toHaveBeenCalledTimes(1);
+        expect(screen.getByRole("alert")).toHaveTextContent("Exported 1 filtered messages.");
+    });
+
     test("Reconciles a stale pending message and refreshes the browser results", async () => {
         mockedAxios.get
             .mockResolvedValueOnce({

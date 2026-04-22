@@ -3,6 +3,7 @@ package org.orgname.solace.broker.api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.orgname.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
@@ -179,6 +180,23 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("003"))
                 .andExpect(jsonPath("$.items[0].stalePending").value(true));
+    }
+
+    @Test
+    void shouldExportAllFilteredMessages() throws Exception {
+        Message failedMessage = storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1, "2026-04-19T10:00:00");
+        failedMessage.setPublishStatus(PublishStatus.FAILED);
+        failedMessage.setFailureReason("Failed to publish message to Solace broker");
+        failedMessage.setPublishedAt(null);
+        database.storedMessages.add(failedMessage);
+
+        mockMvc.perform(get("/api/v1/messages/export?destination=system-02&publishStatus=FAILED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.filters.destination").value("system-02"))
+                .andExpect(jsonPath("$.filters.publishStatus").value("FAILED"))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.lifecycleCounts.failedCount").value(1))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("002"));
     }
 
     @Test
@@ -677,6 +695,52 @@ class MessageControllerTest {
             return PagedMessagesResponseDTO.fromMessages(
                     new PageImpl<>(content, PageRequest.of(page, size), filteredMessages.size()),
                     lifecycleCounts(filteredMessages)
+            );
+        }
+
+        @Override
+        public FilteredMessagesExportResponseDTO exportMessages(
+                String destination,
+                String deliveryMode,
+                String innerMessageId,
+                PublishStatus publishStatus,
+                boolean stalePendingOnly,
+                LocalDateTime createdAtFrom,
+                LocalDateTime createdAtTo,
+                LocalDateTime publishedAtFrom,
+                LocalDateTime publishedAtTo,
+                String sortBy,
+                String sortDirection) {
+            List<Message> filteredMessages = storedMessages.stream()
+                    .filter(message -> matches(message.getDestination(), destination))
+                    .filter(message -> matches(message.getDeliveryMode(), deliveryMode))
+                    .filter(message -> matches(message.getInnerMessageId(), innerMessageId))
+                    .filter(message -> publishStatus == null || publishStatus == message.getPublishStatus())
+                    .filter(message -> !stalePendingOnly || MessageLifecycleSupport.isStalePending(message.getPublishStatus(), message.getCreatedAt()))
+                    .filter(message -> matchesOnOrAfter(message.getCreatedAt(), createdAtFrom))
+                    .filter(message -> matchesOnOrBefore(message.getCreatedAt(), createdAtTo))
+                    .filter(message -> matchesOnOrAfter(message.getPublishedAt(), publishedAtFrom))
+                    .filter(message -> matchesOnOrBefore(message.getPublishedAt(), publishedAtTo))
+                    .sorted(comparatorFor(sortBy, sortDirection))
+                    .collect(Collectors.toList());
+
+            return FilteredMessagesExportResponseDTO.fromMessages(
+                    LocalDateTime.parse("2026-04-22T13:45:00"),
+                    new FilteredMessagesExportResponseDTO.FiltersDTO(
+                            destination,
+                            deliveryMode,
+                            innerMessageId,
+                            publishStatus,
+                            stalePendingOnly,
+                            createdAtFrom,
+                            createdAtTo,
+                            publishedAtFrom,
+                            publishedAtTo,
+                            sortBy,
+                            sortDirection
+                    ),
+                    lifecycleCounts(filteredMessages),
+                    filteredMessages
             );
         }
 

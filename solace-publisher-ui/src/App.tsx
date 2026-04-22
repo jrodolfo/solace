@@ -6,7 +6,7 @@ import ShowOutput from "./ShowOutput.tsx";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
 import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
-import type {BulkRetryResponse, BulkRetryResultItem, PagedStoredMessagesResponse} from "./StoredMessageTypes.ts";
+import type {BulkRetryResponse, BulkRetryResultItem, FilteredMessagesExportResponse, PagedStoredMessagesResponse} from "./StoredMessageTypes.ts";
 
 type MessagePropertyFormRow = {
     key: string;
@@ -67,6 +67,7 @@ function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
     const messagesBaseUrl = "http://localhost:8081/api/v1/messages";
     const messagesApiUrl = "http://localhost:8081/api/v1/messages/all";
+    const messagesExportApiUrl = "http://localhost:8081/api/v1/messages/export";
 
     // State hooks for input fields
     const [userName, setUserName] = useState("");
@@ -651,6 +652,11 @@ function App() {
         const url = new URL(messagesApiUrl);
         url.searchParams.set("page", String(query.page));
         url.searchParams.set("size", String(query.size));
+        appendBrowserQueryParams(url, query);
+        return url.toString();
+    };
+
+    const appendBrowserQueryParams = (url: URL, query: BrowserQueryState) => {
         if (query.destination) {
             url.searchParams.set("destination", query.destination);
         }
@@ -680,7 +686,6 @@ function App() {
         }
         url.searchParams.set("sortBy", query.sortBy);
         url.searchParams.set("sortDirection", query.sortDirection);
-        return url.toString();
     };
 
     const copyCurrentFilterQuery = async () => {
@@ -715,6 +720,51 @@ function App() {
         setBrowserMessage(`Exported ${messagesResponse.items.length} messages from the current page.`);
         setBrowserVariant("info");
         setBrowserStatusCode(null);
+    };
+
+    const exportFilteredResults = async () => {
+        try {
+            const response = await axios.get<FilteredMessagesExportResponse>(messagesExportApiUrl, {
+                params: {
+                    ...(filterDestination.trim() ? {destination: filterDestination.trim()} : {}),
+                    ...(filterDeliveryMode.trim() ? {deliveryMode: filterDeliveryMode.trim()} : {}),
+                    ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
+                    ...(filterPublishStatus ? {publishStatus: filterPublishStatus} : {}),
+                    ...(filterStalePendingOnly ? {stalePendingOnly: true} : {}),
+                    ...(filterCreatedAtFrom ? {createdAtFrom: toIsoLocalDateTime(filterCreatedAtFrom)} : {}),
+                    ...(filterCreatedAtTo ? {createdAtTo: toIsoLocalDateTime(filterCreatedAtTo)} : {}),
+                    ...(filterPublishedAtFrom ? {publishedAtFrom: toIsoLocalDateTime(filterPublishedAtFrom)} : {}),
+                    ...(filterPublishedAtTo ? {publishedAtTo: toIsoLocalDateTime(filterPublishedAtTo)} : {}),
+                    sortBy: browserSortBy,
+                    sortDirection: browserSortDirection,
+                }
+            });
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            const blob = new Blob([JSON.stringify(response.data, null, 2)], {type: "application/json"});
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = `stored-messages-filtered-export-${timestamp}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+            setBrowserMessage(`Exported ${response.data.items.length} filtered messages.`);
+            setBrowserVariant("info");
+            setBrowserStatusCode(response.status);
+        } catch (error) {
+            if (axios.isAxiosError<SolaceBrokerAPIError>(error) && error.response) {
+                setBrowserMessage(error.response.data?.message ?? "Failed to export filtered messages.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(error.response.status);
+            } else {
+                console.error("Failed to export filtered messages.", error);
+                setBrowserMessage("Failed to export filtered messages.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(500);
+            }
+        }
     };
 
     const pageLifecycleCounts = (messagesResponse?.items ?? []).reduce(
@@ -1531,6 +1581,14 @@ function App() {
                                             disabled={!messagesResponse || messagesResponse.first || isLoadingMessages || isBulkRetrying}
                                         >
                                             Previous Page
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-info"
+                                            onClick={exportFilteredResults}
+                                            disabled={isLoadingMessages || isBulkRetrying}
+                                        >
+                                            Export Filtered Results
                                         </button>
                                         <button
                                             type="button"

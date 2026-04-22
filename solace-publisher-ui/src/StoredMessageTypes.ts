@@ -41,6 +41,26 @@ export interface PagedStoredMessagesResponse {
     };
 }
 
+export interface FilteredMessagesExportResponse {
+    exportedAt: string;
+    filters: {
+        destination?: string | null;
+        deliveryMode?: string | null;
+        innerMessageId?: string | null;
+        publishStatus?: "PENDING" | "PUBLISHED" | "FAILED" | null;
+        stalePendingOnly: boolean;
+        createdAtFrom?: string | null;
+        createdAtTo?: string | null;
+        publishedAtFrom?: string | null;
+        publishedAtTo?: string | null;
+        sortBy: string;
+        sortDirection: string;
+    };
+    totalElements: number;
+    lifecycleCounts: PagedStoredMessagesResponse["lifecycleCounts"];
+    items: StoredMessage[];
+}
+
 export interface BulkRetryResultItem {
     messageId: number | null;
     outcome: "RETRIED" | "FAILED" | "SKIPPED";
