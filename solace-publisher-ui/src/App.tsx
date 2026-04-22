@@ -346,6 +346,14 @@ function App() {
         };
 
         try {
+            const existingSavedView = savedViews.find((view) => view.name === normalizedName);
+            if (existingSavedView && !window.confirm(`A saved browser view named "${normalizedName}" already exists. Overwrite it?`)) {
+                setBrowserMessage(`Kept the existing saved browser view "${normalizedName}".`);
+                setBrowserVariant("info");
+                setBrowserStatusCode(null);
+                return;
+            }
+
             const existingSavedViews = savedViews.filter((view) => view.name !== normalizedName);
             persistSavedViews([...existingSavedViews, savedView]);
             setSelectedSavedViewName(normalizedName);
@@ -428,6 +436,17 @@ function App() {
                 setBrowserMessage(`Saved browser view "${selectedSavedViewName}" was not found.`);
                 setBrowserVariant("danger");
                 setBrowserStatusCode(404);
+                return;
+            }
+
+            const isOverwritingDifferentSavedView =
+                normalizedName !== selectedSavedViewName &&
+                savedViews.some((view) => view.name === normalizedName);
+
+            if (isOverwritingDifferentSavedView && !window.confirm(`A saved browser view named "${normalizedName}" already exists. Overwrite it?`)) {
+                setBrowserMessage(`Kept the existing saved browser view "${selectedSavedViewName}".`);
+                setBrowserVariant("info");
+                setBrowserStatusCode(null);
                 return;
             }
 

@@ -14,6 +14,7 @@ const writeTextMock = vi.fn();
 const createObjectUrlMock = vi.fn();
 const revokeObjectUrlMock = vi.fn();
 const anchorClickMock = vi.fn();
+const confirmMock = vi.fn();
 
 class MockBlob {
     readonly parts: unknown[];
@@ -99,6 +100,8 @@ beforeEach(() => {
     createObjectUrlMock.mockReturnValue("blob:test-export");
     revokeObjectUrlMock.mockReset();
     anchorClickMock.mockReset();
+    confirmMock.mockReset();
+    confirmMock.mockReturnValue(true);
     window.localStorage.clear();
 });
 
@@ -125,6 +128,11 @@ Object.defineProperty(globalThis, "Blob", {
 });
 
 HTMLAnchorElement.prototype.click = anchorClickMock;
+
+Object.defineProperty(window, "confirm", {
+    value: confirmMock,
+    configurable: true,
+});
 
 function buildPublishSuccessResponse(overrides?: Partial<SolaceBrokerAPIResponse>): SolaceBrokerAPIResponse {
     return {
@@ -656,6 +664,105 @@ describe("Stored Messages Browser", () => {
         ]);
     });
 
+    test("Confirms before overwriting an existing saved browser view on save", async () => {
+        window.localStorage.setItem(
+            "solace.publisher-ui.saved-browser-views",
+            JSON.stringify([
+                {
+                    name: "Failed Priority View",
+                    query: {
+                        page: 0,
+                        size: 20,
+                        destination: "system-02",
+                        deliveryMode: "",
+                        innerMessageId: "",
+                        publishStatus: "FAILED",
+                        stalePendingOnly: false,
+                        createdAtFrom: "",
+                        createdAtTo: "",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "createdAt",
+                        sortDirection: "desc",
+                    },
+                },
+            ])
+        );
+
+        render(<App/>);
+
+        await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-09");
+        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
+        await userEvent.click(screen.getByRole("button", {name: /^save current view$/i}));
+
+        expect(confirmMock).toHaveBeenCalledWith('A saved browser view named "Failed Priority View" already exists. Overwrite it?');
+        expect(await screen.findByText(/Saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
+        expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
+            {
+                name: "Failed Priority View",
+                query: expect.objectContaining({
+                    destination: "system-09",
+                }),
+            },
+        ]);
+    });
+
+    test("Keeps the existing saved browser view when save overwrite is cancelled", async () => {
+        confirmMock.mockReturnValue(false);
+        window.localStorage.setItem(
+            "solace.publisher-ui.saved-browser-views",
+            JSON.stringify([
+                {
+                    name: "Failed Priority View",
+                    query: {
+                        page: 0,
+                        size: 20,
+                        destination: "system-02",
+                        deliveryMode: "",
+                        innerMessageId: "",
+                        publishStatus: "FAILED",
+                        stalePendingOnly: false,
+                        createdAtFrom: "",
+                        createdAtTo: "",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "createdAt",
+                        sortDirection: "desc",
+                    },
+                },
+            ])
+        );
+
+        render(<App/>);
+
+        await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-09");
+        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
+        await userEvent.click(screen.getByRole("button", {name: /^save current view$/i}));
+
+        expect(confirmMock).toHaveBeenCalledWith('A saved browser view named "Failed Priority View" already exists. Overwrite it?');
+        expect(await screen.findByText(/Kept the existing saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
+        expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
+            {
+                name: "Failed Priority View",
+                query: {
+                    page: 0,
+                    size: 20,
+                    destination: "system-02",
+                    deliveryMode: "",
+                    innerMessageId: "",
+                    publishStatus: "FAILED",
+                    stalePendingOnly: false,
+                    createdAtFrom: "",
+                    createdAtTo: "",
+                    publishedAtFrom: "",
+                    publishedAtTo: "",
+                    sortBy: "createdAt",
+                    sortDirection: "desc",
+                },
+            },
+        ]);
+    });
+
     test("Shows built-in browser views separately from local saved views", () => {
         render(<App/>);
 
@@ -832,6 +939,171 @@ describe("Stored Messages Browser", () => {
                     publishedAtTo: "",
                     sortBy: "createdAt",
                     sortDirection: "desc",
+                },
+            },
+        ]);
+    });
+
+    test("Confirms before overwriting an existing saved browser view on rename", async () => {
+        window.localStorage.setItem(
+            "solace.publisher-ui.saved-browser-views",
+            JSON.stringify([
+                {
+                    name: "Failed Priority View",
+                    query: {
+                        page: 0,
+                        size: 20,
+                        destination: "system-02",
+                        deliveryMode: "",
+                        innerMessageId: "",
+                        publishStatus: "FAILED",
+                        stalePendingOnly: false,
+                        createdAtFrom: "",
+                        createdAtTo: "",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "createdAt",
+                        sortDirection: "desc",
+                    },
+                },
+                {
+                    name: "Published Review",
+                    query: {
+                        page: 0,
+                        size: 10,
+                        destination: "",
+                        deliveryMode: "DIRECT",
+                        innerMessageId: "",
+                        publishStatus: "PUBLISHED",
+                        stalePendingOnly: false,
+                        createdAtFrom: "",
+                        createdAtTo: "",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "priority",
+                        sortDirection: "asc",
+                    },
+                },
+            ])
+        );
+
+        render(<App/>);
+
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
+        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Published Review");
+        await userEvent.click(screen.getByRole("button", {name: /rename saved view/i}));
+
+        expect(confirmMock).toHaveBeenCalledWith('A saved browser view named "Published Review" already exists. Overwrite it?');
+        expect(await screen.findByText(/Renamed saved browser view "Failed Priority View" to "Published Review"\./i)).toBeInTheDocument();
+        expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
+            {
+                name: "Published Review",
+                query: {
+                    page: 0,
+                    size: 20,
+                    destination: "system-02",
+                    deliveryMode: "",
+                    innerMessageId: "",
+                    publishStatus: "FAILED",
+                    stalePendingOnly: false,
+                    createdAtFrom: "",
+                    createdAtTo: "",
+                    publishedAtFrom: "",
+                    publishedAtTo: "",
+                    sortBy: "createdAt",
+                    sortDirection: "desc",
+                },
+            },
+        ]);
+    });
+
+    test("Keeps the existing saved browser view when rename overwrite is cancelled", async () => {
+        confirmMock.mockReturnValue(false);
+        window.localStorage.setItem(
+            "solace.publisher-ui.saved-browser-views",
+            JSON.stringify([
+                {
+                    name: "Failed Priority View",
+                    query: {
+                        page: 0,
+                        size: 20,
+                        destination: "system-02",
+                        deliveryMode: "",
+                        innerMessageId: "",
+                        publishStatus: "FAILED",
+                        stalePendingOnly: false,
+                        createdAtFrom: "",
+                        createdAtTo: "",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "createdAt",
+                        sortDirection: "desc",
+                    },
+                },
+                {
+                    name: "Published Review",
+                    query: {
+                        page: 0,
+                        size: 10,
+                        destination: "",
+                        deliveryMode: "DIRECT",
+                        innerMessageId: "",
+                        publishStatus: "PUBLISHED",
+                        stalePendingOnly: false,
+                        createdAtFrom: "",
+                        createdAtTo: "",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "priority",
+                        sortDirection: "asc",
+                    },
+                },
+            ])
+        );
+
+        render(<App/>);
+
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
+        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Published Review");
+        await userEvent.click(screen.getByRole("button", {name: /rename saved view/i}));
+
+        expect(confirmMock).toHaveBeenCalledWith('A saved browser view named "Published Review" already exists. Overwrite it?');
+        expect(await screen.findByText(/Kept the existing saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
+        expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
+            {
+                name: "Failed Priority View",
+                query: {
+                    page: 0,
+                    size: 20,
+                    destination: "system-02",
+                    deliveryMode: "",
+                    innerMessageId: "",
+                    publishStatus: "FAILED",
+                    stalePendingOnly: false,
+                    createdAtFrom: "",
+                    createdAtTo: "",
+                    publishedAtFrom: "",
+                    publishedAtTo: "",
+                    sortBy: "createdAt",
+                    sortDirection: "desc",
+                },
+            },
+            {
+                name: "Published Review",
+                query: {
+                    page: 0,
+                    size: 10,
+                    destination: "",
+                    deliveryMode: "DIRECT",
+                    innerMessageId: "",
+                    publishStatus: "PUBLISHED",
+                    stalePendingOnly: false,
+                    createdAtFrom: "",
+                    createdAtTo: "",
+                    publishedAtFrom: "",
+                    publishedAtTo: "",
+                    sortBy: "priority",
+                    sortDirection: "asc",
                 },
             },
         ]);
