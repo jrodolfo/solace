@@ -218,6 +218,7 @@ Important distinction:
 - invalid saved-view import entries are skipped, and the UI reports added, updated, and skipped counts after import
 - the import feedback also lists which user-defined views were added, updated, or skipped, using fallback entry labels when needed
 - the UI keeps a short local history of recent save, rename, delete, and import actions for saved views
+- that short saved-view history can also be cleared explicitly from the UI
 - saved browser views are client-side state only and are not stored by the backend
 
 ## Subscriber Role
