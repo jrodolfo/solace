@@ -1859,6 +1859,9 @@ function App() {
                                                         Clear History
                                                     </button>
                                                 </div>
+                                                <p className="saved-view-history-note mb-2">
+                                                    Keeps the {MAX_SAVED_VIEW_ACTION_HISTORY} most recent actions.
+                                                </p>
                                                 <div className="saved-view-history-list">
                                                     {savedViewActionHistory.map((entry) => (
                                                         <div key={entry.id} className="saved-view-history-item">

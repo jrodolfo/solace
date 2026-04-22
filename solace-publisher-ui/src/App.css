@@ -208,6 +208,11 @@
     text-transform: uppercase;
 }
 
+.saved-view-history-note {
+    color: #6d879a;
+    font-size: 0.88rem;
+}
+
 .saved-view-history-list {
     display: grid;
     gap: 0.45rem;

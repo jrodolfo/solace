@@ -98,6 +98,7 @@ Saved browser views are client-side only:
 - skipped invalid entries use fallback labels such as `entry 3` when no usable view name is present
 - the UI also keeps a short recent-action history for save, rename, delete, and import events
 - that recent saved-view history can be cleared explicitly from the UI
+- only the 5 most recent saved-view actions are kept in that history
 - they live in the browser's `localStorage`
 - they are not stored in `solace-broker-api`
 - JSON export/import is the intended sharing path between browsers or operators

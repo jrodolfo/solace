@@ -219,6 +219,7 @@ Important distinction:
 - the import feedback also lists which user-defined views were added, updated, or skipped, using fallback entry labels when needed
 - the UI keeps a short local history of recent save, rename, delete, and import actions for saved views
 - that short saved-view history can also be cleared explicitly from the UI
+- the history is intentionally capped to the 5 most recent saved-view actions
 - saved browser views are client-side state only and are not stored by the backend
 
 ## Subscriber Role

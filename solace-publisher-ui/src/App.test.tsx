@@ -769,6 +769,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
         await userEvent.click(screen.getByRole("button", {name: /save current view/i}));
         expect(await screen.findByText(/Recent Saved View Actions/i)).toBeInTheDocument();
+        expect(screen.getByText(/Keeps the 5 most recent actions\./i)).toBeInTheDocument();
         expect(screen.getByText('Saved "Failed Priority View"')).toBeInTheDocument();
 
         await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
