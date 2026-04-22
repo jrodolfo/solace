@@ -103,7 +103,29 @@ const formatSavedViewAction = (entry: SavedViewActionHistoryEntry) => {
     return `Imported ${entry.label}`;
 };
 
-const formatSavedViewActionTimestamp = (value: string) =>
+const formatSavedViewActionTimestamp = (value: string) => {
+    const timestamp = new Date(value).getTime();
+    const diffMs = Date.now() - timestamp;
+
+    if (diffMs < 60_000) {
+        return "just now";
+    }
+
+    const diffMinutes = Math.floor(diffMs / 60_000);
+    if (diffMinutes < 60) {
+        return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
+    }
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) {
+        return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+    }
+
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+};
+
+const formatSavedViewActionAbsoluteTimestamp = (value: string) =>
     new Intl.DateTimeFormat(undefined, {
         month: "short",
         day: "numeric",
@@ -1866,7 +1888,12 @@ function App() {
                                                     {savedViewActionHistory.map((entry) => (
                                                         <div key={entry.id} className="saved-view-history-item">
                                                             <span>{formatSavedViewAction(entry)}</span>
-                                                            <time dateTime={entry.timestamp}>{formatSavedViewActionTimestamp(entry.timestamp)}</time>
+                                                            <time
+                                                                dateTime={entry.timestamp}
+                                                                title={formatSavedViewActionAbsoluteTimestamp(entry.timestamp)}
+                                                            >
+                                                                {formatSavedViewActionTimestamp(entry.timestamp)}
+                                                            </time>
                                                         </div>
                                                     ))}
                                                 </div>
