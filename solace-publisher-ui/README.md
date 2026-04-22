@@ -72,7 +72,7 @@ The browser loads `GET /api/v1/messages/all` from `solace-broker-api` and suppor
 - manual reconciliation for stale `PENDING` messages
 - built-in operator views for `failed today`, `stale pending only`, `published today`, and `pending now`
 - saving the current browser view in local storage
-- loading and deleting saved browser views
+- loading, renaming, and deleting saved browser views
 - exporting saved browser views to JSON
 - importing saved browser views from JSON
 - exporting the full filtered result set through the backend export endpoint
@@ -84,6 +84,8 @@ Saved browser views are client-side only:
 - built-in views ship with the app and are always available
 - built-in views are separate from user-defined saved views
 - built-in views reuse the normal browser query/load path and update the visible controls
+- rename applies only to user-defined saved views
+- save and rename intentionally overwrite by name when the target name already exists
 - they live in the browser's `localStorage`
 - they are not stored in `solace-broker-api`
 - JSON export/import is the intended sharing path between browsers or operators

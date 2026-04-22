@@ -194,6 +194,7 @@ The UI layers on:
 - clickable lifecycle summary pills for `published`, `failed`, `pending`, and stale pending
 - page-level lifecycle counts derived from the currently loaded items
 - saved browser views stored in browser `localStorage`
+- saved-view rename for user-defined local views
 - saved-view JSON import/export for sharing browser query state
 - full filtered export delegated to the backend export endpoint
 - refresh/reset behavior
@@ -206,6 +207,7 @@ Important distinction:
 - backend retryability counts describe how many failed rows are retryable versus blocked
 - UI page counts describe only the items currently loaded in `items`
 - built-in browser views are shipped UI defaults, while saved browser views are user-defined local state
+- save and rename intentionally overwrite existing user-defined saved views by name
 - saved browser views are client-side state only and are not stored by the backend
 
 ## Subscriber Role
