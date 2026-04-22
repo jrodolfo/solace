@@ -1,9 +1,13 @@
 SHELL := /bin/bash
 
-.PHONY: help start-api start-ui start-subscriber start-all test-api test-ui test-subscriber test-scripts test
+.PHONY: help build-api build-ui build-subscriber build-all start-api start-ui start-subscriber start-all test-api test-ui test-subscriber test-scripts test
 
 help:
 	@echo "available targets:"
+	@echo "  make build-api         - build solace-broker-api"
+	@echo "  make build-ui          - build solace-publisher-ui"
+	@echo "  make build-subscriber  - build solace-subscriber"
+	@echo "  make build-all         - build all three modules"
 	@echo "  make start-api         - start solace-broker-api"
 	@echo "  make start-ui          - start solace-publisher-ui"
 	@echo "  make start-subscriber  - build and start solace-subscriber"
@@ -13,6 +17,18 @@ help:
 	@echo "  make test-subscriber   - run subscriber tests"
 	@echo "  make test-scripts      - run root script smoke tests"
 	@echo "  make test              - run all test targets"
+
+build-api:
+	@./scripts/build-broker-api.sh
+
+build-ui:
+	@./scripts/build-publisher-ui.sh
+
+build-subscriber:
+	@./scripts/build-subscriber.sh
+
+build-all:
+	@./scripts/build-all.sh
 
 start-api:
 	@./scripts/start-broker-api.sh

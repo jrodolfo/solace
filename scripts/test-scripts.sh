@@ -37,6 +37,8 @@ assert_command_fails_with() {
 
 echo "checking make help output"
 make_help_output="$(make -C "${REPO_ROOT}" help)"
+assert_contains "${make_help_output}" "make build-api"
+assert_contains "${make_help_output}" "make build-all"
 assert_contains "${make_help_output}" "make start-api"
 assert_contains "${make_help_output}" "make test-scripts"
 
@@ -59,5 +61,11 @@ assert_command_fails_with \
   "node_modules is missing in ${temp_ui_dir}" \
   env PUBLISHER_UI_DIR="${temp_ui_dir}" \
   "${REPO_ROOT}/scripts/start-publisher-ui.sh"
+
+echo "checking publisher ui build node_modules validation"
+assert_command_fails_with \
+  "node_modules is missing in ${temp_ui_dir}" \
+  env PUBLISHER_UI_DIR="${temp_ui_dir}" \
+  "${REPO_ROOT}/scripts/build-publisher-ui.sh"
 
 echo "script smoke tests passed"

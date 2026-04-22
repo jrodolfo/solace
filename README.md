@@ -39,6 +39,10 @@ This repo includes a root `scripts/` folder plus a `Makefile` so you do not have
 
 Available scripts:
 
+- `scripts/build-broker-api.sh`
+- `scripts/build-publisher-ui.sh`
+- `scripts/build-subscriber.sh`
+- `scripts/build-all.sh`
 - `scripts/start-broker-api.sh`
 - `scripts/start-publisher-ui.sh`
 - `scripts/start-subscriber.sh`
@@ -48,6 +52,10 @@ Available scripts:
 Available `make` targets:
 
 - `make help`
+- `make build-api`
+- `make build-ui`
+- `make build-subscriber`
+- `make build-all`
 - `make start-api`
 - `make start-ui`
 - `make start-subscriber`
@@ -60,6 +68,10 @@ Available `make` targets:
 
 Notes:
 
+- `build-broker-api.sh` runs `mvn clean package` inside `solace-broker-api`.
+- `build-subscriber.sh` runs `mvn clean package` inside `solace-subscriber`.
+- `build-publisher-ui.sh` runs `npm run build` inside `solace-publisher-ui` and expects `node_modules` to already exist.
+- `build-all.sh` runs the three module builds sequentially from the repo root.
 - `start-broker-api.sh` and `start-subscriber.sh` require the shared Solace env vars.
 - `start-publisher-ui.sh` expects `solace-publisher-ui/node_modules` to already exist. If not, run `cd solace-publisher-ui && npm install` once first.
 - `start-all.sh` validates the shared Solace env vars before starting any child processes, runs all three modules together in the current terminal, stops them on `ctrl-c`, and shuts the others down if any one module exits.
