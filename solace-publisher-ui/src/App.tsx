@@ -186,6 +186,7 @@ function App() {
     const [selectedSavedViewName, setSelectedSavedViewName] = useState("");
     const [savedViews, setSavedViews] = useState<SavedBrowserView[]>([]);
     const [savedViewActionHistory, setSavedViewActionHistory] = useState<SavedViewActionHistoryEntry[]>([]);
+    const [savedViewHistoryClock, setSavedViewHistoryClock] = useState(0);
     const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
@@ -223,6 +224,18 @@ function App() {
             console.error("Failed to load saved-view action history.", error);
         }
     }, []);
+
+    useEffect(() => {
+        if (savedViewActionHistory.length === 0) {
+            return;
+        }
+
+        const intervalId = window.setInterval(() => {
+            setSavedViewHistoryClock((currentValue) => currentValue + 1);
+        }, 30_000);
+
+        return () => window.clearInterval(intervalId);
+    }, [savedViewActionHistory.length]);
 
     const currentBrowserQuery = (overrides?: Partial<BrowserQueryState>): BrowserQueryState => ({
         page: overrides?.page ?? Number(browserPage),
@@ -1892,7 +1905,7 @@ function App() {
                                                                 dateTime={entry.timestamp}
                                                                 title={formatSavedViewActionAbsoluteTimestamp(entry.timestamp)}
                                                             >
-                                                                {formatSavedViewActionTimestamp(entry.timestamp)}
+                                                                {savedViewHistoryClock >= 0 ? formatSavedViewActionTimestamp(entry.timestamp) : ""}
                                                             </time>
                                                         </div>
                                                     ))}

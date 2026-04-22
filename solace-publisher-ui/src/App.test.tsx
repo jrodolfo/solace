@@ -1,6 +1,6 @@
 import App from "./App";
 import '@testing-library/jest-dom';
-import {fireEvent, render, screen, waitFor, within} from "@testing-library/react";
+import {act, fireEvent, render, screen, waitFor, within} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import axios from "axios";
@@ -1497,6 +1497,13 @@ describe("Stored Messages Browser", () => {
 
         expect(screen.getByText(/Recent Saved View Actions/i)).toBeInTheDocument();
         expect(screen.getByText("2 minutes ago")).toBeInTheDocument();
+
+        act(() => {
+            vi.setSystemTime(new Date("2026-04-22T10:33:00.000Z"));
+            vi.advanceTimersByTime(30_000);
+        });
+
+        expect(screen.getByText("3 minutes ago")).toBeInTheDocument();
         vi.useRealTimers();
     });
 
