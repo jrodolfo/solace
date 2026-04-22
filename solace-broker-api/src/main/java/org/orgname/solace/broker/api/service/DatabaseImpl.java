@@ -59,6 +59,7 @@ public class DatabaseImpl implements Database {
             String deliveryMode,
             String innerMessageId,
             PublishStatus publishStatus,
+            boolean stalePendingOnly,
             LocalDateTime createdAtFrom,
             LocalDateTime createdAtTo,
             LocalDateTime publishedAtFrom,
@@ -78,6 +79,9 @@ public class DatabaseImpl implements Database {
         }
         if (publishStatus != null) {
             specification = specification.and(enumEquals("publishStatus", publishStatus));
+        }
+        if (stalePendingOnly) {
+            specification = specification.and(stalePendingOnly());
         }
         if (createdAtFrom != null) {
             specification = specification.and(dateTimeOnOrAfter("createdAt", createdAtFrom));
@@ -213,6 +217,15 @@ public class DatabaseImpl implements Database {
 
     private static Specification<Message> dateTimeOnOrBefore(String fieldName, LocalDateTime value) {
         return (root, query, criteriaBuilder) -> criteriaBuilder.lessThanOrEqualTo(root.get(fieldName), value);
+    }
+
+    private static Specification<Message> stalePendingOnly() {
+        LocalDateTime cutoff = LocalDateTime.now().minus(MessageLifecycleSupport.STALE_PENDING_THRESHOLD);
+        return (root, query, criteriaBuilder) -> criteriaBuilder.and(
+                criteriaBuilder.equal(root.get("publishStatus"), PublishStatus.PENDING),
+                criteriaBuilder.isNotNull(root.get("createdAt")),
+                criteriaBuilder.lessThan(root.get("createdAt"), cutoff)
+        );
     }
 
     /**

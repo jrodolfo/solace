@@ -508,7 +508,8 @@ describe("Stored Messages Browser", () => {
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
         await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "002");
-        await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "PENDING");
+        await userEvent.click(screen.getByLabelText(/only stale pending/i));
         await userEvent.type(screen.getByLabelText(/Created At From/i), "2026-04-20T09:30");
         await userEvent.type(screen.getByLabelText(/Created At To/i), "2026-04-20T18:45");
         await userEvent.type(screen.getByLabelText(/Published At From/i), "2026-04-21T07:00");
@@ -532,7 +533,8 @@ describe("Stored Messages Browser", () => {
                     destination: "system-02",
                     deliveryMode: "DIRECT",
                     innerMessageId: "002",
-                    publishStatus: "FAILED",
+                    publishStatus: "PENDING",
+                    stalePendingOnly: true,
                     createdAtFrom: "2026-04-20T09:30:00",
                     createdAtTo: "2026-04-20T18:45:00",
                     publishedAtFrom: "2026-04-21T07:00:00",
@@ -880,6 +882,67 @@ describe("Stored Messages Browser", () => {
             }),
         );
         expect(screen.getByLabelText(/filter publish status/i)).toHaveValue("FAILED");
+        expect(screen.getByLabelText(/only stale pending/i)).not.toBeChecked();
+    });
+
+    test("Applies the stale pending quick filter and reloads browser results", async () => {
+        mockedAxios.get
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    totalElements: 2,
+                    totalPages: 1,
+                    last: true,
+                    items: [
+                        buildStoredMessage({id: 3, publishStatus: "PENDING", publishedAt: null, stalePending: true}),
+                        buildStoredMessage({id: 4, publishStatus: "PENDING", publishedAt: null, stalePending: false}),
+                    ],
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            })
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    totalElements: 1,
+                    totalPages: 1,
+                    last: true,
+                    items: [
+                        buildStoredMessage({id: 3, publishStatus: "PENDING", publishedAt: null, stalePending: true}),
+                    ],
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        const lifecycleSummary = screen.getByTestId("browser-lifecycle-summary");
+        const stalePendingQuickFilter = within(lifecycleSummary).getByText(/^stale pending$/i, {selector: ".meta-label"}).closest("button");
+        expect(stalePendingQuickFilter).not.toBeNull();
+
+        await userEvent.click(stalePendingQuickFilter!);
+
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
+        expect(mockedAxios.get).toHaveBeenLastCalledWith(
+            "http://localhost:8081/api/v1/messages/all",
+            expect.objectContaining({
+                params: expect.objectContaining({
+                    page: 0,
+                    publishStatus: "PENDING",
+                    stalePendingOnly: true,
+                    sortBy: "createdAt",
+                    sortDirection: "desc",
+                }),
+            }),
+        );
+        expect(screen.getByLabelText(/filter publish status/i)).toHaveValue("PENDING");
+        expect(screen.getByLabelText(/only stale pending/i)).toBeChecked();
     });
 
     test("Reconciles a stale pending message and refreshes the browser results", async () => {
@@ -1557,6 +1620,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "003");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "PUBLISHED");
+        await userEvent.click(screen.getByLabelText(/only stale pending/i));
         await userEvent.type(screen.getByLabelText(/Created At From/i), "2026-04-20T09:30");
         await userEvent.type(screen.getByLabelText(/Created At To/i), "2026-04-20T18:45");
         await userEvent.type(screen.getByLabelText(/Published At From/i), "2026-04-21T07:00");
@@ -1579,6 +1643,7 @@ describe("Stored Messages Browser", () => {
         expect(screen.getByLabelText(/Filter Delivery Mode/i)).toHaveValue("");
         expect(screen.getByLabelText(/Filter Inner Message Id/i)).toHaveValue("");
         expect(screen.getByLabelText(/Filter Publish Status/i)).toHaveValue("");
+        expect(screen.getByLabelText(/only stale pending/i)).not.toBeChecked();
         expect(screen.getByLabelText(/Created At From/i)).toHaveValue("");
         expect(screen.getByLabelText(/Created At To/i)).toHaveValue("");
         expect(screen.getByLabelText(/Published At From/i)).toHaveValue("");

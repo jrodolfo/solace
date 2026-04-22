@@ -379,6 +379,7 @@ Supported query parameters:
 - `deliveryMode`: case-insensitive contains filter
 - `innerMessageId`: case-insensitive contains filter on descriptive payload metadata, not a unique key
 - `publishStatus`: exact filter, one of `PENDING`, `PUBLISHED`, `FAILED`
+- `stalePendingOnly`: when `true`, return only stale `PENDING` rows older than the stale threshold
 - `createdAtFrom`: ISO-8601 local date-time lower bound
 - `createdAtTo`: ISO-8601 local date-time upper bound
 - `publishedAtFrom`: ISO-8601 local date-time lower bound
@@ -390,6 +391,12 @@ Example:
 
 ```text
 GET /api/v1/messages/all?page=0&size=20&publishStatus=FAILED&createdAtFrom=2026-04-21T00:00:00&createdAtTo=2026-04-21T23:59:59&sortBy=createdAt&sortDirection=desc
+```
+
+Stale pending example:
+
+```text
+GET /api/v1/messages/all?page=0&size=20&publishStatus=PENDING&stalePendingOnly=true&sortBy=createdAt&sortDirection=desc
 ```
 
 Representative response:

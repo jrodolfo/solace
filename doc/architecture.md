@@ -180,12 +180,14 @@ The broker API supports:
 - sorting
 - text filters for `destination`, `deliveryMode`, and `innerMessageId`
 - `publishStatus` filtering
+- `stalePendingOnly=true` filtering for stale `PENDING` rows
 - date-range filtering on `createdAt`
 - date-range filtering on `publishedAt`
 
 The UI layers on:
 
 - quick presets such as `failed today`
+- clickable lifecycle summary pills for `published`, `failed`, `pending`, and stale pending
 - refresh/reset behavior
 - detail expansion
 - copy actions

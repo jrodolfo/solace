@@ -64,6 +64,7 @@ public interface Database {
             String deliveryMode,
             String innerMessageId,
             PublishStatus publishStatus,
+            boolean stalePendingOnly,
             LocalDateTime createdAtFrom,
             LocalDateTime createdAtTo,
             LocalDateTime publishedAtFrom,

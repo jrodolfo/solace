@@ -39,7 +39,7 @@ class MessageRepositoryDataJpaTest {
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, "SYSTEM-03", "persistent", "ABC", PublishStatus.PUBLISHED,
-                null, null, null, null, "createdAt", "desc");
+                false, null, null, null, null, "createdAt", "desc");
 
         assertEquals(1L, response.getTotalElements());
         assertEquals("abc-003", response.getItems().getFirst().getInnerMessageId());
@@ -55,7 +55,7 @@ class MessageRepositoryDataJpaTest {
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, null,
-                null, null, null, null, "priority", "asc");
+                false, null, null, null, null, "priority", "asc");
 
         assertEquals(List.of("002", "003", "001"),
                 response.getItems().stream().map(item -> item.getInnerMessageId()).toList());
@@ -70,7 +70,7 @@ class MessageRepositoryDataJpaTest {
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 1, 1, null, null, null, null,
-                null, null, null, null, "createdAt", "desc");
+                false, null, null, null, null, "createdAt", "desc");
 
         assertEquals(3L, response.getTotalElements());
         assertEquals(3, response.getTotalPages());
@@ -88,7 +88,7 @@ class MessageRepositoryDataJpaTest {
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, PublishStatus.FAILED,
-                null, null, null, null, "createdAt", "desc");
+                false, null, null, null, null, "createdAt", "desc");
 
         assertEquals(1L, response.getTotalElements());
         assertEquals("002", response.getItems().getFirst().getInnerMessageId());
@@ -104,6 +104,7 @@ class MessageRepositoryDataJpaTest {
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, null,
+                false,
                 LocalDateTime.of(2026, 4, 19, 0, 0),
                 LocalDateTime.of(2026, 4, 19, 23, 59, 59),
                 null,
@@ -123,6 +124,7 @@ class MessageRepositoryDataJpaTest {
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, PublishStatus.PUBLISHED,
+                false,
                 null,
                 null,
                 LocalDateTime.of(2026, 4, 19, 0, 0),
@@ -131,6 +133,21 @@ class MessageRepositoryDataJpaTest {
                 "asc");
 
         assertEquals(List.of("003"), response.getItems().stream().map(item -> item.getInnerMessageId()).toList());
+    }
+
+    @Test
+    void shouldFilterMessagesByStalePendingOnly() {
+        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        persistMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, PublishStatus.PENDING, LocalDateTime.now().minusMinutes(1));
+        persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
+
+        PagedMessagesResponseDTO response = database.getAllMessages(
+                0, 20, null, null, null, null,
+                true, null, null, null, null, "createdAt", "asc");
+
+        assertEquals(List.of("001"), response.getItems().stream().map(item -> item.getInnerMessageId()).toList());
+        assertEquals(true, response.getItems().getFirst().isStalePending());
     }
 
     private void persistMessage(

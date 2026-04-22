@@ -17,6 +17,7 @@ import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
+import org.orgname.solace.broker.api.service.MessageLifecycleSupport;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
@@ -68,7 +69,7 @@ class MessageControllerTest {
         database.storedMessages.add(first);
         database.storedMessages.add(second);
 
-        PagedMessagesResponseDTO messages = controller.getAllMessages(0, 20, null, null, null, null, null, null, null, null, "createdAt", "desc");
+        PagedMessagesResponseDTO messages = controller.getAllMessages(0, 20, null, null, null, null, false, null, null, null, null, "createdAt", "desc");
         assertEquals(2, messages.getItems().size());
         assertEquals(2L, messages.getTotalElements());
         assertEquals(1, messages.getTotalPages());
@@ -146,6 +147,31 @@ class MessageControllerTest {
         mockMvc.perform(get("/api/v1/messages/all?publishStatus=PENDING"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].publishStatus").value("PENDING"))
+                .andExpect(jsonPath("$.items[0].stalePending").value(true));
+    }
+
+    @Test
+    void shouldFilterMessagesByStalePendingOnly() throws Exception {
+        Message stalePendingMessage = storedMessage("003", "solace/java/direct/system-03", "DIRECT", 2, "2026-04-19T10:00:00");
+        stalePendingMessage.setPublishStatus(PublishStatus.PENDING);
+        stalePendingMessage.setPublishedAt(null);
+        database.storedMessages.add(stalePendingMessage);
+
+        Message freshPendingMessage = storedMessage(
+                "004",
+                "solace/java/direct/system-04",
+                "DIRECT",
+                2,
+                LocalDateTime.now().minusMinutes(1).toString()
+        );
+        freshPendingMessage.setPublishStatus(PublishStatus.PENDING);
+        freshPendingMessage.setPublishedAt(null);
+        database.storedMessages.add(freshPendingMessage);
+
+        mockMvc.perform(get("/api/v1/messages/all?stalePendingOnly=true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("003"))
                 .andExpect(jsonPath("$.items[0].stalePending").value(true));
     }
 
@@ -619,6 +645,7 @@ class MessageControllerTest {
                 String deliveryMode,
                 String innerMessageId,
                 PublishStatus publishStatus,
+                boolean stalePendingOnly,
                 LocalDateTime createdAtFrom,
                 LocalDateTime createdAtTo,
                 LocalDateTime publishedAtFrom,
@@ -630,6 +657,7 @@ class MessageControllerTest {
                     .filter(message -> matches(message.getDeliveryMode(), deliveryMode))
                     .filter(message -> matches(message.getInnerMessageId(), innerMessageId))
                     .filter(message -> publishStatus == null || publishStatus == message.getPublishStatus())
+                    .filter(message -> !stalePendingOnly || MessageLifecycleSupport.isStalePending(message.getPublishStatus(), message.getCreatedAt()))
                     .filter(message -> matchesOnOrAfter(message.getCreatedAt(), createdAtFrom))
                     .filter(message -> matchesOnOrBefore(message.getCreatedAt(), createdAtTo))
                     .filter(message -> matchesOnOrAfter(message.getPublishedAt(), publishedAtFrom))

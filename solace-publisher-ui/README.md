@@ -55,9 +55,11 @@ The browser loads `GET /api/v1/messages/all` from `solace-broker-api` and suppor
 
 - `destination`, `deliveryMode`, and `innerMessageId` filters
 - `publishStatus`, `createdAt`, and `publishedAt` filtering
+- `stalePendingOnly` filtering for stale pending rows
 - `sortBy` and `sortDirection`
 - `page` and `size`
 - quick lifecycle/date presets such as `failed today`
+- clickable lifecycle summary pills for `published`, `failed`, `pending`, and stale pending
 - previous/next paging
 - refresh and reset controls
 - expandable message details

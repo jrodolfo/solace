@@ -28,6 +28,7 @@ const DEFAULT_BROWSER_CREATED_AT_FROM = "";
 const DEFAULT_BROWSER_CREATED_AT_TO = "";
 const DEFAULT_BROWSER_PUBLISHED_AT_FROM = "";
 const DEFAULT_BROWSER_PUBLISHED_AT_TO = "";
+const DEFAULT_BROWSER_STALE_PENDING_ONLY = false;
 
 type BrowserQueryState = {
     page: number;
@@ -36,6 +37,7 @@ type BrowserQueryState = {
     deliveryMode: string;
     innerMessageId: string;
     publishStatus: string;
+    stalePendingOnly: boolean;
     createdAtFrom: string;
     createdAtTo: string;
     publishedAtFrom: string;
@@ -69,6 +71,7 @@ function App() {
     const [filterDeliveryMode, setFilterDeliveryMode] = useState("");
     const [filterInnerMessageId, setFilterInnerMessageId] = useState("");
     const [filterPublishStatus, setFilterPublishStatus] = useState(DEFAULT_BROWSER_PUBLISH_STATUS);
+    const [filterStalePendingOnly, setFilterStalePendingOnly] = useState(DEFAULT_BROWSER_STALE_PENDING_ONLY);
     const [filterCreatedAtFrom, setFilterCreatedAtFrom] = useState(DEFAULT_BROWSER_CREATED_AT_FROM);
     const [filterCreatedAtTo, setFilterCreatedAtTo] = useState(DEFAULT_BROWSER_CREATED_AT_TO);
     const [filterPublishedAtFrom, setFilterPublishedAtFrom] = useState(DEFAULT_BROWSER_PUBLISHED_AT_FROM);
@@ -97,6 +100,7 @@ function App() {
         deliveryMode: overrides?.deliveryMode ?? filterDeliveryMode.trim(),
         innerMessageId: overrides?.innerMessageId ?? filterInnerMessageId.trim(),
         publishStatus: overrides?.publishStatus ?? filterPublishStatus,
+        stalePendingOnly: overrides?.stalePendingOnly ?? filterStalePendingOnly,
         createdAtFrom: overrides?.createdAtFrom ?? filterCreatedAtFrom,
         createdAtTo: overrides?.createdAtTo ?? filterCreatedAtTo,
         publishedAtFrom: overrides?.publishedAtFrom ?? filterPublishedAtFrom,
@@ -161,6 +165,7 @@ function App() {
                     ...(query.deliveryMode ? {deliveryMode: query.deliveryMode} : {}),
                     ...(query.innerMessageId ? {innerMessageId: query.innerMessageId} : {}),
                     ...(query.publishStatus ? {publishStatus: query.publishStatus} : {}),
+                    ...(query.stalePendingOnly ? {stalePendingOnly: true} : {}),
                     ...(query.createdAtFrom ? {createdAtFrom: toIsoLocalDateTime(query.createdAtFrom)} : {}),
                     ...(query.createdAtTo ? {createdAtTo: toIsoLocalDateTime(query.createdAtTo)} : {}),
                     ...(query.publishedAtFrom ? {publishedAtFrom: toIsoLocalDateTime(query.publishedAtFrom)} : {}),
@@ -222,6 +227,7 @@ function App() {
         setFilterDeliveryMode("");
         setFilterInnerMessageId("");
         setFilterPublishStatus(DEFAULT_BROWSER_PUBLISH_STATUS);
+        setFilterStalePendingOnly(DEFAULT_BROWSER_STALE_PENDING_ONLY);
         setFilterCreatedAtFrom(DEFAULT_BROWSER_CREATED_AT_FROM);
         setFilterCreatedAtTo(DEFAULT_BROWSER_CREATED_AT_TO);
         setFilterPublishedAtFrom(DEFAULT_BROWSER_PUBLISHED_AT_FROM);
@@ -252,6 +258,7 @@ function App() {
         setFilterDestination("");
         setFilterDeliveryMode("");
         setFilterInnerMessageId("");
+        setFilterStalePendingOnly(DEFAULT_BROWSER_STALE_PENDING_ONLY);
         setBrowserPage(DEFAULT_BROWSER_PAGE);
         setExpandedMessageId(null);
         setBrowserMessage(null);
@@ -447,13 +454,26 @@ function App() {
 
     const applyLifecycleQuickFilter = async (publishStatus: "PUBLISHED" | "FAILED" | "PENDING") => {
         setFilterPublishStatus(publishStatus);
+        setFilterStalePendingOnly(false);
         setBrowserPage(DEFAULT_BROWSER_PAGE);
         setExpandedMessageId(null);
         setBrowserMessage(null);
         setBrowserVariant(null);
         setBrowserStatusCode(null);
         setBulkRetryResults(null);
-        await fetchMessages({page: Number(DEFAULT_BROWSER_PAGE), publishStatus});
+        await fetchMessages({page: Number(DEFAULT_BROWSER_PAGE), publishStatus, stalePendingOnly: false});
+    };
+
+    const applyStalePendingQuickFilter = async () => {
+        setFilterPublishStatus("PENDING");
+        setFilterStalePendingOnly(true);
+        setBrowserPage(DEFAULT_BROWSER_PAGE);
+        setExpandedMessageId(null);
+        setBrowserMessage(null);
+        setBrowserVariant(null);
+        setBrowserStatusCode(null);
+        setBulkRetryResults(null);
+        await fetchMessages({page: Number(DEFAULT_BROWSER_PAGE), publishStatus: "PENDING", stalePendingOnly: true});
     };
 
     // Submit handler
@@ -926,13 +946,42 @@ function App() {
                                                 id="filterPublishStatus"
                                                 className="form-select"
                                                 value={filterPublishStatus}
-                                                onChange={(e) => setFilterPublishStatus(e.target.value)}
+                                                onChange={(e) => {
+                                                    const nextStatus = e.target.value;
+                                                    setFilterPublishStatus(nextStatus);
+                                                    if (nextStatus !== "PENDING") {
+                                                        setFilterStalePendingOnly(false);
+                                                    }
+                                                }}
                                             >
                                                 <option value="">all statuses</option>
                                                 <option value="PENDING">PENDING</option>
                                                 <option value="PUBLISHED">PUBLISHED</option>
                                                 <option value="FAILED">FAILED</option>
                                             </select>
+                                        </div>
+                                        <div className="col-md-2">
+                                            <label htmlFor="filterStalePendingOnly" className="form-label">
+                                                Stale Pending Only
+                                            </label>
+                                            <div className="form-check mt-2">
+                                                <input
+                                                    id="filterStalePendingOnly"
+                                                    type="checkbox"
+                                                    className="form-check-input"
+                                                    checked={filterStalePendingOnly}
+                                                    onChange={(e) => {
+                                                        const checked = e.target.checked;
+                                                        setFilterStalePendingOnly(checked);
+                                                        if (checked) {
+                                                            setFilterPublishStatus("PENDING");
+                                                        }
+                                                    }}
+                                                />
+                                                <label className="form-check-label" htmlFor="filterStalePendingOnly">
+                                                    only stale pending
+                                                </label>
+                                            </div>
                                         </div>
                                         <div className="col-md-3">
                                             <label htmlFor="filterCreatedAtFrom" className="form-label">
@@ -1177,10 +1226,15 @@ function App() {
                                             <span className="meta-label">pending</span>
                                             <strong>{pageLifecycleCounts.pending}</strong>
                                         </button>
-                                        <div className="browser-lifecycle-pill">
+                                        <button
+                                            type="button"
+                                            className={`browser-lifecycle-pill browser-lifecycle-pill-button${filterPublishStatus === "PENDING" && filterStalePendingOnly ? " is-active" : ""}`}
+                                            onClick={applyStalePendingQuickFilter}
+                                            disabled={isLoadingMessages || isBulkRetrying || retryingMessageId !== null || reconcilingMessageId !== null}
+                                        >
                                             <span className="meta-label">stale pending</span>
                                             <strong>{pageLifecycleCounts.stalePending}</strong>
-                                        </div>
+                                        </button>
                                     </div>
 
                                     {messagesResponse.items.length === 0 ? (

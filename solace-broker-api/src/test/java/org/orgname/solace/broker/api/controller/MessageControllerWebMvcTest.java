@@ -58,7 +58,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldReturnStoredMessagesJsonContract() throws Exception {
-        when(database.getAllMessages(0, 20, null, null, null, null, null, null, null, null, "createdAt", "desc"))
+        when(database.getAllMessages(0, 20, null, null, null, null, false, null, null, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all"))
@@ -80,7 +80,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldExposeStalePendingMessagesInReadResponse() throws Exception {
-        when(database.getAllMessages(0, 20, null, null, null, PublishStatus.PENDING, null, null, null, null, "createdAt", "desc"))
+        when(database.getAllMessages(0, 20, null, null, null, PublishStatus.PENDING, false, null, null, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(stalePendingStoredMessage("003", "solace/java/direct/system-03", "DIRECT", 2)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?publishStatus=PENDING"))
@@ -91,7 +91,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldReturnExplicitPageOfStoredMessages() throws Exception {
-        when(database.getAllMessages(1, 1, null, null, null, null, null, null, null, null, "createdAt", "desc"))
+        when(database.getAllMessages(1, 1, null, null, null, null, false, null, null, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1)), 1, 1, 2));
 
         mockMvc.perform(get("/api/v1/messages/all?page=1&size=1"))
@@ -107,7 +107,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldFilterStoredMessagesByDeliveryMode() throws Exception {
-        when(database.getAllMessages(0, 20, null, "PERSISTENT", null, null, null, null, null, null, "createdAt", "desc"))
+        when(database.getAllMessages(0, 20, null, "PERSISTENT", null, null, false, null, null, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?deliveryMode=PERSISTENT"))
@@ -118,7 +118,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldFilterStoredMessagesByPublishStatus() throws Exception {
-        when(database.getAllMessages(0, 20, null, null, null, PublishStatus.FAILED, null, null, null, null, "createdAt", "desc"))
+        when(database.getAllMessages(0, 20, null, null, null, PublishStatus.FAILED, false, null, null, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(failedStoredMessage("002", "solace/java/direct/system-02", "DIRECT", 1)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?publishStatus=FAILED"))
@@ -130,7 +130,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldRespectExplicitSortFieldAndDirection() throws Exception {
-        when(database.getAllMessages(0, 20, null, null, null, null, null, null, null, null, "priority", "asc"))
+        when(database.getAllMessages(0, 20, null, null, null, null, false, null, null, null, null, "priority", "asc"))
                 .thenReturn(messagePageResponse(List.of(
                         storedMessage("002", "solace/java/direct/system-02", "DIRECT", 1),
                         storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 2));
@@ -146,13 +146,25 @@ class MessageControllerWebMvcTest {
         LocalDateTime createdAtFrom = LocalDateTime.parse("2026-04-20T00:00:00");
         LocalDateTime createdAtTo = LocalDateTime.parse("2026-04-20T23:59:59");
 
-        when(database.getAllMessages(0, 20, null, null, null, null, createdAtFrom, createdAtTo, null, null, "createdAt", "desc"))
+        when(database.getAllMessages(0, 20, null, null, null, null, false, createdAtFrom, createdAtTo, null, null, "createdAt", "desc"))
                 .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?createdAtFrom=2026-04-20T00:00:00&createdAtTo=2026-04-20T23:59:59"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("001"));
+    }
+
+    @Test
+    void shouldFilterStoredMessagesByStalePendingOnly() throws Exception {
+        when(database.getAllMessages(0, 20, null, null, null, null, true, null, null, null, null, "createdAt", "desc"))
+                .thenReturn(messagePageResponse(List.of(stalePendingStoredMessage("003", "solace/java/direct/system-03", "DIRECT", 2)), 0, 20, 1));
+
+        mockMvc.perform(get("/api/v1/messages/all?stalePendingOnly=true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].publishStatus").value("PENDING"))
+                .andExpect(jsonPath("$.items[0].stalePending").value(true));
     }
 
     @Test

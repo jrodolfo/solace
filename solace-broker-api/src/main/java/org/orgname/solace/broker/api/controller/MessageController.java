@@ -144,6 +144,8 @@ public class MessageController {
             @RequestParam(required = false) String innerMessageId,
             @Parameter(description = "Optional exact filter for publish status. Allowed values: PENDING, PUBLISHED, FAILED", example = "FAILED")
             @RequestParam(required = false) String publishStatus,
+            @Parameter(description = "When true, return only stale pending messages older than the stale threshold", example = "true")
+            @RequestParam(defaultValue = "false") boolean stalePendingOnly,
             @Parameter(description = "Optional lower bound for createdAt using ISO-8601 local date-time", example = "2026-04-21T00:00:00")
             @RequestParam(required = false) String createdAtFrom,
             @Parameter(description = "Optional upper bound for createdAt using ISO-8601 local date-time", example = "2026-04-21T23:59:59")
@@ -178,6 +180,7 @@ public class MessageController {
                 deliveryMode,
                 innerMessageId,
                 parsePublishStatus(publishStatus),
+                stalePendingOnly,
                 parseDateTime("createdAtFrom", createdAtFrom),
                 parseDateTime("createdAtTo", createdAtTo),
                 parseDateTime("publishedAtFrom", publishedAtFrom),
