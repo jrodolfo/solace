@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import axios, {AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig} from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
@@ -29,6 +29,7 @@ const DEFAULT_BROWSER_CREATED_AT_TO = "";
 const DEFAULT_BROWSER_PUBLISHED_AT_FROM = "";
 const DEFAULT_BROWSER_PUBLISHED_AT_TO = "";
 const DEFAULT_BROWSER_STALE_PENDING_ONLY = false;
+const SAVED_BROWSER_VIEWS_STORAGE_KEY = "solace.publisher-ui.saved-browser-views";
 
 type BrowserQueryState = {
     page: number;
@@ -45,6 +46,14 @@ type BrowserQueryState = {
     sortBy: string;
     sortDirection: string;
 };
+
+type SavedBrowserView = {
+    name: string;
+    query: BrowserQueryState;
+};
+
+const sortSavedViews = (savedViews: SavedBrowserView[]) =>
+    [...savedViews].sort((left, right) => left.name.localeCompare(right.name));
 
 function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
@@ -92,6 +101,27 @@ function App() {
     const [hasLoadedMessages, setHasLoadedMessages] = useState(false);
     const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
     const [bulkRetryResults, setBulkRetryResults] = useState<BulkRetryResultItem[] | null>(null);
+    const [savedViewName, setSavedViewName] = useState("");
+    const [selectedSavedViewName, setSelectedSavedViewName] = useState("");
+    const [savedViews, setSavedViews] = useState<SavedBrowserView[]>([]);
+
+    useEffect(() => {
+        try {
+            const savedViewsJson = window.localStorage.getItem(SAVED_BROWSER_VIEWS_STORAGE_KEY);
+            if (!savedViewsJson) {
+                return;
+            }
+
+            const parsedSavedViews = JSON.parse(savedViewsJson) as SavedBrowserView[];
+            if (!Array.isArray(parsedSavedViews)) {
+                return;
+            }
+
+            setSavedViews(sortSavedViews(parsedSavedViews));
+        } catch (error) {
+            console.error("Failed to load saved browser views.", error);
+        }
+    }, []);
 
     const currentBrowserQuery = (overrides?: Partial<BrowserQueryState>): BrowserQueryState => ({
         page: overrides?.page ?? Number(browserPage),
@@ -108,6 +138,30 @@ function App() {
         sortBy: overrides?.sortBy ?? browserSortBy,
         sortDirection: overrides?.sortDirection ?? browserSortDirection
     });
+
+    const persistSavedViews = (nextSavedViews: SavedBrowserView[]) => {
+        const sortedSavedViews = sortSavedViews(nextSavedViews);
+        setSavedViews(sortedSavedViews);
+        window.localStorage.setItem(SAVED_BROWSER_VIEWS_STORAGE_KEY, JSON.stringify(sortedSavedViews));
+        return sortedSavedViews;
+    };
+
+    const applyBrowserQueryState = (query: BrowserQueryState) => {
+        setFilterDestination(query.destination);
+        setFilterDeliveryMode(query.deliveryMode);
+        setFilterInnerMessageId(query.innerMessageId);
+        setFilterPublishStatus(query.publishStatus);
+        setFilterStalePendingOnly(query.stalePendingOnly);
+        setFilterCreatedAtFrom(query.createdAtFrom);
+        setFilterCreatedAtTo(query.createdAtTo);
+        setFilterPublishedAtFrom(query.publishedAtFrom);
+        setFilterPublishedAtTo(query.publishedAtTo);
+        setBrowserSortBy(query.sortBy);
+        setBrowserSortDirection(query.sortDirection);
+        setBrowserPage(String(query.page));
+        setBrowserSize(String(query.size));
+        setExpandedMessageId(null);
+    };
 
     const updateProperty = (index: number, field: keyof MessagePropertyFormRow, value: string) => {
         setProperties((currentProperties) =>
@@ -243,10 +297,87 @@ function App() {
         setMessagesResponse(null);
         setHasLoadedMessages(false);
         setBulkRetryResults(null);
+        setSavedViewName("");
+        setSelectedSavedViewName("");
     };
 
     const refreshBrowserResults = async () => {
         await fetchMessages();
+    };
+
+    const saveCurrentView = () => {
+        const normalizedName = savedViewName.trim();
+        if (!normalizedName) {
+            setBrowserMessage("Saved view name is required.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+            return;
+        }
+
+        const savedView: SavedBrowserView = {
+            name: normalizedName,
+            query: currentBrowserQuery({page: Number(DEFAULT_BROWSER_PAGE)}),
+        };
+
+        try {
+            const existingSavedViews = savedViews.filter((view) => view.name !== normalizedName);
+            persistSavedViews([...existingSavedViews, savedView]);
+            setSelectedSavedViewName(normalizedName);
+            setSavedViewName("");
+            setBrowserMessage(`Saved browser view "${normalizedName}".`);
+            setBrowserVariant("success");
+            setBrowserStatusCode(null);
+        } catch (error) {
+            console.error("Failed to save the browser view.", error);
+            setBrowserMessage("Failed to save the browser view.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(500);
+        }
+    };
+
+    const loadSavedView = async () => {
+        if (!selectedSavedViewName) {
+            setBrowserMessage("Select a saved browser view to load.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+            return;
+        }
+
+        const selectedSavedView = savedViews.find((view) => view.name === selectedSavedViewName);
+        if (!selectedSavedView) {
+            setBrowserMessage(`Saved browser view "${selectedSavedViewName}" was not found.`);
+            setBrowserVariant("danger");
+            setBrowserStatusCode(404);
+            return;
+        }
+
+        const queryToLoad = {...selectedSavedView.query, page: Number(DEFAULT_BROWSER_PAGE)};
+        applyBrowserQueryState(queryToLoad);
+        setSavedViewName("");
+        await fetchMessages(queryToLoad);
+    };
+
+    const deleteSavedView = () => {
+        if (!selectedSavedViewName) {
+            setBrowserMessage("Select a saved browser view to delete.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(400);
+            return;
+        }
+
+        try {
+            const nextSavedViews = savedViews.filter((view) => view.name !== selectedSavedViewName);
+            persistSavedViews(nextSavedViews);
+            setBrowserMessage(`Deleted saved browser view "${selectedSavedViewName}".`);
+            setBrowserVariant("info");
+            setBrowserStatusCode(null);
+            setSelectedSavedViewName("");
+        } catch (error) {
+            console.error("Failed to delete the browser view.", error);
+            setBrowserMessage("Failed to delete the browser view.");
+            setBrowserVariant("danger");
+            setBrowserStatusCode(500);
+        }
     };
 
     const applyBrowserPreset = (preset: BrowserPreset) => {
@@ -1162,6 +1293,64 @@ function App() {
                                     </div>
 
                                     <div className="d-flex gap-2 mt-3 flex-wrap">
+                                        <div className="saved-view-controls d-flex gap-2 flex-wrap align-items-end w-100">
+                                            <div className="saved-view-field">
+                                                <label htmlFor="savedViewName" className="form-label">
+                                                    Saved View Name
+                                                </label>
+                                                <input
+                                                    id="savedViewName"
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={savedViewName}
+                                                    onChange={(e) => setSavedViewName(e.target.value)}
+                                                    placeholder="e.g. failed today"
+                                                />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-success"
+                                                onClick={saveCurrentView}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Save Current View
+                                            </button>
+                                            <div className="saved-view-field">
+                                                <label htmlFor="savedViews" className="form-label">
+                                                    Saved Views
+                                                </label>
+                                                <select
+                                                    id="savedViews"
+                                                    className="form-select"
+                                                    value={selectedSavedViewName}
+                                                    onChange={(e) => setSelectedSavedViewName(e.target.value)}
+                                                    disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
+                                                >
+                                                    <option value="">select a saved view</option>
+                                                    {savedViews.map((view) => (
+                                                        <option key={view.name} value={view.name}>
+                                                            {view.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-primary"
+                                                onClick={loadSavedView}
+                                                disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Load Saved View
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-dark"
+                                                onClick={deleteSavedView}
+                                                disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Delete Saved View
+                                            </button>
+                                        </div>
                                         {messagesResponse && messagesResponse.items.some((message) => message.publishStatus === "FAILED" && message.retrySupported) && (
                                             <button
                                                 type="button"

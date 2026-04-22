@@ -168,6 +168,17 @@
     border-radius: 0.9rem;
 }
 
+.saved-view-controls {
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(21, 48, 71, 0.08);
+    margin-bottom: 0.25rem;
+}
+
+.saved-view-field {
+    min-width: 13rem;
+    flex: 1 1 13rem;
+}
+
 .bulk-retry-results-panel {
     padding: 1rem 1.25rem;
     border-radius: 1rem;

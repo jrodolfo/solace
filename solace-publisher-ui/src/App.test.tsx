@@ -29,7 +29,7 @@ test('it shows 5 inputs and 1 button', () => {
     render(<App/>);
     const textboxes = screen.getAllByRole('textbox');
     const spinbuttons = screen.getAllByRole('spinbutton');
-    expect(textboxes).toHaveLength(13);
+    expect(textboxes).toHaveLength(14);
     expect(spinbuttons).toHaveLength(3);
     expect(screen.getByRole('button', {name: /publish message/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /load messages/i})).toBeInTheDocument();
@@ -98,6 +98,7 @@ beforeEach(() => {
     createObjectUrlMock.mockReturnValue("blob:test-export");
     revokeObjectUrlMock.mockReset();
     anchorClickMock.mockReset();
+    window.localStorage.clear();
 });
 
 Object.defineProperty(navigator, "clipboard", {
@@ -615,6 +616,155 @@ describe("Stored Messages Browser", () => {
             "http://localhost:8081/api/v1/messages/all?page=2&size=10&destination=system-02&deliveryMode=DIRECT&innerMessageId=002&publishStatus=PENDING&stalePendingOnly=true&createdAtFrom=2026-04-20T09%3A30%3A00&createdAtTo=2026-04-20T18%3A45%3A00&publishedAtFrom=2026-04-21T07%3A00%3A00&publishedAtTo=2026-04-21T08%3A15%3A00&sortBy=priority&sortDirection=asc"
         );
         expect(await screen.findByRole("status")).toHaveTextContent("Current filter query copied.");
+    });
+
+    test("Saves the current browser view in local storage", async () => {
+        render(<App/>);
+
+        await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
+        await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
+        await userEvent.clear(screen.getByLabelText(/^Size$/i));
+        await userEvent.type(screen.getByLabelText(/^Size$/i), "15");
+        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
+
+        await userEvent.click(screen.getByRole("button", {name: /save current view/i}));
+
+        expect(await screen.findByText(/Saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/Saved Views/i)).toHaveValue("Failed Priority View");
+
+        expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
+            {
+                name: "Failed Priority View",
+                query: {
+                    page: 0,
+                    size: 15,
+                    destination: "system-02",
+                    deliveryMode: "",
+                    innerMessageId: "",
+                    publishStatus: "FAILED",
+                    stalePendingOnly: false,
+                    createdAtFrom: "",
+                    createdAtTo: "",
+                    publishedAtFrom: "",
+                    publishedAtTo: "",
+                    sortBy: "priority",
+                    sortDirection: "desc",
+                },
+            },
+        ]);
+    });
+
+    test("Loads a saved browser view and refreshes with its query", async () => {
+        window.localStorage.setItem(
+            "solace.publisher-ui.saved-browser-views",
+            JSON.stringify([
+                {
+                    name: "Stale Pending Review",
+                    query: {
+                        page: 0,
+                        size: 25,
+                        destination: "system-03",
+                        deliveryMode: "PERSISTENT",
+                        innerMessageId: "003",
+                        publishStatus: "PENDING",
+                        stalePendingOnly: true,
+                        createdAtFrom: "2026-04-20T09:30",
+                        createdAtTo: "2026-04-20T18:45",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "priority",
+                        sortDirection: "asc",
+                    },
+                },
+            ])
+        );
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                size: 25,
+                totalElements: 0,
+                totalPages: 0,
+                items: [],
+                last: true,
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.selectOptions(screen.getByLabelText(/Saved Views/i), "Stale Pending Review");
+        await userEvent.click(screen.getByRole("button", {name: /load saved view/i}));
+
+        expect(screen.getByLabelText(/Filter Destination/i)).toHaveValue("system-03");
+        expect(screen.getByLabelText(/Filter Delivery Mode/i)).toHaveValue("PERSISTENT");
+        expect(screen.getByLabelText(/Filter Inner Message Id/i)).toHaveValue("003");
+        expect(screen.getByLabelText(/Filter Publish Status/i)).toHaveValue("PENDING");
+        expect(screen.getByLabelText(/only stale pending/i)).toBeChecked();
+        expect(screen.getByLabelText(/Created At From/i)).toHaveValue("2026-04-20T09:30");
+        expect(screen.getByLabelText(/Created At To/i)).toHaveValue("2026-04-20T18:45");
+        expect(screen.getByLabelText(/Sort By/i)).toHaveValue("priority");
+        expect(screen.getByLabelText(/Sort Direction/i)).toHaveValue("asc");
+        expect(screen.getByLabelText(/^Page$/i)).toHaveValue(0);
+        expect(screen.getByLabelText(/^Size$/i)).toHaveValue(25);
+
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+        expect(mockedAxios.get).toHaveBeenCalledWith(
+            "http://localhost:8081/api/v1/messages/all",
+            {
+                params: {
+                    page: 0,
+                    size: 25,
+                    destination: "system-03",
+                    deliveryMode: "PERSISTENT",
+                    innerMessageId: "003",
+                    publishStatus: "PENDING",
+                    stalePendingOnly: true,
+                    createdAtFrom: "2026-04-20T09:30:00",
+                    createdAtTo: "2026-04-20T18:45:00",
+                    sortBy: "priority",
+                    sortDirection: "asc",
+                },
+            }
+        );
+    });
+
+    test("Deletes a saved browser view from local storage", async () => {
+        window.localStorage.setItem(
+            "solace.publisher-ui.saved-browser-views",
+            JSON.stringify([
+                {
+                    name: "Failed Priority View",
+                    query: {
+                        page: 0,
+                        size: 20,
+                        destination: "system-02",
+                        deliveryMode: "",
+                        innerMessageId: "",
+                        publishStatus: "FAILED",
+                        stalePendingOnly: false,
+                        createdAtFrom: "",
+                        createdAtTo: "",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "createdAt",
+                        sortDirection: "desc",
+                    },
+                },
+            ])
+        );
+
+        render(<App/>);
+
+        await userEvent.selectOptions(screen.getByLabelText(/Saved Views/i), "Failed Priority View");
+        await userEvent.click(screen.getByRole("button", {name: /delete saved view/i}));
+
+        expect(await screen.findByText(/Deleted saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/Saved Views/i)).toHaveValue("");
+        expect(screen.queryByRole("option", {name: "Failed Priority View"})).not.toBeInTheDocument();
+        expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([]);
     });
 
     test("Loads the next page when pagination advances", async () => {
