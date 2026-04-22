@@ -191,6 +191,15 @@
     border: 1px solid rgba(21, 48, 71, 0.08);
 }
 
+.saved-view-history-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
 .saved-view-history-title {
     color: #51697c;
     font-size: 0.82rem;

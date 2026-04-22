@@ -242,6 +242,15 @@ function App() {
         window.localStorage.setItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
     };
 
+    const clearSavedViewActionHistory = () => {
+        setSavedViewActionHistory([]);
+        window.localStorage.removeItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY);
+        setBrowserMessage("Cleared recent saved view actions.");
+        setBrowserVariant("info");
+        setBrowserStatusCode(null);
+        setBrowserFeedbackDetails(null);
+    };
+
     const applyBrowserQueryState = (query: BrowserQueryState) => {
         setFilterDestination(query.destination);
         setFilterDeliveryMode(query.deliveryMode);
@@ -1839,7 +1848,17 @@ function App() {
                                         </div>
                                         {savedViewActionHistory.length > 0 && (
                                             <div className="saved-view-history w-100">
-                                                <p className="saved-view-history-title mb-2">Recent Saved View Actions</p>
+                                                <div className="saved-view-history-header">
+                                                    <p className="saved-view-history-title mb-0">Recent Saved View Actions</p>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-sm btn-outline-secondary"
+                                                        onClick={clearSavedViewActionHistory}
+                                                        disabled={isLoadingMessages || isBulkRetrying}
+                                                    >
+                                                        Clear History
+                                                    </button>
+                                                </div>
                                                 <div className="saved-view-history-list">
                                                     {savedViewActionHistory.map((entry) => (
                                                         <div key={entry.id} className="saved-view-history-item">

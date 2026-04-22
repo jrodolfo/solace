@@ -1477,6 +1477,32 @@ describe("Stored Messages Browser", () => {
         expect(screen.getByText("Imported 2 views")).toBeInTheDocument();
     });
 
+    test("Clears recent saved view action history", async () => {
+        window.localStorage.setItem(
+            "solace.publisher-ui.saved-view-action-history",
+            JSON.stringify([
+                {
+                    id: "saved-Failed Priority View-1",
+                    action: "saved",
+                    label: "Failed Priority View",
+                    timestamp: "2026-04-22T10:30:00.000Z",
+                },
+            ])
+        );
+
+        render(<App/>);
+
+        expect(await screen.findByText(/Recent Saved View Actions/i)).toBeInTheDocument();
+        expect(screen.getByText('Saved "Failed Priority View"')).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole("button", {name: /clear history/i}));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("Cleared recent saved view actions.");
+        expect(screen.queryByRole("button", {name: /clear history/i})).not.toBeInTheDocument();
+        expect(screen.queryByText('Saved "Failed Priority View"')).not.toBeInTheDocument();
+        expect(window.localStorage.getItem("solace.publisher-ui.saved-view-action-history")).toBeNull();
+    });
+
     test("Loads the next page when pagination advances", async () => {
         mockedAxios.get
             .mockResolvedValueOnce({
