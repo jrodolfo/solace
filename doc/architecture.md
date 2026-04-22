@@ -190,6 +190,7 @@ The broker API supports:
 The UI layers on:
 
 - quick presets such as `failed today`
+- built-in operator views such as `failed today`, `stale pending only`, `published today`, and `pending now`
 - clickable lifecycle summary pills for `published`, `failed`, `pending`, and stale pending
 - page-level lifecycle counts derived from the currently loaded items
 - saved browser views stored in browser `localStorage`
@@ -204,6 +205,7 @@ Important distinction:
 - backend `lifecycleCounts` describe the full filtered result set across all pages
 - backend retryability counts describe how many failed rows are retryable versus blocked
 - UI page counts describe only the items currently loaded in `items`
+- built-in browser views are shipped UI defaults, while saved browser views are user-defined local state
 - saved browser views are client-side state only and are not stored by the backend
 
 ## Subscriber Role
