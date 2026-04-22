@@ -213,6 +213,8 @@ Important distinction:
 - CSV flattening turns nested payload fields into explicit columns and serializes `properties` into a single field
 - built-in browser views are shipped UI defaults, while saved browser views are user-defined local state
 - save and rename intentionally overwrite existing user-defined saved views by name
+- saved-view import merges by name, so imported user-defined views can add new entries or update existing ones
+- invalid saved-view import entries are skipped, and the UI reports added, updated, and skipped counts after import
 - saved browser views are client-side state only and are not stored by the backend
 
 ## Subscriber Role
