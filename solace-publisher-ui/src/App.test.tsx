@@ -953,7 +953,31 @@ describe("Stored Messages Browser", () => {
         expect(await screen.findByText(/Exported 1 saved browser view\./i)).toBeInTheDocument();
     });
 
-    test("Imports saved browser views from json", async () => {
+    test("Imports saved browser views from json with added, updated, and skipped counts", async () => {
+        window.localStorage.setItem(
+            "solace.publisher-ui.saved-browser-views",
+            JSON.stringify([
+                {
+                    name: "Published Today Review",
+                    query: {
+                        page: 0,
+                        size: 20,
+                        destination: "",
+                        deliveryMode: "",
+                        innerMessageId: "",
+                        publishStatus: "PUBLISHED",
+                        stalePendingOnly: false,
+                        createdAtFrom: "",
+                        createdAtTo: "",
+                        publishedAtFrom: "",
+                        publishedAtTo: "",
+                        sortBy: "createdAt",
+                        sortDirection: "desc",
+                    },
+                },
+            ])
+        );
+
         render(<App/>);
 
         const importFile = new File(
@@ -977,6 +1001,42 @@ describe("Stored Messages Browser", () => {
                             sortDirection: "asc",
                         },
                     },
+                    {
+                        name: "Failed Direct Review",
+                        query: {
+                            page: 0,
+                            size: 10,
+                            destination: "system-02",
+                            deliveryMode: "DIRECT",
+                            innerMessageId: "",
+                            publishStatus: "FAILED",
+                            stalePendingOnly: false,
+                            createdAtFrom: "",
+                            createdAtTo: "",
+                            publishedAtFrom: "",
+                            publishedAtTo: "",
+                            sortBy: "priority",
+                            sortDirection: "desc",
+                        },
+                    },
+                    {
+                        name: "   ",
+                        query: {
+                            page: 0,
+                            size: 20,
+                            destination: "",
+                            deliveryMode: "",
+                            innerMessageId: "",
+                            publishStatus: "",
+                            stalePendingOnly: false,
+                            createdAtFrom: "",
+                            createdAtTo: "",
+                            publishedAtFrom: "",
+                            publishedAtTo: "",
+                            sortBy: "createdAt",
+                            sortDirection: "desc",
+                        },
+                    },
                 ],
             })],
             "saved-views.json",
@@ -985,9 +1045,27 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.upload(screen.getByLabelText(/Import Saved Views File/i), importFile);
 
-        expect(await screen.findByText(/Imported 1 saved browser view\./i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("Published Today Review");
+        expect(await screen.findByText(/Imported 2 saved browser views\. Added 1\. Updated 1\. Skipped 1 invalid entry\./i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("Failed Direct Review");
         expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
+            {
+                name: "Failed Direct Review",
+                query: {
+                    page: 0,
+                    size: 10,
+                    destination: "system-02",
+                    deliveryMode: "DIRECT",
+                    innerMessageId: "",
+                    publishStatus: "FAILED",
+                    stalePendingOnly: false,
+                    createdAtFrom: "",
+                    createdAtTo: "",
+                    publishedAtFrom: "",
+                    publishedAtTo: "",
+                    sortBy: "priority",
+                    sortDirection: "desc",
+                },
+            },
             {
                 name: "Published Today Review",
                 query: {
@@ -1007,6 +1085,46 @@ describe("Stored Messages Browser", () => {
                 },
             },
         ]);
+    });
+
+    test("Rejects saved view import files that contain no valid entries", async () => {
+        render(<App/>);
+
+        const importFile = new File(
+            [JSON.stringify({
+                savedViews: [
+                    {
+                        name: "",
+                        query: {
+                            page: 0,
+                            size: 20,
+                            destination: "",
+                            deliveryMode: "",
+                            innerMessageId: "",
+                            publishStatus: "",
+                            stalePendingOnly: false,
+                            createdAtFrom: "",
+                            createdAtTo: "",
+                            publishedAtFrom: "",
+                            publishedAtTo: "",
+                            sortBy: "createdAt",
+                            sortDirection: "desc",
+                        },
+                    },
+                    {
+                        name: "Missing Query",
+                    },
+                ],
+            })],
+            "saved-views-invalid.json",
+            {type: "application/json"}
+        );
+
+        await userEvent.upload(screen.getByLabelText(/Import Saved Views File/i), importFile);
+
+        expect(await screen.findByText(/Imported 0 saved browser views\. Skipped 2 invalid entries\./i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("");
+        expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([]);
     });
 
     test("Loads the next page when pagination advances", async () => {

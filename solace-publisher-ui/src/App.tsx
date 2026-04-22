@@ -525,18 +525,48 @@ function App() {
             }
 
             const mergedViewsByName = new Map(savedViews.map((view) => [view.name, view]));
+            let addedCount = 0;
+            let updatedCount = 0;
+            let skippedCount = 0;
+
             parsedImport.savedViews.forEach((view) => {
-                if (view && typeof view.name === "string" && view.query) {
-                    mergedViewsByName.set(view.name, view);
+                const normalizedName = typeof view?.name === "string" ? view.name.trim() : "";
+                if (!normalizedName || !view?.query || typeof view.query !== "object") {
+                    skippedCount += 1;
+                    return;
                 }
+
+                if (mergedViewsByName.has(normalizedName)) {
+                    updatedCount += 1;
+                } else {
+                    addedCount += 1;
+                }
+
+                mergedViewsByName.set(normalizedName, {...view, name: normalizedName});
             });
 
             const mergedViews = persistSavedViews(Array.from(mergedViewsByName.values()));
             setSelectedSavedViewName(mergedViews[0]?.name ?? "");
             setSavedViewName("");
-            setBrowserMessage(`Imported ${parsedImport.savedViews.length} saved browser view${parsedImport.savedViews.length === 1 ? "" : "s"}.`);
-            setBrowserVariant("success");
-            setBrowserStatusCode(null);
+            if (addedCount === 0 && updatedCount === 0) {
+                setBrowserMessage(`Imported 0 saved browser views. Skipped ${skippedCount} invalid entr${skippedCount === 1 ? "y" : "ies"}.`);
+                setBrowserVariant("danger");
+                setBrowserStatusCode(400);
+                return;
+            }
+
+            const summaryParts = [
+                `Imported ${addedCount + updatedCount} saved browser view${addedCount + updatedCount === 1 ? "" : "s"}.`,
+                `Added ${addedCount}.`,
+                `Updated ${updatedCount}.`,
+            ];
+            if (skippedCount > 0) {
+                summaryParts.push(`Skipped ${skippedCount} invalid entr${skippedCount === 1 ? "y" : "ies"}.`);
+            }
+
+            setBrowserMessage(summaryParts.join(" "));
+            setBrowserVariant(skippedCount > 0 ? "info" : "success");
+            setBrowserStatusCode(skippedCount > 0 ? 207 : null);
         } catch (error) {
             console.error("Failed to import saved browser views.", error);
             setBrowserMessage("Failed to import saved browser views.");
