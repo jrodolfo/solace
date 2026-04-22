@@ -32,3 +32,22 @@ export interface PagedStoredMessagesResponse {
     first: boolean;
     last: boolean;
 }
+
+export interface BulkRetryResultItem {
+    messageId: number | null;
+    outcome: "RETRIED" | "FAILED" | "SKIPPED";
+    detail: string;
+    publishStatus?: "PENDING" | "PUBLISHED" | "FAILED" | null;
+    response?: {
+        destination: string;
+        content: string;
+    } | null;
+}
+
+export interface BulkRetryResponse {
+    totalRequested: number;
+    retriedSuccessfully: number;
+    failedToRetry: number;
+    skipped: number;
+    results: BulkRetryResultItem[];
+}

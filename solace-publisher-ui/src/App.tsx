@@ -6,7 +6,7 @@ import ShowOutput from "./ShowOutput.tsx";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
 import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
-import type {PagedStoredMessagesResponse} from "./StoredMessageTypes.ts";
+import type {BulkRetryResponse, PagedStoredMessagesResponse} from "./StoredMessageTypes.ts";
 
 type MessagePropertyFormRow = {
     key: string;
@@ -311,36 +311,45 @@ function App() {
         setBrowserVariant(null);
         setBrowserStatusCode(null);
 
-        let successfulRetries = 0;
-        let failedRetries = 0;
+        try {
+            const response = await axios.post<BulkRetryResponse>(`${messagesBaseUrl}/retry`, {
+                messageIds: failedMessages.map((message) => message.id),
+            });
 
-        for (const message of failedMessages) {
-            try {
-                await axios.post<SolaceBrokerAPIResponse>(`${messagesBaseUrl}/${message.id}/retry`);
-                successfulRetries += 1;
-            } catch (error) {
-                failedRetries += 1;
-                console.error(`Failed to retry stored message ${message.id}.`, error);
+            await fetchMessages(messagesResponse ? {page: messagesResponse.page, size: messagesResponse.size} : undefined);
+
+            const batchResult = response.data;
+            const detailSummary = [
+                `${batchResult.retriedSuccessfully} retried`,
+                `${batchResult.failedToRetry} failed`,
+                `${batchResult.skipped} skipped`,
+            ].join(", ");
+
+            if (batchResult.failedToRetry === 0 && batchResult.skipped === 0) {
+                setBrowserMessage(`Bulk retry completed successfully. ${detailSummary}.`);
+                setBrowserVariant("success");
+            } else if (batchResult.retriedSuccessfully === 0) {
+                setBrowserMessage(`Bulk retry did not complete successfully. ${detailSummary}.`);
+                setBrowserVariant("danger");
+            } else {
+                setBrowserMessage(`Bulk retry completed with mixed results. ${detailSummary}.`);
+                setBrowserVariant("info");
             }
+            setBrowserStatusCode(response.status);
+        } catch (error) {
+            if (axios.isAxiosError<SolaceBrokerAPIError>(error) && error.response) {
+                setBrowserMessage(error.response.data?.message ?? "Failed to retry the visible failed messages.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(error.response.status);
+            } else {
+                console.error("Failed to retry the visible failed messages.", error);
+                setBrowserMessage("Failed to retry the visible failed messages.");
+                setBrowserVariant("danger");
+                setBrowserStatusCode(500);
+            }
+        } finally {
+            setIsBulkRetrying(false);
         }
-
-        await fetchMessages(messagesResponse ? {page: messagesResponse.page, size: messagesResponse.size} : undefined);
-
-        if (failedRetries === 0) {
-            setBrowserMessage(`Retried ${successfulRetries} failed messages successfully.`);
-            setBrowserVariant("success");
-            setBrowserStatusCode(200);
-        } else if (successfulRetries === 0) {
-            setBrowserMessage(`Failed to retry all ${failedRetries} visible failed messages.`);
-            setBrowserVariant("danger");
-            setBrowserStatusCode(502);
-        } else {
-            setBrowserMessage(`Retried ${successfulRetries} failed messages successfully. ${failedRetries} retries failed.`);
-            setBrowserVariant("info");
-            setBrowserStatusCode(207);
-        }
-
-        setIsBulkRetrying(false);
     };
 
     const reconcileStalePendingMessage = async (message: PagedStoredMessagesResponse["items"][number]) => {

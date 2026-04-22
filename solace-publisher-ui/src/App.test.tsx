@@ -29,6 +29,43 @@ test('it shows 5 inputs and 1 button', () => {
     expect(screen.getByText(/No results loaded yet\./i)).toBeInTheDocument();
 });
 
+function buildBulkRetryResponse(overrides?: Partial<{
+    totalRequested: number;
+    retriedSuccessfully: number;
+    failedToRetry: number;
+    skipped: number;
+    results: Array<{
+        messageId: number | null;
+        outcome: "RETRIED" | "FAILED" | "SKIPPED";
+        detail: string;
+        publishStatus?: "PENDING" | "PUBLISHED" | "FAILED" | null;
+        response?: SolaceBrokerAPIResponse | null;
+    }>;
+}>) {
+    return {
+        totalRequested: overrides?.totalRequested ?? 2,
+        retriedSuccessfully: overrides?.retriedSuccessfully ?? 2,
+        failedToRetry: overrides?.failedToRetry ?? 0,
+        skipped: overrides?.skipped ?? 0,
+        results: overrides?.results ?? [
+            {
+                messageId: 7,
+                outcome: "RETRIED" as const,
+                detail: "Message retried successfully",
+                publishStatus: "PUBLISHED" as const,
+                response: buildPublishSuccessResponse({destination: "solace/java/direct/system-07"}),
+            },
+            {
+                messageId: 8,
+                outcome: "RETRIED" as const,
+                detail: "Message retried successfully",
+                publishStatus: "PUBLISHED" as const,
+                response: buildPublishSuccessResponse({destination: "solace/java/direct/system-08"}),
+            },
+        ],
+    };
+}
+
 // Mock Axios
 vi.mock("axios");
 
@@ -899,7 +936,7 @@ describe("Stored Messages Browser", () => {
                 config: {headers: new AxiosHeaders()},
             });
         mockedAxios.post.mockResolvedValue({
-            data: buildPublishSuccessResponse(),
+            data: buildBulkRetryResponse(),
             status: 200,
             statusText: "OK",
             headers: new AxiosHeaders(),
@@ -914,11 +951,12 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /retry visible failed messages/i}));
 
-        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(2));
-        expect(mockedAxios.post).toHaveBeenNthCalledWith(1, "http://localhost:8081/api/v1/messages/7/retry");
-        expect(mockedAxios.post).toHaveBeenNthCalledWith(2, "http://localhost:8081/api/v1/messages/8/retry");
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(1));
+        expect(mockedAxios.post).toHaveBeenCalledWith("http://localhost:8081/api/v1/messages/retry", {
+            messageIds: [7, 8],
+        });
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
-        expect(await screen.findByRole("alert")).toHaveTextContent("Retried 2 failed messages successfully.");
+        expect(await screen.findByRole("alert")).toHaveTextContent("Bulk retry completed successfully. 2 retried, 0 failed, 0 skipped.");
     });
 
     test("Shows a mixed bulk retry summary when some visible retries fail", async () => {
@@ -972,27 +1010,32 @@ describe("Stored Messages Browser", () => {
             });
         mockedAxios.post
             .mockResolvedValueOnce({
-                data: buildPublishSuccessResponse(),
+                data: buildBulkRetryResponse({
+                    totalRequested: 2,
+                    retriedSuccessfully: 1,
+                    failedToRetry: 1,
+                    skipped: 0,
+                    results: [
+                        {
+                            messageId: 7,
+                            outcome: "RETRIED",
+                            detail: "Message retried successfully",
+                            publishStatus: "PUBLISHED",
+                            response: buildPublishSuccessResponse({destination: "solace/java/direct/system-07"}),
+                        },
+                        {
+                            messageId: 8,
+                            outcome: "FAILED",
+                            detail: "Failed to publish message to Solace broker",
+                            publishStatus: "FAILED",
+                            response: null,
+                        },
+                    ],
+                }),
                 status: 200,
                 statusText: "OK",
                 headers: new AxiosHeaders(),
                 config: {headers: new AxiosHeaders()},
-            })
-            .mockRejectedValueOnce({
-                response: {
-                    data: {
-                        status: 502,
-                        error: "Bad Gateway",
-                        message: "Failed to publish message to Solace broker",
-                        path: "/api/v1/messages/8/retry",
-                        validationErrors: null,
-                    },
-                    status: 502,
-                    statusText: "Bad Gateway",
-                    headers: new AxiosHeaders(),
-                    config: {headers: new AxiosHeaders()},
-                },
-                isAxiosError: true,
             });
 
         render(<App/>);
@@ -1002,10 +1045,10 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /retry visible failed messages/i}));
 
-        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(1));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
-        expect(await screen.findByRole("alert")).toHaveTextContent("Retried 1 failed messages successfully. 1 retries failed.");
-        expect(screen.getByText(/status: 207/i)).toBeInTheDocument();
+        expect(await screen.findByRole("alert")).toHaveTextContent("Bulk retry completed with mixed results. 1 retried, 1 failed, 0 skipped.");
+        expect(screen.getByText(/status: 200/i)).toBeInTheDocument();
     });
 
     test("Shows a retry error when retrying a failed stored message fails", async () => {
