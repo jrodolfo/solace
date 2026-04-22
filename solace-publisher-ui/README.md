@@ -76,6 +76,8 @@ The browser loads `GET /api/v1/messages/all` from `solace-broker-api` and suppor
 - exporting saved browser views to JSON
 - importing saved browser views from JSON
 - exporting the full filtered result set through the backend export endpoint
+- exporting the current page as JSON or CSV
+- exporting the full filtered result set as JSON or CSV
 
 Bulk retry now calls the backend batch retry endpoint (`POST /api/v1/messages/retry`) instead of sending one browser request per failed row.
 
@@ -89,6 +91,20 @@ Saved browser views are client-side only:
 - they live in the browser's `localStorage`
 - they are not stored in `solace-broker-api`
 - JSON export/import is the intended sharing path between browsers or operators
+
+Export behavior:
+
+- `Export Current Page JSON` downloads the currently loaded page exactly as it exists in the browser, including page metadata, lifecycle aggregates, and `items`
+- `Export Current Page CSV` flattens the currently loaded page into spreadsheet-friendly rows
+- `Export Filtered Results JSON` calls the backend export endpoint and downloads the full filtered result set as structured JSON
+- `Export Filtered Results CSV` calls the backend export endpoint for the full filtered result set and then flattens that response into CSV in the browser
+
+CSV is intentionally flatter than JSON:
+
+- payload fields are split into explicit columns such as `payloadType` and `payloadContent`
+- lifecycle, retryability, and timestamp fields each get their own column
+- `properties` are serialized into a single CSV field
+- JSON is the better fit when you want to preserve the nested response structure exactly
 
 ## Notes
 

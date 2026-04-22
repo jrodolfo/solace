@@ -197,6 +197,8 @@ The UI layers on:
 - saved-view rename for user-defined local views
 - saved-view JSON import/export for sharing browser query state
 - full filtered export delegated to the backend export endpoint
+- current-page export generated directly from the loaded browser data
+- JSON and CSV export options for both current-page and full filtered-result workflows
 - refresh/reset behavior
 - detail expansion
 - copy actions
@@ -206,6 +208,9 @@ Important distinction:
 - backend `lifecycleCounts` describe the full filtered result set across all pages
 - backend retryability counts describe how many failed rows are retryable versus blocked
 - UI page counts describe only the items currently loaded in `items`
+- current-page export works from the browser's already loaded page state, while full filtered export calls the backend export endpoint
+- JSON preserves the full normalized response shape more naturally, while CSV is flattened client-side for spreadsheet-style inspection
+- CSV flattening turns nested payload fields into explicit columns and serializes `properties` into a single field
 - built-in browser views are shipped UI defaults, while saved browser views are user-defined local state
 - save and rename intentionally overwrite existing user-defined saved views by name
 - saved browser views are client-side state only and are not stored by the backend
