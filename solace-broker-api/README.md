@@ -21,6 +21,7 @@ For the repo-level module relationships and flow, see [../doc/architecture.md](.
 - If publish succeeds, the stored record becomes `PUBLISHED` and `publishedAt` is set.
 - If publish fails, the stored record becomes `FAILED` and `failureReason` is set.
 - `POST /api/v1/messages/{messageId}/retry` retries only `FAILED` messages.
+- `POST /api/v1/messages/retry` retries multiple stored messages in one request using the same eligibility rules.
 - `POST /api/v1/messages/{messageId}/reconcile-stale-pending` manually reclassifies stale `PENDING` messages as `FAILED`.
 - `GET /api/v1/messages/all` returns normalized DTOs, not raw JPA entities.
 
@@ -246,6 +247,76 @@ Rejected retry, `400 Bad Request`:
   "error": "Bad Request",
   "message": "Only FAILED messages can be retried",
   "path": "/api/v1/messages/2/retry",
+  "validationErrors": null
+}
+```
+
+### `POST /retry`
+
+Retries multiple stored messages in one request.
+
+Request body:
+
+```json
+{
+  "messageIds": [2, 7, 8]
+}
+```
+
+Contract:
+
+- evaluates each id independently
+- uses the same retry eligibility rules as `POST /{messageId}/retry`
+- retries only `FAILED` messages
+- skips non-retryable or non-`FAILED` rows without aborting the whole batch
+- returns a structured result summary plus one result entry per requested id
+
+Successful response with mixed outcomes, `200 OK`:
+
+```json
+{
+  "totalRequested": 3,
+  "retriedSuccessfully": 1,
+  "failedToRetry": 1,
+  "skipped": 1,
+  "results": [
+    {
+      "messageId": 2,
+      "outcome": "RETRIED",
+      "detail": "Message retried successfully",
+      "publishStatus": "PUBLISHED",
+      "response": {
+        "destination": "solace/java/direct/system-02",
+        "content": "01001000 01100101 01101100"
+      }
+    },
+    {
+      "messageId": 1,
+      "outcome": "SKIPPED",
+      "detail": "Only FAILED messages can be retried",
+      "publishStatus": "PUBLISHED",
+      "response": null
+    },
+    {
+      "messageId": 999999,
+      "outcome": "FAILED",
+      "detail": "Message not found for id 999999",
+      "publishStatus": null,
+      "response": null
+    }
+  ]
+}
+```
+
+Rejected batch request, `400 Bad Request`:
+
+```json
+{
+  "timestamp": "2026-04-22T09:35:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "messageIds must contain at least one id",
+  "path": "/api/v1/messages/retry",
   "validationErrors": null
 }
 ```

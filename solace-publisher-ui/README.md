@@ -66,6 +66,8 @@ The browser loads `GET /api/v1/messages/all` from `solace-broker-api` and suppor
 - bulk retry for currently visible failed messages
 - manual reconciliation for stale `PENDING` messages
 
+Bulk retry now calls the backend batch retry endpoint (`POST /api/v1/messages/retry`) instead of sending one browser request per failed row.
+
 ## Notes
 
 - Sample destinations used throughout the repo still follow the pattern `solace/java/direct/system-01`.

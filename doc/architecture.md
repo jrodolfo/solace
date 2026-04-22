@@ -119,7 +119,10 @@ Stale pending signal:
 
 ## Retry Flow
 
-Retry is handled by `POST /api/v1/messages/{messageId}/retry`.
+Retry is handled by:
+
+- `POST /api/v1/messages/{messageId}/retry` for one stored message
+- `POST /api/v1/messages/retry` for batch retry by id list
 
 Rules:
 
@@ -140,7 +143,7 @@ The UI supports both:
 - retrying one failed message
 - retrying all currently visible failed messages in the browser
 
-The bulk retry action is UI fan-out over the single retry endpoint; there is no backend bulk-retry endpoint yet.
+The bulk retry action now delegates to the backend batch endpoint instead of sending one browser request per message.
 
 ## Stale Pending Reconciliation Flow
 
