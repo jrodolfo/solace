@@ -1317,7 +1317,11 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.upload(screen.getByLabelText(/Import Saved Views File/i), importFile);
 
-        expect(await screen.findByText(/Imported 2 saved browser views\. Added 1\. Updated 1\. Skipped 1 invalid entry\./i)).toBeInTheDocument();
+        const alert = await screen.findByRole("alert");
+        expect(alert).toHaveTextContent("Imported 2 saved browser views. Added 1. Updated 1. Skipped 1 invalid entry. (status: 207)");
+        expect(alert).toHaveTextContent("Added: Failed Direct Review");
+        expect(alert).toHaveTextContent("Updated: Published Today Review");
+        expect(alert).toHaveTextContent("Skipped: entry 3");
         expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("Failed Direct Review");
         expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
             {
@@ -1394,7 +1398,9 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.upload(screen.getByLabelText(/Import Saved Views File/i), importFile);
 
-        expect(await screen.findByText(/Imported 0 saved browser views\. Skipped 2 invalid entries\./i)).toBeInTheDocument();
+        const alert = await screen.findByRole("alert");
+        expect(alert).toHaveTextContent("Imported 0 saved browser views. Skipped 2 invalid entries. (status: 400)");
+        expect(alert).toHaveTextContent("Skipped: entry 1, Missing Query");
         expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("");
         expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([]);
     });

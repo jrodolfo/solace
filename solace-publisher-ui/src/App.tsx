@@ -64,6 +64,12 @@ type BuiltInBrowserView = {
     query: BrowserQueryState;
 };
 
+type BrowserFeedbackDetails = {
+    added?: string[];
+    updated?: string[];
+    skipped?: string[];
+};
+
 const sortSavedViews = (savedViews: SavedBrowserView[]) =>
     [...savedViews].sort((left, right) => left.name.localeCompare(right.name));
 
@@ -114,6 +120,7 @@ function App() {
     const [browserMessage, setBrowserMessage] = useState<string | null>(null);
     const [browserVariant, setBrowserVariant] = useState<"success" | "danger" | "info" | null>(null);
     const [browserStatusCode, setBrowserStatusCode] = useState<number | null>(null);
+    const [browserFeedbackDetails, setBrowserFeedbackDetails] = useState<BrowserFeedbackDetails | null>(null);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [retryingMessageId, setRetryingMessageId] = useState<string | null>(null);
     const [reconcilingMessageId, setReconcilingMessageId] = useState<string | null>(null);
@@ -233,6 +240,7 @@ function App() {
         setBrowserMessage(null);
         setBrowserVariant(null);
         setBrowserStatusCode(null);
+        setBrowserFeedbackDetails(null);
         setBulkRetryResults(null);
 
         try {
@@ -319,6 +327,7 @@ function App() {
         setBrowserMessage(null);
         setBrowserVariant(null);
         setBrowserStatusCode(null);
+        setBrowserFeedbackDetails(null);
         setMessagesResponse(null);
         setHasLoadedMessages(false);
         setBulkRetryResults(null);
@@ -500,6 +509,7 @@ function App() {
             setBrowserMessage("No saved browser views are available to export.");
             setBrowserVariant("danger");
             setBrowserStatusCode(400);
+            setBrowserFeedbackDetails(null);
             return;
         }
 
@@ -521,6 +531,7 @@ function App() {
         setBrowserMessage(`Exported ${savedViews.length} saved browser view${savedViews.length === 1 ? "" : "s"}.`);
         setBrowserVariant("info");
         setBrowserStatusCode(null);
+        setBrowserFeedbackDetails(null);
     };
 
     const openSavedViewsImport = () => {
@@ -540,6 +551,7 @@ function App() {
                 setBrowserMessage("Imported saved views file is invalid.");
                 setBrowserVariant("danger");
                 setBrowserStatusCode(400);
+                setBrowserFeedbackDetails(null);
                 return;
             }
 
@@ -547,18 +559,24 @@ function App() {
             let addedCount = 0;
             let updatedCount = 0;
             let skippedCount = 0;
+            const addedNames: string[] = [];
+            const updatedNames: string[] = [];
+            const skippedNames: string[] = [];
 
-            parsedImport.savedViews.forEach((view) => {
+            parsedImport.savedViews.forEach((view, index) => {
                 const normalizedName = typeof view?.name === "string" ? view.name.trim() : "";
                 if (!normalizedName || !view?.query || typeof view.query !== "object") {
                     skippedCount += 1;
+                    skippedNames.push(normalizedName || `entry ${index + 1}`);
                     return;
                 }
 
                 if (mergedViewsByName.has(normalizedName)) {
                     updatedCount += 1;
+                    updatedNames.push(normalizedName);
                 } else {
                     addedCount += 1;
+                    addedNames.push(normalizedName);
                 }
 
                 mergedViewsByName.set(normalizedName, {...view, name: normalizedName});
@@ -571,6 +589,9 @@ function App() {
                 setBrowserMessage(`Imported 0 saved browser views. Skipped ${skippedCount} invalid entr${skippedCount === 1 ? "y" : "ies"}.`);
                 setBrowserVariant("danger");
                 setBrowserStatusCode(400);
+                setBrowserFeedbackDetails({
+                    skipped: skippedNames,
+                });
                 return;
             }
 
@@ -586,11 +607,17 @@ function App() {
             setBrowserMessage(summaryParts.join(" "));
             setBrowserVariant(skippedCount > 0 ? "info" : "success");
             setBrowserStatusCode(skippedCount > 0 ? 207 : null);
+            setBrowserFeedbackDetails({
+                ...(addedNames.length > 0 ? {added: addedNames} : {}),
+                ...(updatedNames.length > 0 ? {updated: updatedNames} : {}),
+                ...(skippedNames.length > 0 ? {skipped: skippedNames} : {}),
+            });
         } catch (error) {
             console.error("Failed to import saved browser views.", error);
             setBrowserMessage("Failed to import saved browser views.");
             setBrowserVariant("danger");
             setBrowserStatusCode(400);
+            setBrowserFeedbackDetails(null);
         } finally {
             event.target.value = "";
         }
@@ -1367,8 +1394,26 @@ function App() {
 
                             {browserMessage && browserVariant && (
                                 <div className={`alert alert-${browserVariant}`} role="alert">
-                                    {browserMessage}
-                                    {browserStatusCode !== null && ` (status: ${browserStatusCode})`}
+                                    <div>{browserMessage}{browserStatusCode !== null && ` (status: ${browserStatusCode})`}</div>
+                                    {browserFeedbackDetails && (
+                                        <div className="browser-feedback-details mt-2">
+                                            {browserFeedbackDetails.added && browserFeedbackDetails.added.length > 0 && (
+                                                <div>
+                                                    <strong>Added:</strong> {browserFeedbackDetails.added.join(", ")}
+                                                </div>
+                                            )}
+                                            {browserFeedbackDetails.updated && browserFeedbackDetails.updated.length > 0 && (
+                                                <div>
+                                                    <strong>Updated:</strong> {browserFeedbackDetails.updated.join(", ")}
+                                                </div>
+                                            )}
+                                            {browserFeedbackDetails.skipped && browserFeedbackDetails.skipped.length > 0 && (
+                                                <div>
+                                                    <strong>Skipped:</strong> {browserFeedbackDetails.skipped.join(", ")}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

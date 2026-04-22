@@ -168,6 +168,10 @@
     border-radius: 0.9rem;
 }
 
+.browser-feedback-details {
+    font-size: 0.95rem;
+}
+
 .browser-export-note {
     color: #5b7488;
     font-size: 0.92rem;
