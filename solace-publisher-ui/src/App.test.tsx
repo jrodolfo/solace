@@ -11,6 +11,19 @@ import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError";
 import type {PagedStoredMessagesResponse, StoredMessage} from "./StoredMessageTypes";
 
 const writeTextMock = vi.fn();
+const createObjectUrlMock = vi.fn();
+const revokeObjectUrlMock = vi.fn();
+const anchorClickMock = vi.fn();
+
+class MockBlob {
+    readonly parts: unknown[];
+    readonly type: string;
+
+    constructor(parts: unknown[], options?: { type?: string }) {
+        this.parts = parts;
+        this.type = options?.type ?? "";
+    }
+}
 
 test('it shows 5 inputs and 1 button', () => {
     render(<App/>);
@@ -81,6 +94,10 @@ beforeEach(() => {
     mockedAxios.get.mockReset();
     mockedAxios.isAxiosError.mockImplementation((error: unknown) => Boolean((error as { isAxiosError?: boolean })?.isAxiosError));
     writeTextMock.mockReset();
+    createObjectUrlMock.mockReset();
+    createObjectUrlMock.mockReturnValue("blob:test-export");
+    revokeObjectUrlMock.mockReset();
+    anchorClickMock.mockReset();
 });
 
 Object.defineProperty(navigator, "clipboard", {
@@ -89,6 +106,23 @@ Object.defineProperty(navigator, "clipboard", {
     },
     configurable: true,
 });
+
+Object.defineProperty(URL, "createObjectURL", {
+    value: createObjectUrlMock,
+    configurable: true,
+});
+
+Object.defineProperty(URL, "revokeObjectURL", {
+    value: revokeObjectUrlMock,
+    configurable: true,
+});
+
+Object.defineProperty(globalThis, "Blob", {
+    value: MockBlob,
+    configurable: true,
+});
+
+HTMLAnchorElement.prototype.click = anchorClickMock;
 
 function buildPublishSuccessResponse(overrides?: Partial<SolaceBrokerAPIResponse>): SolaceBrokerAPIResponse {
     return {
@@ -978,6 +1012,50 @@ describe("Stored Messages Browser", () => {
         );
         expect(screen.getByLabelText(/filter publish status/i)).toHaveValue("PENDING");
         expect(screen.getByLabelText(/only stale pending/i)).toBeChecked();
+    });
+
+    test("Exports the currently loaded page as json", async () => {
+        mockedAxios.get.mockResolvedValue({
+            data: buildMessagesPage(0, {
+                totalElements: 2,
+                totalPages: 1,
+                last: true,
+                lifecycleCounts: {
+                    publishedCount: 1,
+                    failedCount: 1,
+                    pendingCount: 0,
+                    stalePendingCount: 0,
+                    retryableFailedCount: 1,
+                    nonRetryableFailedCount: 0,
+                },
+                items: [
+                    buildStoredMessage({id: 1, publishStatus: "PUBLISHED"}),
+                    buildStoredMessage({id: 2, publishStatus: "FAILED", publishedAt: null}),
+                ],
+            }),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        await userEvent.click(screen.getByRole("button", {name: /export current page/i}));
+
+        expect(createObjectUrlMock).toHaveBeenCalledTimes(1);
+        const exportBlob = createObjectUrlMock.mock.calls[0][0] as MockBlob;
+        const exportJson = JSON.parse(String(exportBlob.parts[0]));
+        expect(exportJson.page).toBe(0);
+        expect(exportJson.totalElements).toBe(2);
+        expect(exportJson.lifecycleCounts.retryableFailedCount).toBe(1);
+        expect(exportJson.items).toHaveLength(2);
+        expect(anchorClickMock).toHaveBeenCalledTimes(1);
+        expect(revokeObjectUrlMock).toHaveBeenCalledWith("blob:test-export");
+        expect(screen.getByRole("alert")).toHaveTextContent("Exported 2 messages from the current page.");
     });
 
     test("Reconciles a stale pending message and refreshes the browser results", async () => {

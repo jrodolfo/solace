@@ -435,6 +435,36 @@ function App() {
         }
     };
 
+    const exportCurrentPage = () => {
+        if (!messagesResponse) {
+            return;
+        }
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const exportPayload = {
+            exportedAt: new Date().toISOString(),
+            page: messagesResponse.page,
+            size: messagesResponse.size,
+            totalElements: messagesResponse.totalElements,
+            totalPages: messagesResponse.totalPages,
+            lifecycleCounts: messagesResponse.lifecycleCounts,
+            items: messagesResponse.items,
+        };
+
+        const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {type: "application/json"});
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = `stored-messages-page-${messagesResponse.page + 1}-${timestamp}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+        setBrowserMessage(`Exported ${messagesResponse.items.length} messages from the current page.`);
+        setBrowserVariant("info");
+        setBrowserStatusCode(null);
+    };
+
     const pageLifecycleCounts = (messagesResponse?.items ?? []).reduce(
         (counts, message) => {
             if (message.publishStatus === "PUBLISHED") {
@@ -1159,6 +1189,14 @@ function App() {
                                             disabled={!messagesResponse || messagesResponse.first || isLoadingMessages || isBulkRetrying}
                                         >
                                             Previous Page
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-info"
+                                            onClick={exportCurrentPage}
+                                            disabled={!messagesResponse || isLoadingMessages || isBulkRetrying}
+                                        >
+                                            Export Current Page
                                         </button>
                                         <button
                                             type="button"
