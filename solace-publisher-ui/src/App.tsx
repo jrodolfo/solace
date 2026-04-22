@@ -6,7 +6,7 @@ import ShowOutput from "./ShowOutput.tsx";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
 import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
-import type {BulkRetryResponse, PagedStoredMessagesResponse} from "./StoredMessageTypes.ts";
+import type {BulkRetryResponse, BulkRetryResultItem, PagedStoredMessagesResponse} from "./StoredMessageTypes.ts";
 
 type MessagePropertyFormRow = {
     key: string;
@@ -73,6 +73,7 @@ function App() {
     const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
     const [hasLoadedMessages, setHasLoadedMessages] = useState(false);
     const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+    const [bulkRetryResults, setBulkRetryResults] = useState<BulkRetryResultItem[] | null>(null);
 
     const updateProperty = (index: number, field: keyof MessagePropertyFormRow, value: string) => {
         setProperties((currentProperties) =>
@@ -118,6 +119,7 @@ function App() {
         setBrowserMessage(null);
         setBrowserVariant(null);
         setBrowserStatusCode(null);
+        setBulkRetryResults(null);
 
         try {
             const response = await axios.get<PagedStoredMessagesResponse>(messagesApiUrl, {
@@ -203,6 +205,7 @@ function App() {
         setBrowserStatusCode(null);
         setMessagesResponse(null);
         setHasLoadedMessages(false);
+        setBulkRetryResults(null);
     };
 
     const refreshBrowserResults = async () => {
@@ -223,6 +226,7 @@ function App() {
         setBrowserMessage(null);
         setBrowserVariant(null);
         setBrowserStatusCode(null);
+        setBulkRetryResults(null);
 
         if (preset === "FAILED_TODAY") {
             setFilterPublishStatus("FAILED");
@@ -310,6 +314,7 @@ function App() {
         setBrowserMessage(null);
         setBrowserVariant(null);
         setBrowserStatusCode(null);
+        setBulkRetryResults(null);
 
         try {
             const response = await axios.post<BulkRetryResponse>(`${messagesBaseUrl}/retry`, {
@@ -319,6 +324,7 @@ function App() {
             await fetchMessages(messagesResponse ? {page: messagesResponse.page, size: messagesResponse.size} : undefined);
 
             const batchResult = response.data;
+            setBulkRetryResults(batchResult.results);
             const detailSummary = [
                 `${batchResult.retriedSuccessfully} retried`,
                 `${batchResult.failedToRetry} failed`,
@@ -768,6 +774,40 @@ function App() {
                                 <div className={`alert alert-${browserVariant}`} role="alert">
                                     {browserMessage}
                                     {browserStatusCode !== null && ` (status: ${browserStatusCode})`}
+                                </div>
+                            )}
+
+                            {bulkRetryResults && bulkRetryResults.length > 0 && (
+                                <div className="bulk-retry-results-panel mb-3" aria-live="polite">
+                                    <div className="bulk-retry-results-header">
+                                        <strong>Bulk Retry Results</strong>
+                                        <span>{bulkRetryResults.length} result{bulkRetryResults.length === 1 ? "" : "s"}</span>
+                                    </div>
+                                    <div className="bulk-retry-results-list">
+                                        {bulkRetryResults.map((result, index) => (
+                                            <div className="bulk-retry-result-row" key={`${result.messageId ?? "unknown"}-${index}`}>
+                                                <div className="bulk-retry-result-topline">
+                                                    <strong>message id {result.messageId ?? "unknown"}</strong>
+                                                    <span className={`badge text-bg-${
+                                                        result.outcome === "RETRIED"
+                                                            ? "success"
+                                                            : result.outcome === "SKIPPED"
+                                                                ? "secondary"
+                                                                : "danger"
+                                                    }`}>
+                                                        {result.outcome.toLowerCase()}
+                                                    </span>
+                                                </div>
+                                                <p className="mb-1">{result.detail}</p>
+                                                {result.publishStatus && (
+                                                    <p className="mb-0">
+                                                        <span className="meta-label">publish status</span>
+                                                        {result.publishStatus}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 

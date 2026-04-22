@@ -957,6 +957,9 @@ describe("Stored Messages Browser", () => {
         });
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
         expect(await screen.findByRole("alert")).toHaveTextContent("Bulk retry completed successfully. 2 retried, 0 failed, 0 skipped.");
+        expect(screen.getByText(/Bulk Retry Results/i)).toBeInTheDocument();
+        expect(screen.getByText(/message id 7/i)).toBeInTheDocument();
+        expect(screen.getByText(/message id 8/i)).toBeInTheDocument();
     });
 
     test("Shows a mixed bulk retry summary when some visible retries fail", async () => {
@@ -1049,6 +1052,76 @@ describe("Stored Messages Browser", () => {
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
         expect(await screen.findByRole("alert")).toHaveTextContent("Bulk retry completed with mixed results. 1 retried, 1 failed, 0 skipped.");
         expect(screen.getByText(/status: 200/i)).toBeInTheDocument();
+        expect(screen.getByText(/Bulk Retry Results/i)).toBeInTheDocument();
+        expect(screen.getByText(/message id 7/i)).toBeInTheDocument();
+        expect(screen.getByText(/Message retried successfully/i)).toBeInTheDocument();
+        expect(screen.getByText(/message id 8/i)).toBeInTheDocument();
+        expect(screen.getByText(/Failed to publish message to Solace broker/i)).toBeInTheDocument();
+    });
+
+    test("Clears bulk retry results when browser filters are reset", async () => {
+        mockedAxios.get
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    totalElements: 2,
+                    totalPages: 1,
+                    last: true,
+                    items: [
+                        buildStoredMessage({
+                            id: 7,
+                            innerMessageId: "007",
+                            publishStatus: "FAILED",
+                            failureReason: "Failed to publish message to Solace broker",
+                            publishedAt: null,
+                        }),
+                        buildStoredMessage({
+                            id: 8,
+                            innerMessageId: "008",
+                            publishStatus: "FAILED",
+                            failureReason: "Failed to publish message to Solace broker",
+                            publishedAt: null,
+                        }),
+                    ],
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            })
+            .mockResolvedValueOnce({
+                data: buildMessagesPage(0, {
+                    items: [],
+                    totalElements: 0,
+                    totalPages: 0,
+                    last: true,
+                }),
+                status: 200,
+                statusText: "OK",
+                headers: new AxiosHeaders(),
+                config: {headers: new AxiosHeaders()},
+            });
+        mockedAxios.post.mockResolvedValue({
+            data: buildBulkRetryResponse(),
+            status: 200,
+            statusText: "OK",
+            headers: new AxiosHeaders(),
+            config: {headers: new AxiosHeaders()},
+        });
+
+        render(<App/>);
+
+        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        await userEvent.click(screen.getByRole("button", {name: /retry visible failed messages/i}));
+
+        await waitFor(() => expect(mockedAxios.post).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
+        expect(screen.getByText(/Bulk Retry Results/i)).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole("button", {name: /reset filters/i}));
+
+        expect(screen.queryByText(/Bulk Retry Results/i)).not.toBeInTheDocument();
     });
 
     test("Shows a retry error when retrying a failed stored message fails", async () => {
