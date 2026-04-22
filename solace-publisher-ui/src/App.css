@@ -168,6 +168,12 @@
     border-radius: 0.9rem;
 }
 
+.browser-export-note {
+    color: #5b7488;
+    font-size: 0.92rem;
+    max-width: 60rem;
+}
+
 .saved-view-controls {
     padding-bottom: 0.25rem;
     border-bottom: 1px solid rgba(21, 48, 71, 0.08);

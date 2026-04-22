@@ -1793,6 +1793,11 @@ function App() {
                                             Next Page
                                         </button>
                                     </div>
+                                    <p className="browser-export-note mb-0 mt-3">
+                                        Current-page export uses the messages already loaded below. Filtered-result export downloads the full
+                                        matching result set from the backend. JSON preserves the response structure, while CSV flattens fields for
+                                        spreadsheet use.
+                                    </p>
                                 </div>
                             </form>
 

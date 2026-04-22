@@ -40,6 +40,7 @@ test('it shows 5 inputs and 1 button', () => {
     expect(screen.getByLabelText(/Published At From/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Published At To/i)).toBeInTheDocument();
     expect(screen.getByText(/No results loaded yet\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Current-page export uses the messages already loaded below\./i)).toBeInTheDocument();
 });
 
 function buildBulkRetryResponse(overrides?: Partial<{
