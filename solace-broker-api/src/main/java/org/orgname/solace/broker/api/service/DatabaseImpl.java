@@ -98,7 +98,13 @@ public class DatabaseImpl implements Database {
 
         Sort.Direction direction = Sort.Direction.fromString(sortDirection);
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
-        return PagedMessagesResponseDTO.fromMessages(messageRepository.findAll(specification, pageRequest));
+        PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts = new PagedMessagesResponseDTO.LifecycleCountsDTO(
+                countByStatus(specification, PublishStatus.PUBLISHED),
+                countByStatus(specification, PublishStatus.FAILED),
+                countByStatus(specification, PublishStatus.PENDING),
+                countStalePending(specification)
+        );
+        return PagedMessagesResponseDTO.fromMessages(messageRepository.findAll(specification, pageRequest), lifecycleCounts);
     }
 
     @Override
@@ -226,6 +232,14 @@ public class DatabaseImpl implements Database {
                 criteriaBuilder.isNotNull(root.get("createdAt")),
                 criteriaBuilder.lessThan(root.get("createdAt"), cutoff)
         );
+    }
+
+    private long countByStatus(Specification<Message> baseSpecification, PublishStatus publishStatus) {
+        return messageRepository.count(baseSpecification.and(enumEquals("publishStatus", publishStatus)));
+    }
+
+    private long countStalePending(Specification<Message> baseSpecification) {
+        return messageRepository.count(baseSpecification.and(stalePendingOnly()));
     }
 
     /**

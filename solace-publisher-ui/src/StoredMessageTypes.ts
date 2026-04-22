@@ -31,6 +31,12 @@ export interface PagedStoredMessagesResponse {
     totalPages: number;
     first: boolean;
     last: boolean;
+    lifecycleCounts: {
+        publishedCount: number;
+        failedCount: number;
+        pendingCount: number;
+        stalePendingCount: number;
+    };
 }
 
 export interface BulkRetryResultItem {

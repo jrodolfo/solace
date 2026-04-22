@@ -1198,6 +1198,24 @@ function App() {
                                             {messagesResponse.totalElements} stored messages total, page size {messagesResponse.size}
                                         </span>
                                     </div>
+                                    <div className="browser-lifecycle-summary browser-lifecycle-summary-aggregate mb-2" data-testid="browser-lifecycle-summary-aggregate">
+                                        <div className="browser-lifecycle-pill">
+                                            <span className="meta-label">filtered published</span>
+                                            <strong>{messagesResponse.lifecycleCounts.publishedCount}</strong>
+                                        </div>
+                                        <div className="browser-lifecycle-pill">
+                                            <span className="meta-label">filtered failed</span>
+                                            <strong>{messagesResponse.lifecycleCounts.failedCount}</strong>
+                                        </div>
+                                        <div className="browser-lifecycle-pill">
+                                            <span className="meta-label">filtered pending</span>
+                                            <strong>{messagesResponse.lifecycleCounts.pendingCount}</strong>
+                                        </div>
+                                        <div className="browser-lifecycle-pill">
+                                            <span className="meta-label">filtered stale pending</span>
+                                            <strong>{messagesResponse.lifecycleCounts.stalePendingCount}</strong>
+                                        </div>
+                                    </div>
                                     <div className="browser-lifecycle-summary mb-3" data-testid="browser-lifecycle-summary">
                                         <button
                                             type="button"

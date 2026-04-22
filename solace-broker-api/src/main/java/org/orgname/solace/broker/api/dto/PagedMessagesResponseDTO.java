@@ -7,6 +7,13 @@ import java.util.function.Function;
 
 public class PagedMessagesResponseDTO {
 
+    public record LifecycleCountsDTO(
+            long publishedCount,
+            long failedCount,
+            long pendingCount,
+            long stalePendingCount) {
+    }
+
     private final List<StoredMessageDTO> items;
     private final int page;
     private final int size;
@@ -14,8 +21,9 @@ public class PagedMessagesResponseDTO {
     private final int totalPages;
     private final boolean first;
     private final boolean last;
+    private final LifecycleCountsDTO lifecycleCounts;
 
-    public <T> PagedMessagesResponseDTO(Page<T> page, Function<T, StoredMessageDTO> itemMapper) {
+    public <T> PagedMessagesResponseDTO(Page<T> page, Function<T, StoredMessageDTO> itemMapper, LifecycleCountsDTO lifecycleCounts) {
         this.items = page.getContent().stream().map(itemMapper).toList();
         this.page = page.getNumber();
         this.size = page.getSize();
@@ -23,9 +31,10 @@ public class PagedMessagesResponseDTO {
         this.totalPages = page.getTotalPages();
         this.first = page.isFirst();
         this.last = page.isLast();
+        this.lifecycleCounts = lifecycleCounts;
     }
 
-    public PagedMessagesResponseDTO(Page<StoredMessageDTO> page) {
+    public PagedMessagesResponseDTO(Page<StoredMessageDTO> page, LifecycleCountsDTO lifecycleCounts) {
         this.items = page.getContent();
         this.page = page.getNumber();
         this.size = page.getSize();
@@ -33,10 +42,11 @@ public class PagedMessagesResponseDTO {
         this.totalPages = page.getTotalPages();
         this.first = page.isFirst();
         this.last = page.isLast();
+        this.lifecycleCounts = lifecycleCounts;
     }
 
-    public static PagedMessagesResponseDTO fromMessages(Page<org.orgname.solace.broker.api.jpa.Message> messagePage) {
-        return new PagedMessagesResponseDTO(messagePage, StoredMessageDTO::new);
+    public static PagedMessagesResponseDTO fromMessages(Page<org.orgname.solace.broker.api.jpa.Message> messagePage, LifecycleCountsDTO lifecycleCounts) {
+        return new PagedMessagesResponseDTO(messagePage, StoredMessageDTO::new, lifecycleCounts);
     }
 
     public List<StoredMessageDTO> getItems() {
@@ -65,5 +75,9 @@ public class PagedMessagesResponseDTO {
 
     public boolean isLast() {
         return last;
+    }
+
+    public LifecycleCountsDTO getLifecycleCounts() {
+        return lifecycleCounts;
     }
 }

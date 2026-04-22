@@ -118,6 +118,12 @@ public class MessageController {
                                                   "updatedAt": null
                                                 }
                                               ],
+                                              "lifecycleCounts": {
+                                                "publishedCount": 8,
+                                                "failedCount": 2,
+                                                "pendingCount": 1,
+                                                "stalePendingCount": 1
+                                              },
                                               "page": 0,
                                               "size": 10,
                                               "totalElements": 1,

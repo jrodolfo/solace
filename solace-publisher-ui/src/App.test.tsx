@@ -142,15 +142,23 @@ function buildMessagesPage(page: number, overrides?: Partial<{
     first: boolean;
     last: boolean;
     items: StoredMessage[];
+    lifecycleCounts: PagedStoredMessagesResponse["lifecycleCounts"];
 }>): PagedStoredMessagesResponse {
+    const items = overrides?.items ?? [buildStoredMessage()];
     return {
-        items: overrides?.items ?? [buildStoredMessage()],
+        items,
         page,
         size: overrides?.size ?? 20,
         totalElements: overrides?.totalElements ?? 2,
         totalPages: overrides?.totalPages ?? 2,
         first: overrides?.first ?? page === 0,
         last: overrides?.last ?? false,
+        lifecycleCounts: overrides?.lifecycleCounts ?? {
+            publishedCount: items.filter((item) => item.publishStatus === "PUBLISHED").length,
+            failedCount: items.filter((item) => item.publishStatus === "FAILED").length,
+            pendingCount: items.filter((item) => item.publishStatus === "PENDING").length,
+            stalePendingCount: items.filter((item) => item.stalePending).length,
+        },
     };
 }
 
@@ -776,6 +784,12 @@ describe("Stored Messages Browser", () => {
                 totalElements: 4,
                 totalPages: 1,
                 last: true,
+                lifecycleCounts: {
+                    publishedCount: 10,
+                    failedCount: 5,
+                    pendingCount: 3,
+                    stalePendingCount: 2,
+                },
                 items: [
                     buildStoredMessage({
                         id: 1,
@@ -812,6 +826,17 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
+
+        const aggregateSummary = screen.getByTestId("browser-lifecycle-summary-aggregate");
+        const filteredPublishedLabel = within(aggregateSummary).getByText(/^filtered published$/i, {selector: ".meta-label"});
+        const filteredFailedLabel = within(aggregateSummary).getByText(/^filtered failed$/i, {selector: ".meta-label"});
+        const filteredPendingLabel = within(aggregateSummary).getByText(/^filtered pending$/i, {selector: ".meta-label"});
+        const filteredStalePendingLabel = within(aggregateSummary).getByText(/^filtered stale pending$/i, {selector: ".meta-label"});
+
+        expect(filteredPublishedLabel.nextElementSibling).toHaveTextContent("10");
+        expect(filteredFailedLabel.nextElementSibling).toHaveTextContent("5");
+        expect(filteredPendingLabel.nextElementSibling).toHaveTextContent("3");
+        expect(filteredStalePendingLabel.nextElementSibling).toHaveTextContent("2");
 
         const lifecycleSummary = screen.getByTestId("browser-lifecycle-summary");
         const publishedLabel = within(lifecycleSummary).getByText(/^published$/i, {selector: ".meta-label"});

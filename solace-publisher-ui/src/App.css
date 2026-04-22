@@ -109,6 +109,10 @@
     gap: 0.75rem;
 }
 
+.browser-lifecycle-summary-aggregate .browser-lifecycle-pill {
+    background: #eef5f9;
+}
+
 .browser-lifecycle-pill {
     padding: 0.9rem 1rem;
     border-radius: 0.9rem;

@@ -73,6 +73,10 @@ class MessageControllerTest {
         assertEquals(2, messages.getItems().size());
         assertEquals(2L, messages.getTotalElements());
         assertEquals(1, messages.getTotalPages());
+        assertEquals(2L, messages.getLifecycleCounts().publishedCount());
+        assertEquals(0L, messages.getLifecycleCounts().failedCount());
+        assertEquals(0L, messages.getLifecycleCounts().pendingCount());
+        assertEquals(0L, messages.getLifecycleCounts().stalePendingCount());
 
         mockMvc.perform(get("/api/v1/messages/all"))
                 .andExpect(status().isOk())
@@ -668,7 +672,10 @@ class MessageControllerTest {
             int start = Math.min(page * size, filteredMessages.size());
             int end = Math.min(start + size, filteredMessages.size());
             List<Message> content = filteredMessages.subList(start, end);
-            return PagedMessagesResponseDTO.fromMessages(new PageImpl<>(content, PageRequest.of(page, size), filteredMessages.size()));
+            return PagedMessagesResponseDTO.fromMessages(
+                    new PageImpl<>(content, PageRequest.of(page, size), filteredMessages.size()),
+                    lifecycleCounts(filteredMessages)
+            );
         }
 
         private Message getRequiredMessage(Long messageId) {
@@ -698,6 +705,14 @@ class MessageControllerTest {
                 default -> Comparator.comparing(Message::getCreatedAt);
             };
             return "asc".equalsIgnoreCase(sortDirection) ? comparator : comparator.reversed();
+        }
+
+        private static PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts(List<Message> messages) {
+            long publishedCount = messages.stream().filter(message -> message.getPublishStatus() == PublishStatus.PUBLISHED).count();
+            long failedCount = messages.stream().filter(message -> message.getPublishStatus() == PublishStatus.FAILED).count();
+            long pendingCount = messages.stream().filter(message -> message.getPublishStatus() == PublishStatus.PENDING).count();
+            long stalePendingCount = messages.stream().filter(message -> MessageLifecycleSupport.isStalePending(message.getPublishStatus(), message.getCreatedAt())).count();
+            return new PagedMessagesResponseDTO.LifecycleCountsDTO(publishedCount, failedCount, pendingCount, stalePendingCount);
         }
     }
 }

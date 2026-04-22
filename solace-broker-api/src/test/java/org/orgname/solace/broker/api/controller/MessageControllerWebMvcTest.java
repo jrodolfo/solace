@@ -17,6 +17,7 @@ import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
+import org.orgname.solace.broker.api.service.MessageLifecycleSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -71,6 +72,10 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.items[0].deliveryMode").value("PERSISTENT"))
                 .andExpect(jsonPath("$.items[0].priority").value(3))
                 .andExpect(jsonPath("$.items[0].publishStatus").value("PUBLISHED"))
+                .andExpect(jsonPath("$.lifecycleCounts.publishedCount").value(1))
+                .andExpect(jsonPath("$.lifecycleCounts.failedCount").value(0))
+                .andExpect(jsonPath("$.lifecycleCounts.pendingCount").value(0))
+                .andExpect(jsonPath("$.lifecycleCounts.stalePendingCount").value(0))
                 .andExpect(jsonPath("$.items[0].stalePending").value(false))
                 .andExpect(jsonPath("$.items[0].retrySupported").value(true))
                 .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
@@ -519,6 +524,19 @@ class MessageControllerWebMvcTest {
     }
 
     private static PagedMessagesResponseDTO messagePageResponse(List<Message> messages, int page, int size, long totalElements) {
-        return PagedMessagesResponseDTO.fromMessages(new PageImpl<>(messages, PageRequest.of(page, size), totalElements));
+        return PagedMessagesResponseDTO.fromMessages(
+                new PageImpl<>(messages, PageRequest.of(page, size), totalElements),
+                lifecycleCounts(messages)
+        );
+    }
+
+    private static PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts(List<Message> messages) {
+        long publishedCount = messages.stream().filter(message -> message.getPublishStatus() == PublishStatus.PUBLISHED).count();
+        long failedCount = messages.stream().filter(message -> message.getPublishStatus() == PublishStatus.FAILED).count();
+        long pendingCount = messages.stream().filter(message -> message.getPublishStatus() == PublishStatus.PENDING).count();
+        long stalePendingCount = messages.stream()
+                .filter(message -> MessageLifecycleSupport.isStalePending(message.getPublishStatus(), message.getCreatedAt()))
+                .count();
+        return new PagedMessagesResponseDTO.LifecycleCountsDTO(publishedCount, failedCount, pendingCount, stalePendingCount);
     }
 }
