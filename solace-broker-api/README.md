@@ -407,7 +407,9 @@ Representative response:
     "publishedCount": 8,
     "failedCount": 2,
     "pendingCount": 1,
-    "stalePendingCount": 1
+    "stalePendingCount": 1,
+    "retryableFailedCount": 1,
+    "nonRetryableFailedCount": 1
   },
   "items": [
     {
@@ -462,7 +464,7 @@ Representative response:
 }
 ```
 
-`lifecycleCounts` reflects the full filtered result set that matches the current query, not just the messages in the current page. The `items` array still contains only the current page content.
+`lifecycleCounts` reflects the full filtered result set that matches the current query, not just the messages in the current page. The `items` array still contains only the current page content. The retryability fields break failed messages into rows that are eligible for retry and rows that are blocked by the current retry policy.
 
 Invalid date filter, `400 Bad Request`:
 

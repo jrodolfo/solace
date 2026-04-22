@@ -158,6 +158,8 @@ function buildMessagesPage(page: number, overrides?: Partial<{
             failedCount: items.filter((item) => item.publishStatus === "FAILED").length,
             pendingCount: items.filter((item) => item.publishStatus === "PENDING").length,
             stalePendingCount: items.filter((item) => item.stalePending).length,
+            retryableFailedCount: items.filter((item) => item.publishStatus === "FAILED" && item.retrySupported).length,
+            nonRetryableFailedCount: items.filter((item) => item.publishStatus === "FAILED" && !item.retrySupported).length,
         },
     };
 }
@@ -789,6 +791,8 @@ describe("Stored Messages Browser", () => {
                     failedCount: 5,
                     pendingCount: 3,
                     stalePendingCount: 2,
+                    retryableFailedCount: 4,
+                    nonRetryableFailedCount: 1,
                 },
                 items: [
                     buildStoredMessage({
@@ -833,11 +837,15 @@ describe("Stored Messages Browser", () => {
         const filteredFailedLabel = within(aggregateSummary).getByText(/^filtered failed$/i, {selector: ".meta-label"});
         const filteredPendingLabel = within(aggregateSummary).getByText(/^filtered pending$/i, {selector: ".meta-label"});
         const filteredStalePendingLabel = within(aggregateSummary).getByText(/^filtered stale pending$/i, {selector: ".meta-label"});
+        const retryableFailedLabel = within(aggregateSummary).getByText(/^retryable failed$/i, {selector: ".meta-label"});
+        const nonRetryableFailedLabel = within(aggregateSummary).getByText(/^non-retryable failed$/i, {selector: ".meta-label"});
 
         expect(filteredPublishedLabel.nextElementSibling).toHaveTextContent("10");
         expect(filteredFailedLabel.nextElementSibling).toHaveTextContent("5");
         expect(filteredPendingLabel.nextElementSibling).toHaveTextContent("3");
         expect(filteredStalePendingLabel.nextElementSibling).toHaveTextContent("2");
+        expect(retryableFailedLabel.nextElementSibling).toHaveTextContent("4");
+        expect(nonRetryableFailedLabel.nextElementSibling).toHaveTextContent("1");
 
         const lifecycleSummary = screen.getByTestId("browser-lifecycle-summary");
         const publishedLabel = within(lifecycleSummary).getByText(/^published$/i, {selector: ".meta-label"});

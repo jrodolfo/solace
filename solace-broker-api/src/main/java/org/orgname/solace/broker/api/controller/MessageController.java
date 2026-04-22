@@ -122,7 +122,9 @@ public class MessageController {
                                                 "publishedCount": 8,
                                                 "failedCount": 2,
                                                 "pendingCount": 1,
-                                                "stalePendingCount": 1
+                                                "stalePendingCount": 1,
+                                                "retryableFailedCount": 1,
+                                                "nonRetryableFailedCount": 1
                                               },
                                               "page": 0,
                                               "size": 10,

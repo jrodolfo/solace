@@ -11,7 +11,9 @@ public class PagedMessagesResponseDTO {
             long publishedCount,
             long failedCount,
             long pendingCount,
-            long stalePendingCount) {
+            long stalePendingCount,
+            long retryableFailedCount,
+            long nonRetryableFailedCount) {
     }
 
     private final List<StoredMessageDTO> items;

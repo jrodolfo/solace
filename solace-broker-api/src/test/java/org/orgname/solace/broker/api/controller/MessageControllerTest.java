@@ -77,6 +77,8 @@ class MessageControllerTest {
         assertEquals(0L, messages.getLifecycleCounts().failedCount());
         assertEquals(0L, messages.getLifecycleCounts().pendingCount());
         assertEquals(0L, messages.getLifecycleCounts().stalePendingCount());
+        assertEquals(0L, messages.getLifecycleCounts().retryableFailedCount());
+        assertEquals(0L, messages.getLifecycleCounts().nonRetryableFailedCount());
 
         mockMvc.perform(get("/api/v1/messages/all"))
                 .andExpect(status().isOk())
@@ -712,7 +714,20 @@ class MessageControllerTest {
             long failedCount = messages.stream().filter(message -> message.getPublishStatus() == PublishStatus.FAILED).count();
             long pendingCount = messages.stream().filter(message -> message.getPublishStatus() == PublishStatus.PENDING).count();
             long stalePendingCount = messages.stream().filter(message -> MessageLifecycleSupport.isStalePending(message.getPublishStatus(), message.getCreatedAt())).count();
-            return new PagedMessagesResponseDTO.LifecycleCountsDTO(publishedCount, failedCount, pendingCount, stalePendingCount);
+            long retryableFailedCount = messages.stream()
+                    .filter(message -> message.getPublishStatus() == PublishStatus.FAILED && message.isRetrySupported())
+                    .count();
+            long nonRetryableFailedCount = messages.stream()
+                    .filter(message -> message.getPublishStatus() == PublishStatus.FAILED && !message.isRetrySupported())
+                    .count();
+            return new PagedMessagesResponseDTO.LifecycleCountsDTO(
+                    publishedCount,
+                    failedCount,
+                    pendingCount,
+                    stalePendingCount,
+                    retryableFailedCount,
+                    nonRetryableFailedCount
+            );
         }
     }
 }

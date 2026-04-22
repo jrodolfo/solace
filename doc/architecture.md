@@ -197,6 +197,7 @@ The UI layers on:
 Important distinction:
 
 - backend `lifecycleCounts` describe the full filtered result set across all pages
+- backend retryability counts describe how many failed rows are retryable versus blocked
 - UI page counts describe only the items currently loaded in `items`
 
 ## Subscriber Role

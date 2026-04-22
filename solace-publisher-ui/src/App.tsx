@@ -1218,6 +1218,14 @@ function App() {
                                             <span className="meta-label">filtered stale pending</span>
                                             <strong>{messagesResponse.lifecycleCounts.stalePendingCount}</strong>
                                         </div>
+                                        <div className="browser-lifecycle-pill">
+                                            <span className="meta-label">retryable failed</span>
+                                            <strong>{messagesResponse.lifecycleCounts.retryableFailedCount}</strong>
+                                        </div>
+                                        <div className="browser-lifecycle-pill">
+                                            <span className="meta-label">non-retryable failed</span>
+                                            <strong>{messagesResponse.lifecycleCounts.nonRetryableFailedCount}</strong>
+                                        </div>
                                     </div>
                                     <div className="browser-lifecycle-summary mb-3" data-testid="browser-lifecycle-summary">
                                         <button

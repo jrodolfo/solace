@@ -102,7 +102,9 @@ public class DatabaseImpl implements Database {
                 countByStatus(specification, PublishStatus.PUBLISHED),
                 countByStatus(specification, PublishStatus.FAILED),
                 countByStatus(specification, PublishStatus.PENDING),
-                countStalePending(specification)
+                countStalePending(specification),
+                countFailedByRetrySupport(specification, true),
+                countFailedByRetrySupport(specification, false)
         );
         return PagedMessagesResponseDTO.fromMessages(messageRepository.findAll(specification, pageRequest), lifecycleCounts);
     }
@@ -217,6 +219,10 @@ public class DatabaseImpl implements Database {
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get(fieldName), value);
     }
 
+    private static Specification<Message> booleanEquals(String fieldName, boolean value) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get(fieldName), value);
+    }
+
     private static Specification<Message> dateTimeOnOrAfter(String fieldName, LocalDateTime value) {
         return (root, query, criteriaBuilder) -> criteriaBuilder.greaterThanOrEqualTo(root.get(fieldName), value);
     }
@@ -240,6 +246,14 @@ public class DatabaseImpl implements Database {
 
     private long countStalePending(Specification<Message> baseSpecification) {
         return messageRepository.count(baseSpecification.and(stalePendingOnly()));
+    }
+
+    private long countFailedByRetrySupport(Specification<Message> baseSpecification, boolean retrySupported) {
+        return messageRepository.count(
+                baseSpecification
+                        .and(enumEquals("publishStatus", PublishStatus.FAILED))
+                        .and(booleanEquals("retrySupported", retrySupported))
+        );
     }
 
     /**

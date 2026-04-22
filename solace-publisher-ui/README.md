@@ -61,6 +61,7 @@ The browser loads `GET /api/v1/messages/all` from `solace-broker-api` and suppor
 - quick lifecycle/date presets such as `failed today`
 - clickable lifecycle summary pills for `published`, `failed`, `pending`, and stale pending
 - one lifecycle summary strip for full filtered totals returned by the backend
+- filtered failed totals include retryable versus non-retryable counts
 - one lifecycle summary strip for counts on the current page only
 - previous/next paging
 - refresh and reset controls

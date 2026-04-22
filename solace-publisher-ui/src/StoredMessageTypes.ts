@@ -36,6 +36,8 @@ export interface PagedStoredMessagesResponse {
         failedCount: number;
         pendingCount: number;
         stalePendingCount: number;
+        retryableFailedCount: number;
+        nonRetryableFailedCount: number;
     };
 }
 

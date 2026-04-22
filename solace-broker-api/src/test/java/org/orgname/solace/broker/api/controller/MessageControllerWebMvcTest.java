@@ -76,6 +76,8 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.lifecycleCounts.failedCount").value(0))
                 .andExpect(jsonPath("$.lifecycleCounts.pendingCount").value(0))
                 .andExpect(jsonPath("$.lifecycleCounts.stalePendingCount").value(0))
+                .andExpect(jsonPath("$.lifecycleCounts.retryableFailedCount").value(0))
+                .andExpect(jsonPath("$.lifecycleCounts.nonRetryableFailedCount").value(0))
                 .andExpect(jsonPath("$.items[0].stalePending").value(false))
                 .andExpect(jsonPath("$.items[0].retrySupported").value(true))
                 .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
@@ -537,6 +539,19 @@ class MessageControllerWebMvcTest {
         long stalePendingCount = messages.stream()
                 .filter(message -> MessageLifecycleSupport.isStalePending(message.getPublishStatus(), message.getCreatedAt()))
                 .count();
-        return new PagedMessagesResponseDTO.LifecycleCountsDTO(publishedCount, failedCount, pendingCount, stalePendingCount);
+        long retryableFailedCount = messages.stream()
+                .filter(message -> message.getPublishStatus() == PublishStatus.FAILED && message.isRetrySupported())
+                .count();
+        long nonRetryableFailedCount = messages.stream()
+                .filter(message -> message.getPublishStatus() == PublishStatus.FAILED && !message.isRetrySupported())
+                .count();
+        return new PagedMessagesResponseDTO.LifecycleCountsDTO(
+                publishedCount,
+                failedCount,
+                pendingCount,
+                stalePendingCount,
+                retryableFailedCount,
+                nonRetryableFailedCount
+        );
     }
 }
