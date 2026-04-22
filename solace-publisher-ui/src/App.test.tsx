@@ -831,6 +831,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
         expect(screen.getByText(/filtered totals cover the full matching result set/i)).toBeInTheDocument();
+        expect(screen.getByText(/retryable failed messages can be retried under the current server-side policy/i)).toBeInTheDocument();
 
         const aggregateSummary = screen.getByTestId("browser-lifecycle-summary-aggregate");
         const filteredPublishedLabel = within(aggregateSummary).getByText(/^filtered published$/i, {selector: ".meta-label"});

@@ -114,6 +114,10 @@
     font-size: 0.95rem;
 }
 
+.browser-summary-caption-secondary {
+    color: #657f93;
+}
+
 .browser-lifecycle-summary-aggregate .browser-lifecycle-pill {
     background: #eef5f9;
 }

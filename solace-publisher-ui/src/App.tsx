@@ -1201,6 +1201,9 @@ function App() {
                                     <p className="browser-summary-caption mb-2">
                                         Filtered totals cover the full matching result set. Page counts cover only the messages shown below.
                                     </p>
+                                    <p className="browser-summary-caption browser-summary-caption-secondary mb-2">
+                                        Retryable failed messages can be retried under the current server-side policy. Non-retryable failed messages are blocked by that policy.
+                                    </p>
                                     <div className="browser-lifecycle-summary browser-lifecycle-summary-aggregate mb-2" data-testid="browser-lifecycle-summary-aggregate">
                                         <div className="browser-lifecycle-pill">
                                             <span className="meta-label">filtered published</span>
