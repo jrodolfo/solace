@@ -435,6 +435,47 @@ function App() {
         }
     };
 
+    const buildMessagesQueryUrl = (overrides?: Partial<BrowserQueryState>) => {
+        const query = currentBrowserQuery(overrides);
+        const url = new URL(messagesApiUrl);
+        url.searchParams.set("page", String(query.page));
+        url.searchParams.set("size", String(query.size));
+        if (query.destination) {
+            url.searchParams.set("destination", query.destination);
+        }
+        if (query.deliveryMode) {
+            url.searchParams.set("deliveryMode", query.deliveryMode);
+        }
+        if (query.innerMessageId) {
+            url.searchParams.set("innerMessageId", query.innerMessageId);
+        }
+        if (query.publishStatus) {
+            url.searchParams.set("publishStatus", query.publishStatus);
+        }
+        if (query.stalePendingOnly) {
+            url.searchParams.set("stalePendingOnly", "true");
+        }
+        if (query.createdAtFrom) {
+            url.searchParams.set("createdAtFrom", toIsoLocalDateTime(query.createdAtFrom));
+        }
+        if (query.createdAtTo) {
+            url.searchParams.set("createdAtTo", toIsoLocalDateTime(query.createdAtTo));
+        }
+        if (query.publishedAtFrom) {
+            url.searchParams.set("publishedAtFrom", toIsoLocalDateTime(query.publishedAtFrom));
+        }
+        if (query.publishedAtTo) {
+            url.searchParams.set("publishedAtTo", toIsoLocalDateTime(query.publishedAtTo));
+        }
+        url.searchParams.set("sortBy", query.sortBy);
+        url.searchParams.set("sortDirection", query.sortDirection);
+        return url.toString();
+    };
+
+    const copyCurrentFilterQuery = async () => {
+        await copyToClipboard("Current filter query", buildMessagesQueryUrl());
+    };
+
     const exportCurrentPage = () => {
         if (!messagesResponse) {
             return;
@@ -1173,6 +1214,14 @@ function App() {
                                             disabled={isLoadingMessages || isBulkRetrying}
                                         >
                                             Refresh Results
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-outline-info"
+                                            onClick={copyCurrentFilterQuery}
+                                            disabled={isLoadingMessages || isBulkRetrying}
+                                        >
+                                            Copy Filter Query
                                         </button>
                                         <button
                                             type="button"

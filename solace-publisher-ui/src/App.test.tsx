@@ -590,6 +590,33 @@ describe("Stored Messages Browser", () => {
         );
     });
 
+    test("Copies the current filter query url with active parameters only", async () => {
+        render(<App/>);
+
+        await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
+        await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
+        await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "002");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "PENDING");
+        await userEvent.click(screen.getByLabelText(/only stale pending/i));
+        await userEvent.type(screen.getByLabelText(/Created At From/i), "2026-04-20T09:30");
+        await userEvent.type(screen.getByLabelText(/Created At To/i), "2026-04-20T18:45");
+        await userEvent.type(screen.getByLabelText(/Published At From/i), "2026-04-21T07:00");
+        await userEvent.type(screen.getByLabelText(/Published At To/i), "2026-04-21T08:15");
+        await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
+        await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
+        await userEvent.clear(screen.getByLabelText(/^Page$/i));
+        await userEvent.type(screen.getByLabelText(/^Page$/i), "2");
+        await userEvent.clear(screen.getByLabelText(/^Size$/i));
+        await userEvent.type(screen.getByLabelText(/^Size$/i), "10");
+
+        await userEvent.click(screen.getByRole("button", {name: /copy filter query/i}));
+
+        expect(writeTextMock).toHaveBeenCalledWith(
+            "http://localhost:8081/api/v1/messages/all?page=2&size=10&destination=system-02&deliveryMode=DIRECT&innerMessageId=002&publishStatus=PENDING&stalePendingOnly=true&createdAtFrom=2026-04-20T09%3A30%3A00&createdAtTo=2026-04-20T18%3A45%3A00&publishedAtFrom=2026-04-21T07%3A00%3A00&publishedAtTo=2026-04-21T08%3A15%3A00&sortBy=priority&sortDirection=asc"
+        );
+        expect(await screen.findByRole("status")).toHaveTextContent("Current filter query copied.");
+    });
+
     test("Loads the next page when pagination advances", async () => {
         mockedAxios.get
             .mockResolvedValueOnce({
