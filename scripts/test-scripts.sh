@@ -42,6 +42,18 @@ assert_contains "${make_help_output}" "make build-all"
 assert_contains "${make_help_output}" "make start-api"
 assert_contains "${make_help_output}" "make test-scripts"
 
+echo "checking shell script syntax"
+bash -n \
+  "${REPO_ROOT}/scripts/common.sh" \
+  "${REPO_ROOT}/scripts/start-broker-api.sh" \
+  "${REPO_ROOT}/scripts/start-publisher-ui.sh" \
+  "${REPO_ROOT}/scripts/start-subscriber.sh" \
+  "${REPO_ROOT}/scripts/start-all.sh" \
+  "${REPO_ROOT}/scripts/build-broker-api.sh" \
+  "${REPO_ROOT}/scripts/build-publisher-ui.sh" \
+  "${REPO_ROOT}/scripts/build-subscriber.sh" \
+  "${REPO_ROOT}/scripts/build-all.sh"
+
 echo "checking broker api env var validation"
 assert_command_fails_with \
   "start-broker-api.sh cannot continue because a required Solace environment variable is missing: SOLACE_CLOUD_HOST" \

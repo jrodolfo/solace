@@ -74,7 +74,9 @@ Notes:
 - `build-all.sh` runs the three module builds sequentially from the repo root.
 - `start-broker-api.sh` and `start-subscriber.sh` require the shared Solace env vars.
 - `start-publisher-ui.sh` expects `solace-publisher-ui/node_modules` to already exist. If not, run `cd solace-publisher-ui && npm install` once first.
-- `start-all.sh` validates the shared Solace env vars before starting any child processes, runs all three modules together in the current terminal, stops them on `ctrl-c`, and shuts the others down if any one module exits.
+- `start-all.sh` validates the shared Solace env vars before starting any child processes, streams prefixed `[api]`, `[ui]`, and `[subscriber]` logs from a temporary combined-log directory, and prints a status summary when it stops.
+- the Vite UI port is dynamic when `5173` is busy; use the `[ui] Local:` line from `start-all.sh` output to find the actual URL.
+- if any one module exits, `start-all.sh` stops the others intentionally and reports which component failed plus where the combined logs were captured.
 
 ### 1. Start the backend
 

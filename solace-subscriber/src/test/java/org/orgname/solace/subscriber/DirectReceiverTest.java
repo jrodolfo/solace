@@ -7,12 +7,47 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Proxy;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DirectReceiverTest {
+
+    private static final Logger DIRECT_RECEIVER_LOGGER = Logger.getLogger(DirectReceiver.class.getName());
+
+    @Test
+    void runSafelyReturnsZeroWhenRunCompletes() {
+        DirectReceiver directReceiver = new DirectReceiver(
+                new AccessProperties(buildEnvironmentProvider(Map.of()))
+        ) {
+            @Override
+            void run() {
+                // no-op
+            }
+        };
+
+        assertEquals(0, directReceiver.runSafely());
+    }
+
+    @Test
+    void runSafelyReturnsNonZeroWhenRunFails() {
+        DirectReceiver directReceiver = new DirectReceiver(
+                new AccessProperties(buildEnvironmentProvider(Map.of()))
+        ) {
+            @Override
+            void run() {
+                throw new RuntimeException("boom");
+            }
+        };
+
+        try (LoggerCapture ignored = LoggerCapture.capture(DIRECT_RECEIVER_LOGGER)) {
+            assertEquals(1, directReceiver.runSafely());
+        }
+    }
 
     @Test
     void handleInboundMessageStateTracksReceivedMessagesWithoutDiscard() {
@@ -112,5 +147,38 @@ class DirectReceiverTest {
             return '\0';
         }
         return null;
+    }
+
+    private static final class LoggerCapture extends Handler implements AutoCloseable {
+        private final Logger logger;
+        private final boolean originalUseParentHandlers;
+
+        private LoggerCapture(Logger logger) {
+            this.logger = logger;
+            this.originalUseParentHandlers = logger.getUseParentHandlers();
+        }
+
+        static LoggerCapture capture(Logger logger) {
+            LoggerCapture capture = new LoggerCapture(logger);
+            logger.setUseParentHandlers(false);
+            logger.addHandler(capture);
+            return capture;
+        }
+
+        @Override
+        public void publish(LogRecord record) {
+            // Intentionally swallow expected test log output.
+        }
+
+        @Override
+        public void flush() {
+            // No-op.
+        }
+
+        @Override
+        public void close() {
+            logger.removeHandler(this);
+            logger.setUseParentHandlers(originalUseParentHandlers);
+        }
     }
 }

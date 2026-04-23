@@ -42,12 +42,23 @@ public class DirectReceiver {
      * Entrypoint for the standalone subscriber process.
      */
     public static void main(String... args) {
+        System.exit(new DirectReceiver().runSafely());
+    }
+
+    /**
+     * Runs the subscriber and converts fatal startup/runtime errors into a
+     * process exit code suitable for wrapper scripts.
+     */
+    int runSafely() {
         try {
-            new DirectReceiver().run();
+            run();
+            return 0;
         } catch (SubscriberConfigurationException e) {
             logger.log(Level.SEVERE, "Subscriber configuration error: {0}", e.getMessage());
+            return 1;
         } catch (RuntimeException e) {
             logger.log(Level.SEVERE, "Subscriber failed to start or run.", e);
+            return 1;
         }
     }
 
