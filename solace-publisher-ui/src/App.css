@@ -373,7 +373,7 @@
     margin-bottom: 0.25rem;
 }
 
-@media (max-width: 991px) {
+@media (max-width: 1199px) {
     .publisher-hero {
         padding: 1.5rem;
     }
