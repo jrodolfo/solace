@@ -5,6 +5,7 @@ import org.orgname.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
+import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
@@ -57,7 +58,7 @@ public class DatabaseImpl implements Database {
             int page,
             int size,
             String destination,
-            String deliveryMode,
+            DeliveryMode deliveryMode,
             String innerMessageId,
             PublishStatus publishStatus,
             boolean stalePendingOnly,
@@ -86,7 +87,7 @@ public class DatabaseImpl implements Database {
     @Override
     public FilteredMessagesExportResponseDTO exportMessages(
             String destination,
-            String deliveryMode,
+            DeliveryMode deliveryMode,
             String innerMessageId,
             PublishStatus publishStatus,
             boolean stalePendingOnly,
@@ -277,7 +278,7 @@ public class DatabaseImpl implements Database {
 
     private Specification<Message> buildReadSpecification(
             String destination,
-            String deliveryMode,
+            DeliveryMode deliveryMode,
             String innerMessageId,
             PublishStatus publishStatus,
             boolean stalePendingOnly,
@@ -290,8 +291,8 @@ public class DatabaseImpl implements Database {
         if (hasText(destination)) {
             specification = specification.and(stringContains("destination", destination));
         }
-        if (hasText(deliveryMode)) {
-            specification = specification.and(stringContains("deliveryMode", deliveryMode));
+        if (deliveryMode != null) {
+            specification = specification.and(enumEquals("deliveryMode", deliveryMode));
         }
         if (hasText(innerMessageId)) {
             specification = specification.and(stringContains("innerMessageId", innerMessageId));

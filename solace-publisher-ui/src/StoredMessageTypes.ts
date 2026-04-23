@@ -1,3 +1,5 @@
+export type DeliveryMode = "DIRECT" | "NON_PERSISTENT" | "PERSISTENT";
+
 export interface StoredMessagePayload {
     type: string;
     content: string;
@@ -9,7 +11,7 @@ export interface StoredMessage {
     id: number;
     innerMessageId: string;
     destination: string;
-    deliveryMode: string;
+    deliveryMode: DeliveryMode;
     priority: number;
     publishStatus: "PENDING" | "PUBLISHED" | "FAILED";
     stalePending: boolean;
@@ -45,7 +47,7 @@ export interface FilteredMessagesExportResponse {
     exportedAt: string;
     filters: {
         destination?: string | null;
-        deliveryMode?: string | null;
+        deliveryMode?: DeliveryMode | null;
         innerMessageId?: string | null;
         publishStatus?: "PENDING" | "PUBLISHED" | "FAILED" | null;
         stalePendingOnly: boolean;

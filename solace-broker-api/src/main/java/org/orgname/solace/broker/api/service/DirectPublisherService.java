@@ -2,6 +2,7 @@ package org.orgname.solace.broker.api.service;
 
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
+import org.orgname.solace.broker.api.jpa.DeliveryMode;
 
 import java.util.Optional;
 
@@ -26,5 +27,5 @@ public interface DirectPublisherService {
      * @throws RuntimeException when broker configuration, connection, or publish
      *                          steps fail
      */
-    PublishMessageResponseDTO sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional);
+    PublishMessageResponseDTO sendMessage(String topicName, String content, DeliveryMode deliveryMode, Optional<ParameterDTO> solaceParametersOptional);
 }

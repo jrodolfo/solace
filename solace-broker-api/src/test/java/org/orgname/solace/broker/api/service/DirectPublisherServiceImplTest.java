@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
+import org.orgname.solace.broker.api.jpa.DeliveryMode;
 
 import java.util.Optional;
 import java.util.Properties;
@@ -20,7 +21,7 @@ class DirectPublisherServiceImplTest {
     void testSendMessageInvalidTopicName() {
         Exception exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> directPublisherService.sendMessage("", "Message content", Optional.empty())
+                () -> directPublisherService.sendMessage("", "Message content", DeliveryMode.PERSISTENT, Optional.empty())
         );
 
         assertEquals(ERROR_EMPTY_MESSAGE_OR_TOPIC_NAME, exception.getMessage());
@@ -30,7 +31,7 @@ class DirectPublisherServiceImplTest {
     void testSendMessageEmptyContent() {
         Exception exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> directPublisherService.sendMessage("solace/java/direct/system-01", "", Optional.empty())
+                () -> directPublisherService.sendMessage("solace/java/direct/system-01", "", DeliveryMode.PERSISTENT, Optional.empty())
         );
 
         assertEquals(ERROR_EMPTY_MESSAGE_OR_TOPIC_NAME, exception.getMessage());
@@ -42,7 +43,7 @@ class DirectPublisherServiceImplTest {
 
         BrokerConfigurationException exception = assertThrows(
                 BrokerConfigurationException.class,
-                () -> service.sendMessage("solace/java/direct/system-01", "Message content", Optional.empty())
+                () -> service.sendMessage("solace/java/direct/system-01", "Message content", DeliveryMode.PERSISTENT, Optional.empty())
         );
 
         assertEquals("System environment variables SOLACE_CLOUD_HOST, SOLACE_CLOUD_VPN, SOLACE_CLOUD_USERNAME, SOLACE_CLOUD_PASSWORD are not set.", exception.getMessage());

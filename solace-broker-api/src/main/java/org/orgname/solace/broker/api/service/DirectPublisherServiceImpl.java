@@ -12,6 +12,7 @@ import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
 import org.orgname.solace.broker.api.exception.BrokerConnectionException;
 import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
+import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -50,8 +51,8 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
      * <p>If explicit broker parameters are supplied they are used only for this
      * publish attempt. Otherwise server-side configuration is used.
      */
-    public PublishMessageResponseDTO sendMessage(String topicName, String content, Optional<ParameterDTO> solaceParametersOptional) {
-        validateInput(topicName, content);
+    public PublishMessageResponseDTO sendMessage(String topicName, String content, DeliveryMode deliveryMode, Optional<ParameterDTO> solaceParametersOptional) {
+        validateInput(topicName, content, deliveryMode);
         Properties properties = resolveProperties(solaceParametersOptional);
         MessagingService messagingService = createMessagingService(properties);
         DirectMessagePublisher publisher = null;
@@ -59,8 +60,8 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         try {
             connectMessagingService(messagingService);
             publisher = createAndStartPublisher(messagingService);
-            OutboundMessage message = buildOutboundMessage(messagingService, content);
-            publishMessage(publisher, topicName, message);
+            OutboundMessage message = buildOutboundMessage(messagingService, content, deliveryMode);
+            publishMessage(publisher, topicName, message, deliveryMode);
             pauseAfterPublish();
             PublishMessageResponseDTO returnMessage = buildResponse(topicName, content);
             logger.log(Level.INFO, "Published message to topic {0}", topicName);
@@ -73,8 +74,8 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
     /**
      * Rejects empty topic or payload values before any broker work begins.
      */
-    private void validateInput(String topicName, String content) {
-        if (topicName == null || topicName.isEmpty() || content == null || content.isEmpty()) {
+    private void validateInput(String topicName, String content, DeliveryMode deliveryMode) {
+        if (topicName == null || topicName.isEmpty() || content == null || content.isEmpty() || deliveryMode == null) {
             throw new IllegalArgumentException(ERROR_EMPTY_MESSAGE_OR_TOPIC_NAME);
         }
     }
@@ -154,18 +155,23 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
      * Creates the outbound payload to publish. The broker API currently treats
      * the request payload content as UTF-8 text.
      */
-    private OutboundMessage buildOutboundMessage(MessagingService messagingService, String content) {
+    private OutboundMessage buildOutboundMessage(MessagingService messagingService, String content, DeliveryMode deliveryMode) {
         byte[] payload = content.getBytes(StandardCharsets.UTF_8);
         OutboundMessageBuilder messageBuilder = messagingService.messageBuilder();
         messageBuilder.withProperty(MessageProperties.APPLICATION_MESSAGE_ID, UUID.randomUUID().toString());
+        messageBuilder.withProperty(MessageProperties.APPLICATION_MESSAGE_TYPE, deliveryMode.name());
         return messageBuilder.build(payload);
     }
 
     /**
      * Sends the outbound message to the target Solace topic.
      */
-    private void publishMessage(DirectMessagePublisher publisher, String topicName, OutboundMessage message) {
+    private void publishMessage(DirectMessagePublisher publisher, String topicName, OutboundMessage message, DeliveryMode deliveryMode) {
         try {
+            // The current broker API write path uses Solace direct-topic publishing.
+            // Delivery mode is still tracked and validated at the application layer,
+            // but all supported values share this direct publisher path for now.
+            logger.log(Level.INFO, "Publishing topic {0} with delivery mode {1}", new Object[]{topicName, deliveryMode});
             publisher.publish(message, Topic.of(topicName));
         } catch (RuntimeException e) {
             logger.log(Level.SEVERE, "Failed to publish message to topic {0}: {1}", new Object[]{topicName, e.getMessage()});

@@ -1,6 +1,7 @@
 package org.orgname.solace.broker.api.dto;
 
 import org.orgname.solace.broker.api.jpa.Message;
+import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.service.MessageLifecycleSupport;
@@ -15,7 +16,7 @@ public class StoredMessageDTO {
     private final Long id;
     private final String innerMessageId;
     private final String destination;
-    private final String deliveryMode;
+    private final DeliveryMode deliveryMode;
     private final Integer priority;
     private final PublishStatus publishStatus;
     private final boolean stalePending;
@@ -70,7 +71,7 @@ public class StoredMessageDTO {
         return destination;
     }
 
-    public String getDeliveryMode() {
+    public DeliveryMode getDeliveryMode() {
         return deliveryMode;
     }
 

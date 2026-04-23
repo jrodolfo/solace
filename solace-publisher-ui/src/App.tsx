@@ -6,7 +6,7 @@ import ShowOutput from "./ShowOutput.tsx";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
 import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
-import type {BulkRetryResponse, BulkRetryResultItem, FilteredMessagesExportResponse, PagedStoredMessagesResponse, StoredMessage} from "./StoredMessageTypes.ts";
+import type {BulkRetryResponse, BulkRetryResultItem, DeliveryMode, FilteredMessagesExportResponse, PagedStoredMessagesResponse, StoredMessage} from "./StoredMessageTypes.ts";
 
 type MessagePropertyFormRow = {
     key: string;
@@ -29,7 +29,9 @@ const DEFAULT_BROWSER_SORT_BY = "createdAt";
 const DEFAULT_BROWSER_SORT_DIRECTION = "desc";
 const DEFAULT_BROWSER_PAGE = "0";
 const DEFAULT_BROWSER_SIZE = "20";
+const DEFAULT_DELIVERY_MODE = "PERSISTENT";
 const DEFAULT_BROWSER_PUBLISH_STATUS = "";
+const DEFAULT_BROWSER_DELIVERY_MODE = "";
 const DEFAULT_BROWSER_CREATED_AT_FROM = "";
 const DEFAULT_BROWSER_CREATED_AT_TO = "";
 const DEFAULT_BROWSER_PUBLISHED_AT_FROM = "";
@@ -38,12 +40,13 @@ const DEFAULT_BROWSER_STALE_PENDING_ONLY = false;
 const SAVED_BROWSER_VIEWS_STORAGE_KEY = "solace.publisher-ui.saved-browser-views";
 const SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY = "solace.publisher-ui.saved-view-action-history";
 const MAX_SAVED_VIEW_ACTION_HISTORY = 5;
+const DELIVERY_MODE_OPTIONS: DeliveryMode[] = ["DIRECT", "NON_PERSISTENT", "PERSISTENT"];
 
 type BrowserQueryState = {
     page: number;
     size: number;
     destination: string;
-    deliveryMode: string;
+    deliveryMode: DeliveryMode | "";
     innerMessageId: string;
     publishStatus: string;
     stalePendingOnly: boolean;
@@ -148,7 +151,7 @@ function App() {
     const [host, setHost] = useState("");
     const [innerMessageId, setInnerMessageId] = useState("");
     const [destination, setDestination] = useState("");
-    const [deliveryMode, setDeliveryMode] = useState("");
+    const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>(DEFAULT_DELIVERY_MODE);
     const [priority, setPriority] = useState("0");
     const [payloadType, setPayloadType] = useState("");
     const [payloadContent, setPayloadContent] = useState("");
@@ -158,7 +161,7 @@ function App() {
     const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
     const [submissionVariant, setSubmissionVariant] = useState<"success" | "danger" | null>(null);
     const [filterDestination, setFilterDestination] = useState("");
-    const [filterDeliveryMode, setFilterDeliveryMode] = useState("");
+    const [filterDeliveryMode, setFilterDeliveryMode] = useState<DeliveryMode | "">(DEFAULT_BROWSER_DELIVERY_MODE);
     const [filterInnerMessageId, setFilterInnerMessageId] = useState("");
     const [filterPublishStatus, setFilterPublishStatus] = useState(DEFAULT_BROWSER_PUBLISH_STATUS);
     const [filterStalePendingOnly, setFilterStalePendingOnly] = useState(DEFAULT_BROWSER_STALE_PENDING_ONLY);
@@ -244,7 +247,7 @@ function App() {
         page: overrides?.page ?? Number(browserPage),
         size: overrides?.size ?? Number(browserSize),
         destination: overrides?.destination ?? filterDestination.trim(),
-        deliveryMode: overrides?.deliveryMode ?? filterDeliveryMode.trim(),
+        deliveryMode: overrides?.deliveryMode ?? filterDeliveryMode,
         innerMessageId: overrides?.innerMessageId ?? filterInnerMessageId.trim(),
         publishStatus: overrides?.publishStatus ?? filterPublishStatus,
         stalePendingOnly: overrides?.stalePendingOnly ?? filterStalePendingOnly,
@@ -1016,7 +1019,7 @@ function App() {
             const response = await axios.get<FilteredMessagesExportResponse>(messagesExportApiUrl, {
                 params: {
                     ...(filterDestination.trim() ? {destination: filterDestination.trim()} : {}),
-                    ...(filterDeliveryMode.trim() ? {deliveryMode: filterDeliveryMode.trim()} : {}),
+                    ...(filterDeliveryMode ? {deliveryMode: filterDeliveryMode} : {}),
                     ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
                     ...(filterPublishStatus ? {publishStatus: filterPublishStatus} : {}),
                     ...(filterStalePendingOnly ? {stalePendingOnly: true} : {}),
@@ -1057,7 +1060,7 @@ function App() {
             const response = await axios.get<FilteredMessagesExportResponse>(messagesExportApiUrl, {
                 params: {
                     ...(filterDestination.trim() ? {destination: filterDestination.trim()} : {}),
-                    ...(filterDeliveryMode.trim() ? {deliveryMode: filterDeliveryMode.trim()} : {}),
+                    ...(filterDeliveryMode ? {deliveryMode: filterDeliveryMode} : {}),
                     ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
                     ...(filterPublishStatus ? {publishStatus: filterPublishStatus} : {}),
                     ...(filterStalePendingOnly ? {stalePendingOnly: true} : {}),
@@ -1404,15 +1407,19 @@ function App() {
                                                 <label htmlFor="deliveryMode" className="form-label">
                                                     Delivery Mode
                                                 </label>
-                                                <input
+                                                <select
                                                     id="deliveryMode"
-                                                    type="text"
-                                                    className="form-control"
+                                                    className="form-select"
                                                     value={deliveryMode}
-                                                    onChange={(e) => setDeliveryMode(e.target.value)}
-                                                    placeholder="Enter the delivery mode"
+                                                    onChange={(e) => setDeliveryMode(e.target.value as DeliveryMode)}
                                                     required
-                                                />
+                                                >
+                                                    {DELIVERY_MODE_OPTIONS.map((deliveryModeOption) => (
+                                                        <option key={deliveryModeOption} value={deliveryModeOption}>
+                                                            {deliveryModeOption}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
                                             <div className="col-md-6">
                                                 <label htmlFor="priority" className="form-label">
@@ -1627,14 +1634,19 @@ function App() {
                                             <label htmlFor="filterDeliveryMode" className="form-label">
                                                 Filter Delivery Mode
                                             </label>
-                                            <input
+                                            <select
                                                 id="filterDeliveryMode"
-                                                type="text"
-                                                className="form-control"
+                                                className="form-select"
                                                 value={filterDeliveryMode}
-                                                onChange={(e) => setFilterDeliveryMode(e.target.value)}
-                                                placeholder="Filter by delivery mode"
-                                            />
+                                                onChange={(e) => setFilterDeliveryMode(e.target.value as DeliveryMode | "")}
+                                            >
+                                                <option value="">all delivery modes</option>
+                                                {DELIVERY_MODE_OPTIONS.map((deliveryModeOption) => (
+                                                    <option key={deliveryModeOption} value={deliveryModeOption}>
+                                                        {deliveryModeOption}
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div className="col-md-4">
                                             <label htmlFor="filterInnerMessageId" className="form-label">

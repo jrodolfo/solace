@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
+import org.orgname.solace.broker.api.jpa.DeliveryMode;
 
 import java.util.Map;
 
@@ -16,8 +17,8 @@ public class InnerMessageDTO {
     @NotBlank(message = "message.destination is required")
     private String destination;
 
-    @NotBlank(message = "message.deliveryMode is required")
-    private String deliveryMode;
+    @NotNull(message = "message.deliveryMode is required")
+    private DeliveryMode deliveryMode;
 
     @NotNull(message = "message.priority is required")
     @PositiveOrZero(message = "message.priority must be zero or greater")

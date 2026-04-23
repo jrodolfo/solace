@@ -22,6 +22,7 @@ import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.dto.StoredMessageDTO;
 import org.orgname.solace.broker.api.exception.BadRequestException;
 import org.orgname.solace.broker.api.exception.ErrorMessage;
+import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.service.Database;
@@ -147,7 +148,7 @@ public class MessageController {
             @RequestParam(defaultValue = "20") int size,
             @Parameter(description = "Optional case-insensitive filter for destination", example = "solace/java/direct/system-01")
             @RequestParam(required = false) String destination,
-            @Parameter(description = "Optional case-insensitive filter for delivery mode", example = "PERSISTENT")
+            @Parameter(description = "Optional exact filter for delivery mode. Allowed values: DIRECT, NON_PERSISTENT, PERSISTENT", example = "PERSISTENT")
             @RequestParam(required = false) String deliveryMode,
             @Parameter(description = "Optional case-insensitive filter for the inner message id", example = "001")
             @RequestParam(required = false) String innerMessageId,
@@ -172,7 +173,7 @@ public class MessageController {
                 page,
                 size,
                 destination,
-                deliveryMode,
+                parseDeliveryMode(deliveryMode),
                 innerMessageId,
                 parsePublishStatus(publishStatus),
                 stalePendingOnly,
@@ -254,7 +255,7 @@ public class MessageController {
     public FilteredMessagesExportResponseDTO exportMessages(
             @Parameter(description = "Optional case-insensitive filter for destination", example = "solace/java/direct/system-01")
             @RequestParam(required = false) String destination,
-            @Parameter(description = "Optional case-insensitive filter for delivery mode", example = "PERSISTENT")
+            @Parameter(description = "Optional exact filter for delivery mode. Allowed values: DIRECT, NON_PERSISTENT, PERSISTENT", example = "PERSISTENT")
             @RequestParam(required = false) String deliveryMode,
             @Parameter(description = "Optional case-insensitive filter for the inner message id", example = "001")
             @RequestParam(required = false) String innerMessageId,
@@ -277,7 +278,7 @@ public class MessageController {
         validateReadParameters(0, 1, sortBy, sortDirection);
         return database.exportMessages(
                 destination,
-                deliveryMode,
+                parseDeliveryMode(deliveryMode),
                 innerMessageId,
                 parsePublishStatus(publishStatus),
                 stalePendingOnly,
@@ -430,9 +431,9 @@ public class MessageController {
         try {
             if (wrapper.parametersAreValid()) {
                 ParameterDTO parameterDTO = getParameterDTO(wrapper);
-                responseMessage = directPublisherService.sendMessage(topicName, content, Optional.of(parameterDTO));
+                responseMessage = directPublisherService.sendMessage(topicName, content, wrapper.getMessage().getDeliveryMode(), Optional.of(parameterDTO));
             } else {
-                responseMessage = directPublisherService.sendMessage(topicName, content, Optional.empty());
+                responseMessage = directPublisherService.sendMessage(topicName, content, wrapper.getMessage().getDeliveryMode(), Optional.empty());
             }
         } catch (IllegalArgumentException e) {
             markFailedSafely(savedMessage.getId(), topicName, e.getMessage());
@@ -631,6 +632,18 @@ public class MessageController {
         }
     }
 
+    private static DeliveryMode parseDeliveryMode(String deliveryMode) {
+        if (deliveryMode == null || deliveryMode.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return DeliveryMode.fromString(deliveryMode);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("deliveryMode must be one of DIRECT, NON_PERSISTENT, PERSISTENT", e);
+        }
+    }
+
     private static LocalDateTime parseDateTime(String fieldName, String value) {
         if (value == null || value.trim().isEmpty()) {
             return null;
@@ -702,7 +715,7 @@ public class MessageController {
         database.markMessagePending(messageId);
 
         try {
-            responseMessage = directPublisherService.sendMessage(topicName, content, Optional.empty());
+            responseMessage = directPublisherService.sendMessage(topicName, content, storedMessage.getDeliveryMode(), Optional.empty());
         } catch (IllegalArgumentException e) {
             markFailedSafely(messageId, topicName, e.getMessage());
             logger.log(Level.WARNING, "Rejected retry request for stored message {0}: {1}", new Object[]{messageId, e.getMessage()});

@@ -30,7 +30,7 @@ test('it shows 5 inputs and 1 button', () => {
     render(<App/>);
     const textboxes = screen.getAllByRole('textbox');
     const spinbuttons = screen.getAllByRole('spinbutton');
-    expect(textboxes).toHaveLength(14);
+    expect(textboxes).toHaveLength(12);
     expect(spinbuttons).toHaveLength(3);
     expect(screen.getByRole('button', {name: /publish message/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /load messages/i})).toBeInTheDocument();
@@ -247,7 +247,7 @@ async function fillRequiredFormFields() {
     await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
     await userEvent.type(screen.getByLabelText(/^Inner Message Id$/i), "001");
     await userEvent.type(screen.getByLabelText(/^Destination$/i), "solace/java/direct/system-01");
-    await userEvent.type(screen.getByLabelText(/^Delivery Mode$/i), "PERSISTENT");
+    await userEvent.selectOptions(screen.getByLabelText(/^Delivery Mode$/i), "PERSISTENT");
     await userEvent.clear(screen.getByLabelText(/^Priority$/i));
     await userEvent.type(screen.getByLabelText(/^Priority$/i), "3");
     await userEvent.type(screen.getByLabelText(/^Payload Type$/i), "binary");
@@ -384,7 +384,6 @@ describe("Form Submission Tests", () => {
         await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
         await userEvent.type(screen.getByLabelText(/^Inner Message Id$/i), " ");
         await userEvent.type(screen.getByLabelText(/^Destination$/i), "solace/java/direct/system-01");
-        await userEvent.type(screen.getByLabelText(/^Delivery Mode$/i), " ");
         await userEvent.clear(screen.getByLabelText(/^Priority$/i));
         await userEvent.type(screen.getByLabelText(/^Priority$/i), "0");
         await userEvent.type(screen.getByLabelText(/^Payload Type$/i), " ");
@@ -395,7 +394,6 @@ describe("Form Submission Tests", () => {
         expect(mockedAxios.post).not.toHaveBeenCalled();
         expect(await screen.findByRole("alert")).toHaveTextContent("Request validation failed");
         expect(screen.getByText(/message\.innermessageid is required/i)).toBeInTheDocument();
-        expect(screen.getByText(/message\.deliverymode is required/i)).toBeInTheDocument();
         expect(screen.getByText(/payload\.type is required/i)).toBeInTheDocument();
         expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
     });
@@ -582,7 +580,7 @@ describe("Stored Messages Browser", () => {
         render(<App/>);
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
-        await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "002");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "PENDING");
         await userEvent.click(screen.getByLabelText(/only stale pending/i));
@@ -626,7 +624,7 @@ describe("Stored Messages Browser", () => {
         render(<App/>);
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
-        await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "002");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "PENDING");
         await userEvent.click(screen.getByLabelText(/only stale pending/i));
@@ -2124,7 +2122,7 @@ describe("Stored Messages Browser", () => {
         render(<App/>);
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
-        await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "002");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
         await userEvent.click(screen.getByLabelText(/only stale pending/i));
@@ -2717,7 +2715,7 @@ describe("Stored Messages Browser", () => {
         render(<App/>);
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-03");
-        await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "003");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
         await userEvent.type(screen.getByLabelText(/Created At From/i), "2026-04-20T09:30");
@@ -2908,7 +2906,7 @@ describe("Stored Messages Browser", () => {
         render(<App/>);
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-03");
-        await userEvent.type(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "003");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "PUBLISHED");
         await userEvent.click(screen.getByLabelText(/only stale pending/i));

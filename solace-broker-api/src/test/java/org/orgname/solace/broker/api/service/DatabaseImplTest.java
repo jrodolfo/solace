@@ -6,6 +6,7 @@ import org.orgname.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
+import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.repository.MessageRepository;
@@ -74,7 +75,7 @@ class DatabaseImplTest {
 
         assertEquals("001", savedMessage.getInnerMessageId());
         assertEquals("solace/java/direct/system-01", savedMessage.getDestination());
-        assertEquals("PERSISTENT", savedMessage.getDeliveryMode());
+        assertEquals(DeliveryMode.PERSISTENT, savedMessage.getDeliveryMode());
         assertEquals(3, savedMessage.getPriority());
         assertEquals(PublishStatus.PENDING, savedMessage.getPublishStatus());
         assertNull(savedMessage.getFailureReason());
@@ -146,7 +147,7 @@ class DatabaseImplTest {
         failedMessage.setId(2L);
         failedMessage.setInnerMessageId("002");
         failedMessage.setDestination("solace/java/direct/system-02");
-        failedMessage.setDeliveryMode("DIRECT");
+        failedMessage.setDeliveryMode(DeliveryMode.DIRECT);
         failedMessage.setPriority(1);
         failedMessage.setPublishStatus(PublishStatus.FAILED);
         failedMessage.setFailureReason("Failed to publish message to Solace broker");
@@ -194,7 +195,7 @@ class DatabaseImplTest {
         InnerMessageDTO message = new InnerMessageDTO();
         message.setInnerMessageId("001");
         message.setDestination("solace/java/direct/system-01");
-        message.setDeliveryMode("PERSISTENT");
+        message.setDeliveryMode(DeliveryMode.PERSISTENT);
         message.setPriority(3);
         message.setProperties(Map.of("property01", "value01"));
         message.setPayload(payload);

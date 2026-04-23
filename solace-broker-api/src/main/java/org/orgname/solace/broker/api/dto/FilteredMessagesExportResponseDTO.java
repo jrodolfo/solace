@@ -1,6 +1,7 @@
 package org.orgname.solace.broker.api.dto;
 
 import org.orgname.solace.broker.api.jpa.Message;
+import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 
 import java.time.LocalDateTime;
@@ -10,7 +11,7 @@ public class FilteredMessagesExportResponseDTO {
 
     public record FiltersDTO(
             String destination,
-            String deliveryMode,
+            DeliveryMode deliveryMode,
             String innerMessageId,
             PublishStatus publishStatus,
             boolean stalePendingOnly,

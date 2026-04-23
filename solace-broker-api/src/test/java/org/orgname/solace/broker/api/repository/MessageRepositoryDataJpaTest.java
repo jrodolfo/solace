@@ -2,6 +2,7 @@ package org.orgname.solace.broker.api.repository;
 
 import org.junit.jupiter.api.Test;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
+import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
@@ -33,12 +34,12 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldFilterMessagesCaseInsensitivelyByStoredFields() {
         DatabaseImpl database = new DatabaseImpl(messageRepository);
-        persistMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, LocalDateTime.of(2026, 4, 20, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("abc-003", "solace/java/direct/system-03", "PERSISTENT", 2, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("abc-003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 18, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
-                0, 20, "SYSTEM-03", "persistent", "ABC", PublishStatus.PUBLISHED,
+                0, 20, "SYSTEM-03", DeliveryMode.PERSISTENT, "ABC", PublishStatus.PUBLISHED,
                 false, null, null, null, null, "createdAt", "desc");
 
         assertEquals(1L, response.getTotalElements());
@@ -49,9 +50,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldSortMessagesByPriorityAscending() {
         DatabaseImpl database = new DatabaseImpl(messageRepository);
-        persistMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, LocalDateTime.of(2026, 4, 20, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 18, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, null,
@@ -64,9 +65,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldSortMessagesByCreatedAtDescendingAndPaginateResults() {
         DatabaseImpl database = new DatabaseImpl(messageRepository);
-        persistMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, LocalDateTime.of(2026, 4, 18, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 1, 1, null, null, null, null,
@@ -82,9 +83,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldFilterMessagesByPublishStatus() {
         DatabaseImpl database = new DatabaseImpl(messageRepository);
-        persistMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, PublishStatus.FAILED,
@@ -98,9 +99,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldFilterMessagesByCreatedAtRange() {
         DatabaseImpl database = new DatabaseImpl(messageRepository);
-        persistMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, LocalDateTime.of(2026, 4, 18, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, null,
@@ -118,9 +119,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldFilterMessagesByPublishedAtRangeAndPublishStatus() {
         DatabaseImpl database = new DatabaseImpl(messageRepository);
-        persistMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 18, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, PublishStatus.PUBLISHED,
@@ -138,9 +139,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldFilterMessagesByStalePendingOnly() {
         DatabaseImpl database = new DatabaseImpl(messageRepository);
-        persistMessage("001", "solace/java/direct/system-01", "PERSISTENT", 3, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", "DIRECT", 1, PublishStatus.PENDING, LocalDateTime.now().minusMinutes(1));
-        persistMessage("003", "solace/java/direct/system-03", "PERSISTENT", 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, PublishStatus.PENDING, LocalDateTime.now().minusMinutes(1));
+        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, null,
@@ -153,7 +154,7 @@ class MessageRepositoryDataJpaTest {
     private void persistMessage(
             String innerMessageId,
             String destination,
-            String deliveryMode,
+            DeliveryMode deliveryMode,
             int priority,
             LocalDateTime createdAt) {
         persistMessage(innerMessageId, destination, deliveryMode, priority, PublishStatus.PUBLISHED, createdAt);
@@ -162,7 +163,7 @@ class MessageRepositoryDataJpaTest {
     private void persistMessage(
             String innerMessageId,
             String destination,
-            String deliveryMode,
+            DeliveryMode deliveryMode,
             int priority,
             PublishStatus publishStatus,
             LocalDateTime createdAt) {

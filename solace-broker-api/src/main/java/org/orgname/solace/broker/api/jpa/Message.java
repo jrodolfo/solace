@@ -35,8 +35,9 @@ public class Message extends Auditable {
     @Column(name = "destination", nullable = false)
     private String destination;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "delivery_mode", nullable = false)
-    private String deliveryMode;
+    private DeliveryMode deliveryMode;
 
     @Column(name = "priority", nullable = false)
     private Integer priority;

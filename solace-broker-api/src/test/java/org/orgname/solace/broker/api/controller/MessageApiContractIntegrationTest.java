@@ -8,6 +8,7 @@ import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
+import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.repository.MessageRepository;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
@@ -71,6 +72,7 @@ class MessageApiContractIntegrationTest {
         when(directPublisherService.sendMessage(
                 eq("solace/java/direct/system-01"),
                 eq("01001000 01100101 01101100"),
+                eq(DeliveryMode.PERSISTENT),
                 any(Optional.class)))
                 .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"));
 
@@ -101,6 +103,7 @@ class MessageApiContractIntegrationTest {
         verify(directPublisherService).sendMessage(
                 eq("solace/java/direct/system-01"),
                 eq("01001000 01100101 01101100"),
+                eq(DeliveryMode.PERSISTENT),
                 any(Optional.class));
     }
 
@@ -109,7 +112,7 @@ class MessageApiContractIntegrationTest {
         MessageWrapperDTO wrapper = validWrapper();
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
                 .when(directPublisherService)
-                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any(Optional.class));
+                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -129,7 +132,7 @@ class MessageApiContractIntegrationTest {
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
                 .doReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"))
                 .when(directPublisherService)
-                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any(Optional.class));
+                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -154,7 +157,7 @@ class MessageApiContractIntegrationTest {
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
                 .doReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"))
                 .when(directPublisherService)
-                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), any(Optional.class));
+                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -190,6 +193,7 @@ class MessageApiContractIntegrationTest {
         when(directPublisherService.sendMessage(
                 eq("solace/java/direct/system-01"),
                 eq("01001000 01100101 01101100"),
+                eq(DeliveryMode.PERSISTENT),
                 any(Optional.class)))
                 .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"));
 
@@ -227,7 +231,7 @@ class MessageApiContractIntegrationTest {
         InnerMessageDTO message = new InnerMessageDTO();
         message.setInnerMessageId("001");
         message.setDestination("solace/java/direct/system-01");
-        message.setDeliveryMode("PERSISTENT");
+        message.setDeliveryMode(DeliveryMode.PERSISTENT);
         message.setPriority(3);
         message.setProperties(Map.of(
                 "region", "ca-east",
