@@ -15,6 +15,7 @@ import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
+import org.orgname.solace.broker.api.jpa.PayloadType;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.service.Database;
@@ -94,7 +95,7 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-01"))
                 .andExpect(jsonPath("$.items[0].stalePending").value(false))
                 .andExpect(jsonPath("$.items[0].retrySupported").value(true))
-                .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
+                .andExpect(jsonPath("$.items[0].payload.type").value("BINARY"))
                 .andExpect(jsonPath("$.items[0].properties.property01").value("value01"))
                 .andExpect(jsonPath("$.items[1].innerMessageId").value("002"))
                 .andExpect(jsonPath("$.items[1].destination").value("solace/java/direct/system-02"));
@@ -522,7 +523,7 @@ class MessageControllerTest {
     @Test
     void shouldRejectBlankPayloadFields() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        wrapper.getMessage().getPayload().setType(" ");
+        wrapper.getMessage().getPayload().setType(null);
         wrapper.getMessage().getPayload().setContent(" ");
 
         mockMvc.perform(post("/api/v1/messages/message")
@@ -537,7 +538,7 @@ class MessageControllerTest {
 
     private static MessageWrapperDTO validWrapper() {
         PayloadDTO payload = new PayloadDTO();
-        payload.setType("binary");
+        payload.setType(PayloadType.BINARY);
         payload.setContent("01001000 01100101 01101100");
 
         InnerMessageDTO message = new InnerMessageDTO();
@@ -573,7 +574,7 @@ class MessageControllerTest {
 
         Payload payload = new Payload();
         payload.setId(20L);
-        payload.setType("binary");
+        payload.setType(PayloadType.BINARY);
         payload.setContent("01001000 01100101 01101100");
         payload.setMessage(message);
         message.setPayload(payload);

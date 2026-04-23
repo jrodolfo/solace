@@ -6,7 +6,7 @@ import ShowOutput from "./ShowOutput.tsx";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
 import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
-import type {BulkRetryResponse, BulkRetryResultItem, DeliveryMode, FilteredMessagesExportResponse, PagedStoredMessagesResponse, StoredMessage} from "./StoredMessageTypes.ts";
+import type {BulkRetryResponse, BulkRetryResultItem, DeliveryMode, FilteredMessagesExportResponse, PagedStoredMessagesResponse, PayloadType, StoredMessage} from "./StoredMessageTypes.ts";
 
 type MessagePropertyFormRow = {
     key: string;
@@ -30,6 +30,7 @@ const DEFAULT_BROWSER_SORT_DIRECTION = "desc";
 const DEFAULT_BROWSER_PAGE = "0";
 const DEFAULT_BROWSER_SIZE = "20";
 const DEFAULT_DELIVERY_MODE = "PERSISTENT";
+const DEFAULT_PAYLOAD_TYPE = "";
 const DEFAULT_BROWSER_PUBLISH_STATUS = "";
 const DEFAULT_BROWSER_DELIVERY_MODE = "";
 const DEFAULT_BROWSER_CREATED_AT_FROM = "";
@@ -41,6 +42,7 @@ const SAVED_BROWSER_VIEWS_STORAGE_KEY = "solace.publisher-ui.saved-browser-views
 const SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY = "solace.publisher-ui.saved-view-action-history";
 const MAX_SAVED_VIEW_ACTION_HISTORY = 5;
 const DELIVERY_MODE_OPTIONS: DeliveryMode[] = ["DIRECT", "NON_PERSISTENT", "PERSISTENT"];
+const PAYLOAD_TYPE_OPTIONS: PayloadType[] = ["TEXT", "BINARY", "JSON", "XML"];
 
 type BrowserQueryState = {
     page: number;
@@ -153,7 +155,7 @@ function App() {
     const [destination, setDestination] = useState("");
     const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>(DEFAULT_DELIVERY_MODE);
     const [priority, setPriority] = useState("0");
-    const [payloadType, setPayloadType] = useState("");
+    const [payloadType, setPayloadType] = useState<PayloadType | "">(DEFAULT_PAYLOAD_TYPE);
     const [payloadContent, setPayloadContent] = useState("");
     const [properties, setProperties] = useState<MessagePropertyFormRow[]>([{key: "", value: ""}]);
     const [response, setResponse] = useState<AxiosResponse<SolaceBrokerAPIResponse | SolaceBrokerAPIError> | null>(null);
@@ -1440,15 +1442,20 @@ function App() {
                                                 <label htmlFor="payloadType" className="form-label">
                                                     Payload Type
                                                 </label>
-                                                <input
+                                                <select
                                                     id="payloadType"
-                                                    type="text"
-                                                    className="form-control"
+                                                    className="form-select"
                                                     value={payloadType}
-                                                    onChange={(e) => setPayloadType(e.target.value)}
-                                                    placeholder="Enter the payload type"
+                                                    onChange={(e) => setPayloadType(e.target.value as PayloadType | "")}
                                                     required
-                                                />
+                                                >
+                                                    <option value="">Select a payload type</option>
+                                                    {PAYLOAD_TYPE_OPTIONS.map((option) => (
+                                                        <option key={option} value={option}>
+                                                            {option}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
                                             <div className="col-12">
                                                 <label htmlFor="payloadContent" className="form-label">

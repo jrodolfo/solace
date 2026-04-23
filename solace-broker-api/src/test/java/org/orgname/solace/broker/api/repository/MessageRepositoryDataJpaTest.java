@@ -5,6 +5,7 @@ import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
+import org.orgname.solace.broker.api.jpa.PayloadType;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.service.DatabaseImpl;
 import jakarta.persistence.EntityManager;
@@ -181,7 +182,7 @@ class MessageRepositoryDataJpaTest {
         message.setUpdatedAt(createdAt);
 
         Payload payload = new Payload();
-        payload.setType("binary");
+        payload.setType(PayloadType.BINARY);
         payload.setContent("01001000 01100101 01101100");
         payload.setCreatedAt(createdAt);
         payload.setUpdatedAt(createdAt);

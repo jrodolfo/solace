@@ -110,7 +110,7 @@ Sample request with explicit connection parameters:
       "property02": "value02"
     },
     "payload": {
-      "type": "binary",
+      "type": "BINARY",
       "content": "01001000 01100101 01101100 01101100"
     }
   }
@@ -130,7 +130,7 @@ Sample request using server-side Solace environment variables:
       "property01": "value01"
     },
     "payload": {
-      "type": "binary",
+      "type": "BINARY",
       "content": "01001000 01100101 01101100 01101100"
     }
   }
@@ -147,6 +147,13 @@ Successful response, `201 Created`:
 ```
 
 `innerMessageId` is required as part of the request payload, but it is treated as descriptive message metadata. The API does not enforce uniqueness for this field, and duplicate `innerMessageId` values are allowed across separate stored publish attempts.
+
+`payload.type` is a typed application field, not free text. Supported values are:
+
+- `TEXT`
+- `BINARY`
+- `JSON`
+- `XML`
 
 Validation failure, `400 Bad Request`:
 
@@ -377,7 +384,7 @@ Supported query parameters:
 - `page`: zero-based page index, default `0`
 - `size`: page size, default `20`, max `100`
 - `destination`: case-insensitive contains filter
-- `deliveryMode`: case-insensitive contains filter
+- `deliveryMode`: exact filter, one of `DIRECT`, `NON_PERSISTENT`, `PERSISTENT`
 - `innerMessageId`: case-insensitive contains filter on descriptive payload metadata, not a unique key
 - `publishStatus`: exact filter, one of `PENDING`, `PUBLISHED`, `FAILED`
 - `stalePendingOnly`: when `true`, return only stale `PENDING` rows older than the stale threshold
@@ -456,7 +463,7 @@ Representative response:
       "retryBlockedReason": null,
       "properties": {},
       "payload": {
-        "type": "binary",
+        "type": "BINARY",
         "content": "01010111 01101111 01110010 01101100 01100100",
         "createdAt": null,
         "updatedAt": null
@@ -495,7 +502,7 @@ Representative response:
         "property01": "value01"
       },
       "payload": {
-        "type": "binary",
+        "type": "BINARY",
         "content": "01001000 01100101 01101100",
         "createdAt": null,
         "updatedAt": null
@@ -515,7 +522,7 @@ Representative response:
       "stalePending": false,
       "properties": {},
       "payload": {
-        "type": "binary",
+        "type": "BINARY",
         "content": "01010111 01101111 01110010 01101100 01100100",
         "createdAt": null,
         "updatedAt": null

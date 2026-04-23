@@ -9,6 +9,7 @@ import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.orgname.solace.broker.api.jpa.DeliveryMode;
+import org.orgname.solace.broker.api.jpa.PayloadType;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.repository.MessageRepository;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
@@ -95,7 +96,7 @@ class MessageApiContractIntegrationTest {
                 .andExpect(jsonPath("$.items[0].publishStatus").value("PUBLISHED"))
                 .andExpect(jsonPath("$.items[0].retrySupported").value(true))
                 .andExpect(jsonPath("$.items[0].publishedAt").isNotEmpty())
-                .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
+                .andExpect(jsonPath("$.items[0].payload.type").value("BINARY"))
                 .andExpect(jsonPath("$.items[0].payload.content").value("01001000 01100101 01101100"))
                 .andExpect(jsonPath("$.items[0].properties.region").value("ca-east"))
                 .andExpect(jsonPath("$.items[0].properties.source").value("integration-test"));
@@ -225,7 +226,7 @@ class MessageApiContractIntegrationTest {
 
     private static MessageWrapperDTO validWrapper() {
         PayloadDTO payload = new PayloadDTO();
-        payload.setType("binary");
+        payload.setType(PayloadType.BINARY);
         payload.setContent("01001000 01100101 01101100");
 
         InnerMessageDTO message = new InnerMessageDTO();

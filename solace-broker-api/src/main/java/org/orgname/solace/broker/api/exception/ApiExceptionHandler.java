@@ -51,6 +51,15 @@ public class ApiExceptionHandler {
                         validationErrors
                 );
             }
+            if ("message.payload.type".equals(field)) {
+                validationErrors.put(field, "payload.type must be one of TEXT, BINARY, JSON, XML");
+                return buildResponse(
+                        HttpStatus.BAD_REQUEST,
+                        "Request validation failed",
+                        request.getRequestURI(),
+                        validationErrors
+                );
+            }
         }
 
         return buildResponse(HttpStatus.BAD_REQUEST, "Request body could not be parsed", request.getRequestURI(), null);

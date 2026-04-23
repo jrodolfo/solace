@@ -1,7 +1,8 @@
 export type DeliveryMode = "DIRECT" | "NON_PERSISTENT" | "PERSISTENT";
+export type PayloadType = "TEXT" | "BINARY" | "JSON" | "XML";
 
 export interface StoredMessagePayload {
-    type: string;
+    type: PayloadType;
     content: string;
     createdAt?: string | null;
     updatedAt?: string | null;

@@ -19,8 +19,9 @@ public class Payload extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    private String type;
+    private PayloadType type;
 
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;

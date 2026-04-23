@@ -45,6 +45,7 @@ The publish form uses typed fields instead of a raw JSON textarea. It collects:
 - broker credentials: `userName`, `password`, `host`, `vpnName`
 - message fields: `innerMessageId`, `destination`, `deliveryMode`, `priority`
 - payload fields: `type`, `content`
+  `type` is selected from the supported application values: `TEXT`, `BINARY`, `JSON`, `XML`
 - optional repeatable message properties as `key` / `value` rows
 
 The UI performs client-side validation before calling the backend and preserves typed backend error responses when the API returns validation or publish failures.

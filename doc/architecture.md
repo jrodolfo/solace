@@ -101,6 +101,7 @@ Each stored message can include:
 - `publishedAt`
 - `stalePending` as a derived operational flag
 - `innerMessageId` as descriptive payload metadata
+- `payload.type` as an application enum with `TEXT`, `BINARY`, `JSON`, or `XML`
 - normalized `properties` as a key/value map in API responses
 - payload plus audit timestamps
 

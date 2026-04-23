@@ -15,6 +15,7 @@ import org.orgname.solace.broker.api.exception.BrokerPublishFailureException;
 import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
+import org.orgname.solace.broker.api.jpa.PayloadType;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.service.Database;
@@ -82,7 +83,7 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.lifecycleCounts.nonRetryableFailedCount").value(0))
                 .andExpect(jsonPath("$.items[0].stalePending").value(false))
                 .andExpect(jsonPath("$.items[0].retrySupported").value(true))
-                .andExpect(jsonPath("$.items[0].payload.type").value("binary"))
+                .andExpect(jsonPath("$.items[0].payload.type").value("BINARY"))
                 .andExpect(jsonPath("$.items[0].payload.content").value("01001000 01100101 01101100"))
                 .andExpect(jsonPath("$.items[0].properties.property01").value("value01"));
     }
@@ -477,7 +478,7 @@ class MessageControllerWebMvcTest {
 
     private static MessageWrapperDTO validWrapper() {
         PayloadDTO payload = new PayloadDTO();
-        payload.setType("binary");
+        payload.setType(PayloadType.BINARY);
         payload.setContent("01001000 01100101 01101100");
 
         InnerMessageDTO message = new InnerMessageDTO();
@@ -509,7 +510,7 @@ class MessageControllerWebMvcTest {
 
         Payload payload = new Payload();
         payload.setId(20L);
-        payload.setType("binary");
+        payload.setType(PayloadType.BINARY);
         payload.setContent("01001000 01100101 01101100");
         payload.setMessage(message);
         message.setPayload(payload);

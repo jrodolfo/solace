@@ -8,6 +8,7 @@ import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
+import org.orgname.solace.broker.api.jpa.PayloadType;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.repository.MessageRepository;
 import org.springframework.data.domain.Sort;
@@ -83,7 +84,7 @@ class DatabaseImplTest {
         org.junit.jupiter.api.Assertions.assertFalse(savedMessage.isRetrySupported());
         assertEquals("Retries are supported only for messages published with server-side broker configuration.", savedMessage.getRetryBlockedReason());
         assertNotNull(savedMessage.getPayload());
-        assertEquals("binary", savedMessage.getPayload().getType());
+        assertEquals(PayloadType.BINARY, savedMessage.getPayload().getType());
         assertEquals("01001000 01100101 01101100", savedMessage.getPayload().getContent());
         assertEquals(savedMessage, savedMessage.getPayload().getMessage());
         assertNotNull(savedMessage.getProperties());
@@ -157,7 +158,7 @@ class DatabaseImplTest {
         failedMessage.setUpdatedAt(LocalDateTime.parse("2026-04-22T10:00:00"));
         failedMessage.setPublishedAt(null);
         failedMessage.setPayload(new org.orgname.solace.broker.api.jpa.Payload() {{
-            setType("binary");
+            setType(PayloadType.BINARY);
             setContent("01010111 01101111 01110010 01101100 01100100");
         }});
 
@@ -189,7 +190,7 @@ class DatabaseImplTest {
 
     private static MessageWrapperDTO validWrapper() {
         PayloadDTO payload = new PayloadDTO();
-        payload.setType("binary");
+        payload.setType(PayloadType.BINARY);
         payload.setContent("01001000 01100101 01101100");
 
         InnerMessageDTO message = new InnerMessageDTO();

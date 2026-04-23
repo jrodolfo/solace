@@ -1,12 +1,13 @@
 package org.orgname.solace.broker.api.dto;
 
 import org.orgname.solace.broker.api.jpa.Payload;
+import org.orgname.solace.broker.api.jpa.PayloadType;
 
 import java.time.LocalDateTime;
 
 public class StoredMessagePayloadDTO {
 
-    private final String type;
+    private final PayloadType type;
     private final String content;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
@@ -18,7 +19,7 @@ public class StoredMessagePayloadDTO {
         this.updatedAt = payload.getUpdatedAt();
     }
 
-    public String getType() {
+    public PayloadType getType() {
         return type;
     }
 

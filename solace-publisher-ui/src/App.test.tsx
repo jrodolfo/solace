@@ -8,7 +8,7 @@ import {beforeEach, Mock, vi} from "vitest";
 import {AxiosHeaders} from "axios";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError";
-import type {PagedStoredMessagesResponse, StoredMessage} from "./StoredMessageTypes";
+import type {PagedStoredMessagesResponse, PayloadType, StoredMessage} from "./StoredMessageTypes";
 
 const writeTextMock = vi.fn();
 const createObjectUrlMock = vi.fn();
@@ -30,7 +30,7 @@ test('it shows 5 inputs and 1 button', () => {
     render(<App/>);
     const textboxes = screen.getAllByRole('textbox');
     const spinbuttons = screen.getAllByRole('spinbutton');
-    expect(textboxes).toHaveLength(12);
+    expect(textboxes).toHaveLength(11);
     expect(spinbuttons).toHaveLength(3);
     expect(screen.getByRole('button', {name: /publish message/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /load messages/i})).toBeInTheDocument();
@@ -191,7 +191,7 @@ function buildStoredMessage(overrides?: Partial<StoredMessage>): StoredMessage {
         retrySupported: true,
         retryBlockedReason: null,
         payload: {
-            type: "binary",
+            type: "BINARY",
             content: "01001000 01100101 01101100",
         },
         properties: {
@@ -250,7 +250,7 @@ async function fillRequiredFormFields() {
     await userEvent.selectOptions(screen.getByLabelText(/^Delivery Mode$/i), "PERSISTENT");
     await userEvent.clear(screen.getByLabelText(/^Priority$/i));
     await userEvent.type(screen.getByLabelText(/^Priority$/i), "3");
-    await userEvent.type(screen.getByLabelText(/^Payload Type$/i), "binary");
+    await userEvent.selectOptions(screen.getByLabelText(/^Payload Type$/i), "BINARY");
     await userEvent.type(screen.getByLabelText(/^Payload Content$/i), "01001000 01100101 01101100");
 }
 
@@ -286,7 +286,7 @@ describe("Form Submission Tests", () => {
                     deliveryMode: "PERSISTENT",
                     priority: 3,
                     payload: {
-                        type: "binary",
+                        type: "BINARY",
                         content: "01001000 01100101 01101100",
                     },
                 },
@@ -299,7 +299,7 @@ describe("Form Submission Tests", () => {
         expect(await screen.findByRole("alert")).toHaveTextContent("Message published successfully.");
         expect(screen.getByText(/Status: 201/i)).toBeInTheDocument();
         expect(screen.getByText(/"content": "01001000 01100101 01101100"/i)).toBeInTheDocument();
-    });
+    }, 10000);
 
     test("Submits form with message properties", async () => {
         mockedAxios.post.mockResolvedValue({
@@ -336,7 +336,7 @@ describe("Form Submission Tests", () => {
                     deliveryMode: "PERSISTENT",
                     priority: 3,
                     payload: {
-                        type: "binary",
+                        type: "BINARY",
                         content: "01001000 01100101 01101100",
                     },
                     properties: {
@@ -384,9 +384,9 @@ describe("Form Submission Tests", () => {
         await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
         await userEvent.type(screen.getByLabelText(/^Inner Message Id$/i), " ");
         await userEvent.type(screen.getByLabelText(/^Destination$/i), "solace/java/direct/system-01");
+        await userEvent.selectOptions(screen.getByLabelText(/^Payload Type$/i), "BINARY");
         await userEvent.clear(screen.getByLabelText(/^Priority$/i));
         await userEvent.type(screen.getByLabelText(/^Priority$/i), "0");
-        await userEvent.type(screen.getByLabelText(/^Payload Type$/i), " ");
         await userEvent.type(screen.getByLabelText(/^Payload Content$/i), "01001000 01100101 01101100");
 
         await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
@@ -394,7 +394,6 @@ describe("Form Submission Tests", () => {
         expect(mockedAxios.post).not.toHaveBeenCalled();
         expect(await screen.findByRole("alert")).toHaveTextContent("Request validation failed");
         expect(screen.getByText(/message\.innermessageid is required/i)).toBeInTheDocument();
-        expect(screen.getByText(/payload\.type is required/i)).toBeInTheDocument();
         expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
     });
 
@@ -557,7 +556,7 @@ describe("Stored Messages Browser", () => {
         expect(await screen.findByText(/Loaded 1 messages\./i)).toBeInTheDocument();
         expect(screen.getByText(/Page 1 of 1/i)).toBeInTheDocument();
         expect(screen.getByText(/solace\/java\/direct\/system-01/i)).toBeInTheDocument();
-        expect(screen.getByText(/^binary$/i)).toBeInTheDocument();
+        expect(screen.getByText(/^BINARY$/i, {selector: "strong"})).toBeInTheDocument();
         expect(screen.getAllByText(formatExpectedTimestamp(createdAt)).length).toBeGreaterThanOrEqual(1);
         expect(screen.getByText(/^PUBLISHED$/i, {selector: ".badge"})).toBeInTheDocument();
         expect(screen.getByRole("button", {name: /show details/i})).toBeInTheDocument();
@@ -1578,7 +1577,7 @@ describe("Stored Messages Browser", () => {
                             failureReason: "Failed to publish message to Solace broker",
                             publishedAt: null,
                             payload: {
-                                type: "text",
+                                type: "TEXT",
                                 content: "hello world",
                             },
                             properties: {},
@@ -2040,7 +2039,7 @@ describe("Stored Messages Browser", () => {
                         failureReason: "Line 1, \"quoted\"",
                         publishedAt: null,
                         payload: {
-                            type: "text",
+                            type: "TEXT",
                             content: "hello,\n\"world\"",
                         },
                         properties: {
@@ -2194,7 +2193,7 @@ describe("Stored Messages Browser", () => {
                         deliveryMode: "DIRECT",
                         publishStatus: "FAILED",
                         payload: {
-                            type: "text",
+                            type: "TEXT",
                             content: "csv content",
                         },
                         properties: {

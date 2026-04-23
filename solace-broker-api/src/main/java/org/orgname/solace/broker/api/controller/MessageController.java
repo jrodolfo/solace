@@ -92,7 +92,7 @@ public class MessageController {
                                                     "property01": "value01"
                                                   },
                                                   "payload": {
-                                                    "type": "binary",
+                                                    "type": "BINARY",
                                                     "content": "01001000 01100101 01101100",
                                                     "createdAt": null,
                                                     "updatedAt": null
@@ -111,7 +111,7 @@ public class MessageController {
                                                   "publishedAt": null,
                                                   "properties": {},
                                                   "payload": {
-                                                    "type": "binary",
+                                                    "type": "BINARY",
                                                     "content": "01010111 01101111 01110010 01101100 01100100",
                                                     "createdAt": null,
                                                     "updatedAt": null
@@ -236,7 +236,7 @@ public class MessageController {
                                                   "retryBlockedReason": null,
                                                   "properties": {},
                                                   "payload": {
-                                                    "type": "binary",
+                                                    "type": "BINARY",
                                                     "content": "01010111 01101111 01110010 01101100 01100100",
                                                     "createdAt": null,
                                                     "updatedAt": null
