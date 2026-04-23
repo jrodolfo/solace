@@ -16,5 +16,5 @@ if [[ ! -d node_modules ]]; then
   exit 1
 fi
 
-echo "starting solace-publisher-ui on http://localhost:5173"
+echo "starting solace-publisher-ui with vite"
 exec npm run dev

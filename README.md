@@ -103,7 +103,7 @@ From `solace-subscriber`:
 
 ```bash
 mvn package
-java -jar target/solace-subscriber-1.0-SNAPSHOT.jar
+java -jar target/solace-subscriber-1.0-SNAPSHOT-all.jar
 ```
 
 ## Module Summary

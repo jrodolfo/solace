@@ -14,4 +14,4 @@ echo "building solace-subscriber"
 mvn package
 
 echo "starting solace-subscriber"
-exec java -jar target/solace-subscriber-1.0-SNAPSHOT.jar
+exec java -jar target/solace-subscriber-1.0-SNAPSHOT-all.jar
