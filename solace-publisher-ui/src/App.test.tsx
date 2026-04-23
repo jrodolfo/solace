@@ -580,6 +580,7 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Payload Type/i), "JSON");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "002");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "PENDING");
         await userEvent.click(screen.getByLabelText(/only stale pending/i));
@@ -605,6 +606,7 @@ describe("Stored Messages Browser", () => {
                     size: 10,
                     destination: "system-02",
                     deliveryMode: "DIRECT",
+                    payloadType: "JSON",
                     innerMessageId: "002",
                     publishStatus: "PENDING",
                     stalePendingOnly: true,
@@ -624,6 +626,7 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Payload Type/i), "JSON");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "002");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "PENDING");
         await userEvent.click(screen.getByLabelText(/only stale pending/i));
@@ -641,7 +644,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.click(screen.getByRole("button", {name: /copy filter query/i}));
 
         expect(writeTextMock).toHaveBeenCalledWith(
-            "http://localhost:8081/api/v1/messages/all?page=2&size=10&destination=system-02&deliveryMode=DIRECT&innerMessageId=002&publishStatus=PENDING&stalePendingOnly=true&createdAtFrom=2026-04-20T09%3A30%3A00&createdAtTo=2026-04-20T18%3A45%3A00&publishedAtFrom=2026-04-21T07%3A00%3A00&publishedAtTo=2026-04-21T08%3A15%3A00&sortBy=priority&sortDirection=asc"
+            "http://localhost:8081/api/v1/messages/all?page=2&size=10&destination=system-02&deliveryMode=DIRECT&payloadType=JSON&innerMessageId=002&publishStatus=PENDING&stalePendingOnly=true&createdAtFrom=2026-04-20T09%3A30%3A00&createdAtTo=2026-04-20T18%3A45%3A00&publishedAtFrom=2026-04-21T07%3A00%3A00&publishedAtTo=2026-04-21T08%3A15%3A00&sortBy=priority&sortDirection=asc"
         );
         expect(await screen.findByRole("status")).toHaveTextContent("Current filter query copied.");
     });
@@ -862,6 +865,7 @@ describe("Stored Messages Browser", () => {
                         size: 25,
                         destination: "system-03",
                         deliveryMode: "PERSISTENT",
+                        payloadType: "XML",
                         innerMessageId: "003",
                         publishStatus: "PENDING",
                         stalePendingOnly: true,
@@ -896,6 +900,7 @@ describe("Stored Messages Browser", () => {
 
         expect(screen.getByLabelText(/Filter Destination/i)).toHaveValue("system-03");
         expect(screen.getByLabelText(/Filter Delivery Mode/i)).toHaveValue("PERSISTENT");
+        expect(screen.getByLabelText(/Filter Payload Type/i)).toHaveValue("XML");
         expect(screen.getByLabelText(/Filter Inner Message Id/i)).toHaveValue("003");
         expect(screen.getByLabelText(/Filter Publish Status/i)).toHaveValue("PENDING");
         expect(screen.getByLabelText(/only stale pending/i)).toBeChecked();
@@ -915,6 +920,7 @@ describe("Stored Messages Browser", () => {
                     size: 25,
                     destination: "system-03",
                     deliveryMode: "PERSISTENT",
+                    payloadType: "XML",
                     innerMessageId: "003",
                     publishStatus: "PENDING",
                     stalePendingOnly: true,
@@ -2081,6 +2087,7 @@ describe("Stored Messages Browser", () => {
                 filters: {
                     destination: "system-02",
                     deliveryMode: "DIRECT",
+                    payloadType: "JSON",
                     innerMessageId: "002",
                     publishStatus: "PENDING",
                     stalePendingOnly: true,
@@ -2122,6 +2129,7 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
+        await userEvent.selectOptions(screen.getByLabelText(/Filter Payload Type/i), "JSON");
         await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "002");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
         await userEvent.click(screen.getByLabelText(/only stale pending/i));
@@ -2139,6 +2147,7 @@ describe("Stored Messages Browser", () => {
                 params: {
                     destination: "system-02",
                     deliveryMode: "DIRECT",
+                    payloadType: "JSON",
                     innerMessageId: "002",
                     publishStatus: "PENDING",
                     stalePendingOnly: true,
@@ -2166,6 +2175,7 @@ describe("Stored Messages Browser", () => {
                 filters: {
                     destination: "",
                     deliveryMode: "",
+                    payloadType: null,
                     innerMessageId: "",
                     publishStatus: "FAILED",
                     stalePendingOnly: false,

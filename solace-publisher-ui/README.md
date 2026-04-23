@@ -54,7 +54,7 @@ The UI performs client-side validation before calling the backend and preserves 
 
 The browser loads `GET /api/v1/messages/all` from `solace-broker-api` and supports:
 
-- `destination`, `deliveryMode`, and `innerMessageId` filters
+- `destination`, `deliveryMode`, `payloadType`, and `innerMessageId` filters
 - `publishStatus`, `createdAt`, and `publishedAt` filtering
 - `stalePendingOnly` filtering for stale pending rows
 - `sortBy` and `sortDirection`

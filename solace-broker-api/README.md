@@ -385,6 +385,7 @@ Supported query parameters:
 - `size`: page size, default `20`, max `100`
 - `destination`: case-insensitive contains filter
 - `deliveryMode`: exact filter, one of `DIRECT`, `NON_PERSISTENT`, `PERSISTENT`
+- `payloadType`: exact filter, one of `TEXT`, `BINARY`, `JSON`, `XML`
 - `innerMessageId`: case-insensitive contains filter on descriptive payload metadata, not a unique key
 - `publishStatus`: exact filter, one of `PENDING`, `PUBLISHED`, `FAILED`
 - `stalePendingOnly`: when `true`, return only stale `PENDING` rows older than the stale threshold
@@ -429,6 +430,7 @@ Representative response:
   "filters": {
     "destination": "system-02",
     "deliveryMode": null,
+    "payloadType": null,
     "innerMessageId": null,
     "publishStatus": "FAILED",
     "stalePendingOnly": false,

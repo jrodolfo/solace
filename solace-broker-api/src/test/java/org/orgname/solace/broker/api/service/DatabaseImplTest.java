@@ -169,6 +169,7 @@ class DatabaseImplTest {
                 "system-02",
                 null,
                 null,
+                null,
                 PublishStatus.FAILED,
                 false,
                 null,

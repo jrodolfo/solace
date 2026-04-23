@@ -8,6 +8,7 @@ import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
+import org.orgname.solace.broker.api.jpa.PayloadType;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
 import org.orgname.solace.broker.api.repository.MessageRepository;
@@ -59,6 +60,7 @@ public class DatabaseImpl implements Database {
             int size,
             String destination,
             DeliveryMode deliveryMode,
+            PayloadType payloadType,
             String innerMessageId,
             PublishStatus publishStatus,
             boolean stalePendingOnly,
@@ -71,6 +73,7 @@ public class DatabaseImpl implements Database {
         Specification<Message> specification = buildReadSpecification(
                 destination,
                 deliveryMode,
+                payloadType,
                 innerMessageId,
                 publishStatus,
                 stalePendingOnly,
@@ -88,6 +91,7 @@ public class DatabaseImpl implements Database {
     public FilteredMessagesExportResponseDTO exportMessages(
             String destination,
             DeliveryMode deliveryMode,
+            PayloadType payloadType,
             String innerMessageId,
             PublishStatus publishStatus,
             boolean stalePendingOnly,
@@ -100,6 +104,7 @@ public class DatabaseImpl implements Database {
         Specification<Message> specification = buildReadSpecification(
                 destination,
                 deliveryMode,
+                payloadType,
                 innerMessageId,
                 publishStatus,
                 stalePendingOnly,
@@ -114,6 +119,7 @@ public class DatabaseImpl implements Database {
                 new FilteredMessagesExportResponseDTO.FiltersDTO(
                         destination,
                         deliveryMode,
+                        payloadType,
                         innerMessageId,
                         publishStatus,
                         stalePendingOnly,
@@ -239,6 +245,10 @@ public class DatabaseImpl implements Database {
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get(fieldName), value);
     }
 
+    private static <T extends Enum<T>> Specification<Message> nestedEnumEquals(String associationField, String fieldName, T value) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get(associationField).get(fieldName), value);
+    }
+
     private static Specification<Message> booleanEquals(String fieldName, boolean value) {
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get(fieldName), value);
     }
@@ -279,6 +289,7 @@ public class DatabaseImpl implements Database {
     private Specification<Message> buildReadSpecification(
             String destination,
             DeliveryMode deliveryMode,
+            PayloadType payloadType,
             String innerMessageId,
             PublishStatus publishStatus,
             boolean stalePendingOnly,
@@ -293,6 +304,9 @@ public class DatabaseImpl implements Database {
         }
         if (deliveryMode != null) {
             specification = specification.and(enumEquals("deliveryMode", deliveryMode));
+        }
+        if (payloadType != null) {
+            specification = specification.and(nestedEnumEquals("payload", "type", payloadType));
         }
         if (hasText(innerMessageId)) {
             specification = specification.and(stringContains("innerMessageId", innerMessageId));

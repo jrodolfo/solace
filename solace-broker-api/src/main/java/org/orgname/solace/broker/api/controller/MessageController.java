@@ -24,6 +24,7 @@ import org.orgname.solace.broker.api.exception.BadRequestException;
 import org.orgname.solace.broker.api.exception.ErrorMessage;
 import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
+import org.orgname.solace.broker.api.jpa.PayloadType;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
@@ -150,6 +151,8 @@ public class MessageController {
             @RequestParam(required = false) String destination,
             @Parameter(description = "Optional exact filter for delivery mode. Allowed values: DIRECT, NON_PERSISTENT, PERSISTENT", example = "PERSISTENT")
             @RequestParam(required = false) String deliveryMode,
+            @Parameter(description = "Optional exact filter for payload type. Allowed values: TEXT, BINARY, JSON, XML", example = "JSON")
+            @RequestParam(required = false) String payloadType,
             @Parameter(description = "Optional case-insensitive filter for the inner message id", example = "001")
             @RequestParam(required = false) String innerMessageId,
             @Parameter(description = "Optional exact filter for publish status. Allowed values: PENDING, PUBLISHED, FAILED", example = "FAILED")
@@ -174,6 +177,7 @@ public class MessageController {
                 size,
                 destination,
                 parseDeliveryMode(deliveryMode),
+                parsePayloadType(payloadType),
                 innerMessageId,
                 parsePublishStatus(publishStatus),
                 stalePendingOnly,
@@ -202,6 +206,7 @@ public class MessageController {
                                               "filters": {
                                                 "destination": "system-02",
                                                 "deliveryMode": null,
+                                                "payloadType": null,
                                                 "innerMessageId": null,
                                                 "publishStatus": "FAILED",
                                                 "stalePendingOnly": false,
@@ -257,6 +262,8 @@ public class MessageController {
             @RequestParam(required = false) String destination,
             @Parameter(description = "Optional exact filter for delivery mode. Allowed values: DIRECT, NON_PERSISTENT, PERSISTENT", example = "PERSISTENT")
             @RequestParam(required = false) String deliveryMode,
+            @Parameter(description = "Optional exact filter for payload type. Allowed values: TEXT, BINARY, JSON, XML", example = "JSON")
+            @RequestParam(required = false) String payloadType,
             @Parameter(description = "Optional case-insensitive filter for the inner message id", example = "001")
             @RequestParam(required = false) String innerMessageId,
             @Parameter(description = "Optional exact filter for publish status. Allowed values: PENDING, PUBLISHED, FAILED", example = "FAILED")
@@ -279,6 +286,7 @@ public class MessageController {
         return database.exportMessages(
                 destination,
                 parseDeliveryMode(deliveryMode),
+                parsePayloadType(payloadType),
                 innerMessageId,
                 parsePublishStatus(publishStatus),
                 stalePendingOnly,
@@ -641,6 +649,18 @@ public class MessageController {
             return DeliveryMode.fromString(deliveryMode);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("deliveryMode must be one of DIRECT, NON_PERSISTENT, PERSISTENT", e);
+        }
+    }
+
+    private static PayloadType parsePayloadType(String payloadType) {
+        if (payloadType == null || payloadType.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return PayloadType.valueOf(payloadType.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("payloadType must be one of TEXT, BINARY, JSON, XML", e);
         }
     }
 

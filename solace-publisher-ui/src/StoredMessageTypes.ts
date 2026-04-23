@@ -49,6 +49,7 @@ export interface FilteredMessagesExportResponse {
     filters: {
         destination?: string | null;
         deliveryMode?: DeliveryMode | null;
+        payloadType?: PayloadType | null;
         innerMessageId?: string | null;
         publishStatus?: "PENDING" | "PUBLISHED" | "FAILED" | null;
         stalePendingOnly: boolean;

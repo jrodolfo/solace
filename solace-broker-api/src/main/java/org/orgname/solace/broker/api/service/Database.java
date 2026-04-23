@@ -5,6 +5,7 @@ import org.orgname.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
+import org.orgname.solace.broker.api.jpa.PayloadType;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 
 import java.time.LocalDateTime;
@@ -64,6 +65,7 @@ public interface Database {
             int size,
             String destination,
             DeliveryMode deliveryMode,
+            PayloadType payloadType,
             String innerMessageId,
             PublishStatus publishStatus,
             boolean stalePendingOnly,
@@ -83,6 +85,7 @@ public interface Database {
     FilteredMessagesExportResponseDTO exportMessages(
             String destination,
             DeliveryMode deliveryMode,
+            PayloadType payloadType,
             String innerMessageId,
             PublishStatus publishStatus,
             boolean stalePendingOnly,

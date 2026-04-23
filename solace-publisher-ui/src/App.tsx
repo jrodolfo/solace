@@ -33,6 +33,7 @@ const DEFAULT_DELIVERY_MODE = "PERSISTENT";
 const DEFAULT_PAYLOAD_TYPE = "";
 const DEFAULT_BROWSER_PUBLISH_STATUS = "";
 const DEFAULT_BROWSER_DELIVERY_MODE = "";
+const DEFAULT_BROWSER_PAYLOAD_TYPE = "";
 const DEFAULT_BROWSER_CREATED_AT_FROM = "";
 const DEFAULT_BROWSER_CREATED_AT_TO = "";
 const DEFAULT_BROWSER_PUBLISHED_AT_FROM = "";
@@ -49,6 +50,7 @@ type BrowserQueryState = {
     size: number;
     destination: string;
     deliveryMode: DeliveryMode | "";
+    payloadType?: PayloadType | "";
     innerMessageId: string;
     publishStatus: string;
     stalePendingOnly: boolean;
@@ -88,6 +90,14 @@ type SavedViewActionHistoryEntry = {
 
 const sortSavedViews = (savedViews: SavedBrowserView[]) =>
     [...savedViews].sort((left, right) => left.name.localeCompare(right.name));
+
+const normalizeBrowserQueryForPersistence = (query: BrowserQueryState): BrowserQueryState => {
+    const normalizedQuery: BrowserQueryState = {...query};
+    if (!normalizedQuery.payloadType) {
+        delete normalizedQuery.payloadType;
+    }
+    return normalizedQuery;
+};
 
 const readFileAsText = (file: File) =>
     new Promise<string>((resolve, reject) => {
@@ -164,6 +174,7 @@ function App() {
     const [submissionVariant, setSubmissionVariant] = useState<"success" | "danger" | null>(null);
     const [filterDestination, setFilterDestination] = useState("");
     const [filterDeliveryMode, setFilterDeliveryMode] = useState<DeliveryMode | "">(DEFAULT_BROWSER_DELIVERY_MODE);
+    const [filterPayloadType, setFilterPayloadType] = useState<PayloadType | "">(DEFAULT_BROWSER_PAYLOAD_TYPE);
     const [filterInnerMessageId, setFilterInnerMessageId] = useState("");
     const [filterPublishStatus, setFilterPublishStatus] = useState(DEFAULT_BROWSER_PUBLISH_STATUS);
     const [filterStalePendingOnly, setFilterStalePendingOnly] = useState(DEFAULT_BROWSER_STALE_PENDING_ONLY);
@@ -250,6 +261,7 @@ function App() {
         size: overrides?.size ?? Number(browserSize),
         destination: overrides?.destination ?? filterDestination.trim(),
         deliveryMode: overrides?.deliveryMode ?? filterDeliveryMode,
+        payloadType: overrides?.payloadType ?? filterPayloadType,
         innerMessageId: overrides?.innerMessageId ?? filterInnerMessageId.trim(),
         publishStatus: overrides?.publishStatus ?? filterPublishStatus,
         stalePendingOnly: overrides?.stalePendingOnly ?? filterStalePendingOnly,
@@ -297,6 +309,7 @@ function App() {
     const applyBrowserQueryState = (query: BrowserQueryState) => {
         setFilterDestination(query.destination);
         setFilterDeliveryMode(query.deliveryMode);
+        setFilterPayloadType(query.payloadType ?? "");
         setFilterInnerMessageId(query.innerMessageId);
         setFilterPublishStatus(query.publishStatus);
         setFilterStalePendingOnly(query.stalePendingOnly);
@@ -366,6 +379,7 @@ function App() {
                     size: nextSize,
                     ...(query.destination ? {destination: query.destination} : {}),
                     ...(query.deliveryMode ? {deliveryMode: query.deliveryMode} : {}),
+                    ...(query.payloadType ? {payloadType: query.payloadType} : {}),
                     ...(query.innerMessageId ? {innerMessageId: query.innerMessageId} : {}),
                     ...(query.publishStatus ? {publishStatus: query.publishStatus} : {}),
                     ...(query.stalePendingOnly ? {stalePendingOnly: true} : {}),
@@ -428,6 +442,7 @@ function App() {
     const resetBrowserFilters = () => {
         setFilterDestination("");
         setFilterDeliveryMode("");
+        setFilterPayloadType("");
         setFilterInnerMessageId("");
         setFilterPublishStatus(DEFAULT_BROWSER_PUBLISH_STATUS);
         setFilterStalePendingOnly(DEFAULT_BROWSER_STALE_PENDING_ONLY);
@@ -467,7 +482,7 @@ function App() {
 
         const savedView: SavedBrowserView = {
             name: normalizedName,
-            query: currentBrowserQuery({page: Number(DEFAULT_BROWSER_PAGE)}),
+            query: normalizeBrowserQueryForPersistence(currentBrowserQuery({page: Number(DEFAULT_BROWSER_PAGE)})),
         };
 
         try {
@@ -945,6 +960,9 @@ function App() {
         if (query.deliveryMode) {
             url.searchParams.set("deliveryMode", query.deliveryMode);
         }
+        if (query.payloadType) {
+            url.searchParams.set("payloadType", query.payloadType);
+        }
         if (query.innerMessageId) {
             url.searchParams.set("innerMessageId", query.innerMessageId);
         }
@@ -1022,6 +1040,7 @@ function App() {
                 params: {
                     ...(filterDestination.trim() ? {destination: filterDestination.trim()} : {}),
                     ...(filterDeliveryMode ? {deliveryMode: filterDeliveryMode} : {}),
+                    ...(filterPayloadType ? {payloadType: filterPayloadType} : {}),
                     ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
                     ...(filterPublishStatus ? {publishStatus: filterPublishStatus} : {}),
                     ...(filterStalePendingOnly ? {stalePendingOnly: true} : {}),
@@ -1063,6 +1082,7 @@ function App() {
                 params: {
                     ...(filterDestination.trim() ? {destination: filterDestination.trim()} : {}),
                     ...(filterDeliveryMode ? {deliveryMode: filterDeliveryMode} : {}),
+                    ...(filterPayloadType ? {payloadType: filterPayloadType} : {}),
                     ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
                     ...(filterPublishStatus ? {publishStatus: filterPublishStatus} : {}),
                     ...(filterStalePendingOnly ? {stalePendingOnly: true} : {}),
@@ -1651,6 +1671,24 @@ function App() {
                                                 {DELIVERY_MODE_OPTIONS.map((deliveryModeOption) => (
                                                     <option key={deliveryModeOption} value={deliveryModeOption}>
                                                         {deliveryModeOption}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="col-md-4">
+                                            <label htmlFor="filterPayloadType" className="form-label">
+                                                Filter Payload Type
+                                            </label>
+                                            <select
+                                                id="filterPayloadType"
+                                                className="form-select"
+                                                value={filterPayloadType}
+                                                onChange={(e) => setFilterPayloadType(e.target.value as PayloadType | "")}
+                                            >
+                                                <option value="">all payload types</option>
+                                                {PAYLOAD_TYPE_OPTIONS.map((payloadTypeOption) => (
+                                                    <option key={payloadTypeOption} value={payloadTypeOption}>
+                                                        {payloadTypeOption}
                                                     </option>
                                                 ))}
                                             </select>

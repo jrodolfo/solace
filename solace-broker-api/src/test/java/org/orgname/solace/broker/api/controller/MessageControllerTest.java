@@ -72,7 +72,7 @@ class MessageControllerTest {
         database.storedMessages.add(first);
         database.storedMessages.add(second);
 
-        PagedMessagesResponseDTO messages = controller.getAllMessages(0, 20, null, null, null, null, false, null, null, null, null, "createdAt", "desc");
+        PagedMessagesResponseDTO messages = controller.getAllMessages(0, 20, null, null, null, null, null, false, null, null, null, null, "createdAt", "desc");
         assertEquals(2, messages.getItems().size());
         assertEquals(2L, messages.getTotalElements());
         assertEquals(1, messages.getTotalPages());
@@ -127,6 +127,22 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("002"))
                 .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-02"));
+    }
+
+    @Test
+    void shouldFilterMessagesByPayloadType() throws Exception {
+        Message textMessage = storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00");
+        textMessage.getPayload().setType(PayloadType.TEXT);
+        Message jsonMessage = storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
+        jsonMessage.getPayload().setType(PayloadType.JSON);
+        database.storedMessages.add(textMessage);
+        database.storedMessages.add(jsonMessage);
+
+        mockMvc.perform(get("/api/v1/messages/all?payloadType=JSON"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[0].innerMessageId").value("002"))
+                .andExpect(jsonPath("$.items[0].payload.type").value("JSON"));
     }
 
     @Test
@@ -258,6 +274,15 @@ class MessageControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("sortBy must be one of createdAt, priority, destination, innerMessageId"))
+                .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
+    }
+
+    @Test
+    void shouldRejectInvalidPayloadType() throws Exception {
+        mockMvc.perform(get("/api/v1/messages/all?payloadType=YAML"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("payloadType must be one of TEXT, BINARY, JSON, XML"))
                 .andExpect(jsonPath("$.path").value("/api/v1/messages/all"));
     }
 
@@ -669,6 +694,7 @@ class MessageControllerTest {
                 int size,
                 String destination,
                 DeliveryMode deliveryMode,
+                PayloadType payloadType,
                 String innerMessageId,
                 PublishStatus publishStatus,
                 boolean stalePendingOnly,
@@ -681,6 +707,7 @@ class MessageControllerTest {
             List<Message> filteredMessages = storedMessages.stream()
                     .filter(message -> matches(message.getDestination(), destination))
                     .filter(message -> matches(message.getDeliveryMode(), deliveryMode))
+                    .filter(message -> matches(message.getPayload().getType(), payloadType))
                     .filter(message -> matches(message.getInnerMessageId(), innerMessageId))
                     .filter(message -> publishStatus == null || publishStatus == message.getPublishStatus())
                     .filter(message -> !stalePendingOnly || MessageLifecycleSupport.isStalePending(message.getPublishStatus(), message.getCreatedAt()))
@@ -704,6 +731,7 @@ class MessageControllerTest {
         public FilteredMessagesExportResponseDTO exportMessages(
                 String destination,
                 DeliveryMode deliveryMode,
+                PayloadType payloadType,
                 String innerMessageId,
                 PublishStatus publishStatus,
                 boolean stalePendingOnly,
@@ -716,6 +744,7 @@ class MessageControllerTest {
             List<Message> filteredMessages = storedMessages.stream()
                     .filter(message -> matches(message.getDestination(), destination))
                     .filter(message -> matches(message.getDeliveryMode(), deliveryMode))
+                    .filter(message -> matches(message.getPayload().getType(), payloadType))
                     .filter(message -> matches(message.getInnerMessageId(), innerMessageId))
                     .filter(message -> publishStatus == null || publishStatus == message.getPublishStatus())
                     .filter(message -> !stalePendingOnly || MessageLifecycleSupport.isStalePending(message.getPublishStatus(), message.getCreatedAt()))
@@ -731,6 +760,7 @@ class MessageControllerTest {
                     new FilteredMessagesExportResponseDTO.FiltersDTO(
                             destination,
                             deliveryMode,
+                            payloadType,
                             innerMessageId,
                             publishStatus,
                             stalePendingOnly,
@@ -754,6 +784,10 @@ class MessageControllerTest {
         }
 
         private static boolean matches(DeliveryMode actualValue, DeliveryMode filterValue) {
+            return filterValue == null || actualValue == filterValue;
+        }
+
+        private static boolean matches(PayloadType actualValue, PayloadType filterValue) {
             return filterValue == null || actualValue == filterValue;
         }
 

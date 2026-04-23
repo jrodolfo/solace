@@ -180,7 +180,8 @@ The broker API supports:
 
 - pagination
 - sorting
-- text filters for `destination`, `deliveryMode`, and `innerMessageId`
+- text filters for `destination` and `innerMessageId`
+- exact enum filters for `deliveryMode` and `payload.type`
 - `publishStatus` filtering
 - `stalePendingOnly=true` filtering for stale `PENDING` rows
 - date-range filtering on `createdAt`

@@ -40,7 +40,7 @@ class MessageRepositoryDataJpaTest {
         persistMessage("abc-003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 18, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
-                0, 20, "SYSTEM-03", DeliveryMode.PERSISTENT, "ABC", PublishStatus.PUBLISHED,
+                0, 20, "SYSTEM-03", DeliveryMode.PERSISTENT, null, "ABC", PublishStatus.PUBLISHED,
                 false, null, null, null, null, "createdAt", "desc");
 
         assertEquals(1L, response.getTotalElements());
@@ -56,7 +56,7 @@ class MessageRepositoryDataJpaTest {
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 18, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
-                0, 20, null, null, null, null,
+                0, 20, null, null, null, null, null,
                 false, null, null, null, null, "priority", "asc");
 
         assertEquals(List.of("002", "003", "001"),
@@ -71,7 +71,7 @@ class MessageRepositoryDataJpaTest {
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
-                1, 1, null, null, null, null,
+                1, 1, null, null, null, null, null,
                 false, null, null, null, null, "createdAt", "desc");
 
         assertEquals(3L, response.getTotalElements());
@@ -89,12 +89,28 @@ class MessageRepositoryDataJpaTest {
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
-                0, 20, null, null, null, PublishStatus.FAILED,
+                0, 20, null, null, null, null, PublishStatus.FAILED,
                 false, null, null, null, null, "createdAt", "desc");
 
         assertEquals(1L, response.getTotalElements());
         assertEquals("002", response.getItems().getFirst().getInnerMessageId());
         assertEquals(PublishStatus.FAILED, response.getItems().getFirst().getPublishStatus());
+    }
+
+    @Test
+    void shouldFilterMessagesByPayloadType() {
+        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, PayloadType.TEXT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, PayloadType.JSON, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, PayloadType.XML, 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
+
+        PagedMessagesResponseDTO response = database.getAllMessages(
+                0, 20, null, null, PayloadType.JSON, null, null, false,
+                null, null, null, null, "createdAt", "desc");
+
+        assertEquals(1L, response.getTotalElements());
+        assertEquals("002", response.getItems().getFirst().getInnerMessageId());
+        assertEquals(PayloadType.JSON, response.getItems().getFirst().getPayload().getType());
     }
 
     @Test
@@ -105,7 +121,7 @@ class MessageRepositoryDataJpaTest {
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
-                0, 20, null, null, null, null,
+                0, 20, null, null, null, null, null,
                 false,
                 LocalDateTime.of(2026, 4, 19, 0, 0),
                 LocalDateTime.of(2026, 4, 19, 23, 59, 59),
@@ -125,7 +141,7 @@ class MessageRepositoryDataJpaTest {
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
-                0, 20, null, null, null, PublishStatus.PUBLISHED,
+                0, 20, null, null, null, null, PublishStatus.PUBLISHED,
                 false,
                 null,
                 null,
@@ -145,7 +161,7 @@ class MessageRepositoryDataJpaTest {
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
-                0, 20, null, null, null, null,
+                0, 20, null, null, null, null, null,
                 true, null, null, null, null, "createdAt", "asc");
 
         assertEquals(List.of("001"), response.getItems().stream().map(item -> item.getInnerMessageId()).toList());
@@ -158,13 +174,24 @@ class MessageRepositoryDataJpaTest {
             DeliveryMode deliveryMode,
             int priority,
             LocalDateTime createdAt) {
-        persistMessage(innerMessageId, destination, deliveryMode, priority, PublishStatus.PUBLISHED, createdAt);
+        persistMessage(innerMessageId, destination, deliveryMode, PayloadType.BINARY, priority, PublishStatus.PUBLISHED, createdAt);
     }
 
     private void persistMessage(
             String innerMessageId,
             String destination,
             DeliveryMode deliveryMode,
+            int priority,
+            PublishStatus publishStatus,
+            LocalDateTime createdAt) {
+        persistMessage(innerMessageId, destination, deliveryMode, PayloadType.BINARY, priority, publishStatus, createdAt);
+    }
+
+    private void persistMessage(
+            String innerMessageId,
+            String destination,
+            DeliveryMode deliveryMode,
+            PayloadType payloadType,
             int priority,
             PublishStatus publishStatus,
             LocalDateTime createdAt) {
@@ -182,7 +209,7 @@ class MessageRepositoryDataJpaTest {
         message.setUpdatedAt(createdAt);
 
         Payload payload = new Payload();
-        payload.setType(PayloadType.BINARY);
+        payload.setType(payloadType);
         payload.setContent("01001000 01100101 01101100");
         payload.setCreatedAt(createdAt);
         payload.setUpdatedAt(createdAt);
