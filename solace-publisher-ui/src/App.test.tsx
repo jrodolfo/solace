@@ -36,12 +36,34 @@ test('it shows 5 inputs and 1 button', () => {
     expect(screen.getByRole('button', {name: /load messages/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /refresh results/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /reset filters/i})).toBeInTheDocument();
+    expect(screen.getByRole('tab', {name: /publish message/i})).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole('tab', {name: /stored messages/i})).toHaveAttribute("aria-selected", "false");
     expect(screen.getByLabelText(/Created At From/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Created At To/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Published At From/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Published At To/i)).toBeInTheDocument();
     expect(screen.getByText(/No results loaded yet\./i)).toBeInTheDocument();
     expect(screen.getByText(/Current-page export uses the messages already loaded below\./i)).toBeInTheDocument();
+});
+
+test("it switches the active workspace tab", async () => {
+    render(<App/>);
+
+    const publishTab = screen.getByRole("tab", {name: /publish message/i});
+    const storedMessagesTab = screen.getByRole("tab", {name: /stored messages/i});
+
+    expect(publishTab).toHaveAttribute("aria-selected", "true");
+    expect(storedMessagesTab).toHaveAttribute("aria-selected", "false");
+
+    await userEvent.click(storedMessagesTab);
+
+    expect(publishTab).toHaveAttribute("aria-selected", "false");
+    expect(storedMessagesTab).toHaveAttribute("aria-selected", "true");
+
+    await userEvent.click(publishTab);
+
+    expect(publishTab).toHaveAttribute("aria-selected", "true");
+    expect(storedMessagesTab).toHaveAttribute("aria-selected", "false");
 });
 
 function buildBulkRetryResponse(overrides?: Partial<{

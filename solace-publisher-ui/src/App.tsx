@@ -66,6 +66,8 @@ type BuiltInBrowserView = {
     query: BrowserQueryState;
 };
 
+type WorkspaceSection = "PUBLISH" | "BROWSER";
+
 type BrowserFeedbackDetails = {
     added?: string[];
     updated?: string[];
@@ -187,6 +189,7 @@ function App() {
     const [savedViews, setSavedViews] = useState<SavedBrowserView[]>([]);
     const [savedViewActionHistory, setSavedViewActionHistory] = useState<SavedViewActionHistoryEntry[]>([]);
     const [savedViewHistoryClock, setSavedViewHistoryClock] = useState(0);
+    const [activeWorkspaceSection, setActiveWorkspaceSection] = useState<WorkspaceSection>("PUBLISH");
     const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
@@ -1249,8 +1252,38 @@ function App() {
                     </div>
                 </header>
 
+                <div className="workspace-tabs d-xl-none mb-4" role="tablist" aria-label="Workspace sections">
+                    <button
+                        type="button"
+                        role="tab"
+                        id="workspace-tab-publish"
+                        aria-selected={activeWorkspaceSection === "PUBLISH"}
+                        aria-controls="workspace-panel-publish"
+                        className={`workspace-tab${activeWorkspaceSection === "PUBLISH" ? " is-active" : ""}`}
+                        onClick={() => setActiveWorkspaceSection("PUBLISH")}
+                    >
+                        Publish Message
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        id="workspace-tab-browser"
+                        aria-selected={activeWorkspaceSection === "BROWSER"}
+                        aria-controls="workspace-panel-browser"
+                        className={`workspace-tab${activeWorkspaceSection === "BROWSER" ? " is-active" : ""}`}
+                        onClick={() => setActiveWorkspaceSection("BROWSER")}
+                    >
+                        Stored Messages
+                    </button>
+                </div>
+
                 <div className="row g-4 align-items-start">
-                    <div className="col-12 col-xl-5">
+                    <div
+                        className={`col-12 col-xl-5 workspace-pane${activeWorkspaceSection === "PUBLISH" ? " is-active" : ""}`}
+                        id="workspace-panel-publish"
+                        role="tabpanel"
+                        aria-labelledby="workspace-tab-publish"
+                    >
                         <section className="workspace-card h-100">
                             <div className="workspace-card-header">
                                 <div>
@@ -1494,7 +1527,12 @@ function App() {
                         </section>
                     </div>
 
-                    <div className="col-12 col-xl-7">
+                    <div
+                        className={`col-12 col-xl-7 workspace-pane${activeWorkspaceSection === "BROWSER" ? " is-active" : ""}`}
+                        id="workspace-panel-browser"
+                        role="tabpanel"
+                        aria-labelledby="workspace-tab-browser"
+                    >
                         <section className="workspace-card h-100">
                             <div className="workspace-card-header">
                                 <div>

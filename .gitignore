@@ -35,3 +35,6 @@ HELP.md
 *.njsproj
 *.sln
 *.sw?
+
+# Database
+solace-broker-api/mysql-data/
