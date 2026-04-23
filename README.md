@@ -76,7 +76,8 @@ Notes:
 - `start-publisher-ui.sh` expects `solace-publisher-ui/node_modules` to already exist. If not, run `cd solace-publisher-ui && npm install` once first.
 - `start-all.sh` validates the shared Solace env vars before starting any child processes, streams prefixed `[api]`, `[ui]`, and `[subscriber]` logs from a temporary combined-log directory, and prints a status summary when it stops.
 - the Vite UI port is dynamic when `5173` is busy; use the `[ui] Local:` line from `start-all.sh` output to find the actual URL.
-- if any one module exits, `start-all.sh` stops the others intentionally and reports which component failed plus where the combined logs were captured.
+- if `subscriber` exits, `start-all.sh` prints a large warning block and intentionally leaves `api` and `ui` running.
+- if `api` or `ui` exits, `start-all.sh` still stops the remaining processes intentionally and reports which component failed plus where the combined logs were captured.
 
 ### 1. Start the backend
 

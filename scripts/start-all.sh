@@ -11,8 +11,6 @@ LOG_FILES=()
 MONITOR_PIDS=()
 PROCESS_STATUSES=()
 SHUTTING_DOWN=0
-STOP_REASON=""
-STOP_EXIT_CODE=0
 LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/solace-start-all.XXXXXX")"
 
 require_solace_env_vars "start-all.sh"
@@ -35,6 +33,14 @@ update_running_process_statuses() {
   for i in "${!PROCESS_STATUSES[@]}"; do
     if [[ "${PROCESS_STATUSES[$i]}" == "running" ]]; then
       PROCESS_STATUSES[$i]="${replacement_status}"
+    fi
+  done
+}
+
+mark_running_processes_stopped_by_user() {
+  for i in "${!PROCESS_STATUSES[@]}"; do
+    if [[ "${PROCESS_STATUSES[$i]}" == "running" ]]; then
+      PROCESS_STATUSES[$i]="stopped by user"
     fi
   done
 }
@@ -100,10 +106,8 @@ cleanup() {
 }
 
 handle_signal() {
-  STOP_REASON="stopped by user"
-  STOP_EXIT_CODE=130
-  update_running_process_statuses "stopped by user"
-  exit "${STOP_EXIT_CODE}"
+  mark_running_processes_stopped_by_user
+  exit 130
 }
 
 trap cleanup EXIT
@@ -121,6 +125,10 @@ echo "press ctrl-c to stop all three processes"
 while true; do
   for i in "${!PIDS[@]}"; do
     pid="${PIDS[$i]}"
+    if [[ -z "${pid}" ]]; then
+      continue
+    fi
+
     if ! kill -0 "${pid}" 2>/dev/null; then
       if wait "${pid}"; then
         exit_code=0
@@ -129,13 +137,25 @@ while true; do
       fi
 
       PROCESS_STATUSES[$i]="exited with code ${exit_code}"
+      PIDS[$i]=""
+
+      if [[ "${PROCESS_NAMES[$i]}" == "subscriber" ]]; then
+        print_separator "subscriber warning"
+        echo "subscriber exited with code ${exit_code}"
+        echo
+        echo "api and ui are still running intentionally"
+        echo "fix the subscriber configuration if you want the full stack"
+        echo "combined logs: ${LOG_DIR}"
+        echo
+        printf '============================================================\n'
+        continue
+      fi
+
       update_running_process_statuses "stopped after ${PROCESS_NAMES[$i]} exited"
 
       echo
       echo "${PROCESS_NAMES[$i]} exited with code ${exit_code}; stopping remaining processes"
-      STOP_REASON="${PROCESS_NAMES[$i]} exited"
-      STOP_EXIT_CODE="${exit_code}"
-      exit "${STOP_EXIT_CODE}"
+      exit "${exit_code}"
     fi
   done
   sleep 1
