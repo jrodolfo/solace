@@ -55,6 +55,7 @@ assert_contains "${make_help_output}" "make build-api"
 assert_contains "${make_help_output}" "make build-all"
 assert_contains "${make_help_output}" "make start-api"
 assert_contains "${make_help_output}" "make stop-all"
+assert_contains "${make_help_output}" "make restart-all"
 assert_contains "${make_help_output}" "make status-all"
 assert_contains "${make_help_output}" "make test-scripts"
 
@@ -66,6 +67,7 @@ bash -n \
   "${REPO_ROOT}/scripts/start-subscriber.sh" \
   "${REPO_ROOT}/scripts/start-all.sh" \
   "${REPO_ROOT}/scripts/stop-all.sh" \
+  "${REPO_ROOT}/scripts/restart-all.sh" \
   "${REPO_ROOT}/scripts/status-all.sh" \
   "${REPO_ROOT}/scripts/build-broker-api.sh" \
   "${REPO_ROOT}/scripts/build-publisher-ui.sh" \
