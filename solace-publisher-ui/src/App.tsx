@@ -45,6 +45,12 @@ const MAX_SAVED_VIEW_ACTION_HISTORY = 5;
 const DELIVERY_MODE_OPTIONS: DeliveryMode[] = ["DIRECT", "NON_PERSISTENT", "PERSISTENT"];
 const PAYLOAD_TYPE_OPTIONS: PayloadType[] = ["TEXT", "BINARY", "JSON", "XML"];
 
+const isAllowedDeliveryMode = (value: unknown): value is DeliveryMode =>
+    typeof value === "string" && DELIVERY_MODE_OPTIONS.includes(value as DeliveryMode);
+
+const isAllowedPayloadType = (value: unknown): value is PayloadType =>
+    typeof value === "string" && PAYLOAD_TYPE_OPTIONS.includes(value as PayloadType);
+
 type BrowserQueryState = {
     page: number;
     size: number;
@@ -2449,6 +2455,8 @@ function validateMessagePayload(payload: unknown): MessagePayloadValidationError
     }
     if (!hasNonBlankString(payload.deliveryMode)) {
         validationErrors["message.deliveryMode"] = "message.deliveryMode is required";
+    } else if (!isAllowedDeliveryMode(payload.deliveryMode)) {
+        validationErrors["message.deliveryMode"] = "message.deliveryMode must be one of DIRECT, NON_PERSISTENT, PERSISTENT";
     }
     if (!isNonNegativeNumber(payload.priority)) {
         validationErrors["message.priority"] = "message.priority is required";
@@ -2461,6 +2469,8 @@ function validateMessagePayload(payload: unknown): MessagePayloadValidationError
 
     if (!hasNonBlankString(payload.payload.type)) {
         validationErrors["message.payload.type"] = "payload.type is required";
+    } else if (!isAllowedPayloadType(payload.payload.type)) {
+        validationErrors["message.payload.type"] = "payload.type must be one of TEXT, BINARY, JSON, XML";
     }
     if (!hasNonBlankString(payload.payload.content)) {
         validationErrors["message.payload.content"] = "payload.content is required";

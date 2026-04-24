@@ -410,6 +410,29 @@ describe("Form Submission Tests", () => {
         expect(screen.getByText(/message\.properties\[0\]\.value is required/i)).toBeInTheDocument();
         expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
     });
+
+    test("Handles invalid enum values before calling the api", async () => {
+        render(<App/>);
+
+        await fillRequiredFormFields();
+
+        const deliveryModeSelect = screen.getByLabelText(/^Delivery Mode$/i) as HTMLSelectElement;
+        const payloadTypeSelect = screen.getByLabelText(/^Payload Type$/i) as HTMLSelectElement;
+
+        deliveryModeSelect.appendChild(new Option("SIDEWAYS", "SIDEWAYS"));
+        payloadTypeSelect.appendChild(new Option("YAML", "YAML"));
+
+        await userEvent.selectOptions(deliveryModeSelect, "SIDEWAYS");
+        await userEvent.selectOptions(payloadTypeSelect, "YAML");
+
+        await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
+
+        expect(mockedAxios.post).not.toHaveBeenCalled();
+        expect(await screen.findByRole("alert")).toHaveTextContent("Request validation failed");
+        expect(screen.getByText(/message\.deliverymode must be one of direct, non_persistent, persistent/i)).toBeInTheDocument();
+        expect(screen.getByText(/payload\.type must be one of text, binary, json, xml/i)).toBeInTheDocument();
+        expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
+    });
 });
 
 describe("Broker API Contract Tests", () => {

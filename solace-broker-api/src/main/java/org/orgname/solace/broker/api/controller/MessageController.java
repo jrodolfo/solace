@@ -658,7 +658,7 @@ public class MessageController {
         }
 
         try {
-            return PayloadType.valueOf(payloadType.trim().toUpperCase());
+            return PayloadType.fromString(payloadType);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("payloadType must be one of TEXT, BINARY, JSON, XML", e);
         }
