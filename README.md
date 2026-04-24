@@ -47,6 +47,7 @@ Available scripts:
 - `scripts/start-publisher-ui.sh`
 - `scripts/start-subscriber.sh`
 - `scripts/start-all.sh`
+- `scripts/status-all.sh`
 - `scripts/test-scripts.sh`
 
 Available `make` targets:
@@ -60,6 +61,7 @@ Available `make` targets:
 - `make start-ui`
 - `make start-subscriber`
 - `make start-all`
+- `make status-all`
 - `make test-api`
 - `make test-ui`
 - `make test-subscriber`
@@ -75,6 +77,10 @@ Notes:
 - `start-broker-api.sh` and `start-subscriber.sh` require the shared Solace env vars.
 - `start-publisher-ui.sh` expects `solace-publisher-ui/node_modules` to already exist. If not, run `cd solace-publisher-ui && npm install` once first.
 - `start-all.sh` validates the shared Solace env vars before starting any child processes, streams prefixed `[api]`, `[ui]`, and `[subscriber]` logs from a temporary combined-log directory, and prints a status summary when it stops.
+- `status-all.sh` reports local status for the three components using a hybrid model:
+  - API via `http://localhost:8081/rest/actuator/health`
+  - UI via matching Vite process plus detected listening port(s)
+  - subscriber via matching Java process
 - the Vite UI port is dynamic when `5173` is busy; use the `[ui] Local:` line from `start-all.sh` output to find the actual URL.
 - if `subscriber` exits, `start-all.sh` prints a large warning block and intentionally leaves `api` and `ui` running.
 - if `api` or `ui` exits, `start-all.sh` still stops the remaining processes intentionally and reports which component failed plus where the combined logs were captured.

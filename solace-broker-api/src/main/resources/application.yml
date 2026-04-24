@@ -40,4 +40,4 @@ management:
     web:
       base-path: /rest/actuator
       exposure:
-        include: '*'
+        include: health

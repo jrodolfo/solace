@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help build-api build-ui build-subscriber build-all start-api start-ui start-subscriber start-all test-api test-ui test-subscriber test-scripts test
+.PHONY: help build-api build-ui build-subscriber build-all start-api start-ui start-subscriber start-all status-all test-api test-ui test-subscriber test-scripts test
 
 help:
 	@echo "available targets:"
@@ -12,6 +12,7 @@ help:
 	@echo "  make start-ui          - start solace-publisher-ui"
 	@echo "  make start-subscriber  - build and start solace-subscriber"
 	@echo "  make start-all         - start api, ui, and subscriber together"
+	@echo "  make status-all        - show local status for api, ui, and subscriber"
 	@echo "  make test-api          - run broker api tests"
 	@echo "  make test-ui           - run publisher ui tests"
 	@echo "  make test-subscriber   - run subscriber tests"
@@ -41,6 +42,9 @@ start-subscriber:
 
 start-all:
 	@./scripts/start-all.sh
+
+status-all:
+	@./scripts/status-all.sh
 
 test-api:
 	@cd solace-broker-api && mvn test
