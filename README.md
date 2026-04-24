@@ -19,7 +19,7 @@ The backend and subscriber both use the same environment-variable names for brok
 
 The UI does not read those variables directly. It talks to `solace-broker-api`, which uses them on the server side.
 
-For the local MySQL runtime used by `solace-broker-api`, see [solace-broker-api/README.md](solace-broker-api/README.md).
+For the local MySQL runtime used by `solace-broker-api`, including host, port, credentials, and a sample `mysql` command, see [solace-broker-api/README.md](solace-broker-api/README.md).
 
 Sample destinations across the workspace use values like:
 

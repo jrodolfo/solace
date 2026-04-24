@@ -78,6 +78,24 @@ Local MySQL runtime:
 
 Those values match [docker-compose.yaml](docker-compose.yaml) and the default datasource settings in `application.yml`.
 
+To connect from your machine:
+
+```bash
+mysql -h 127.0.0.1 -P 3307 -u myuser -p
+```
+
+Then enter:
+
+```text
+secret
+```
+
+And select the database if needed:
+
+```sql
+USE solace;
+```
+
 Swagger UI:
 
 ```text
