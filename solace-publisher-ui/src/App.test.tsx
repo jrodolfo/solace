@@ -8,7 +8,7 @@ import {beforeEach, Mock, vi} from "vitest";
 import {AxiosHeaders} from "axios";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError";
-import type {PagedStoredMessagesResponse, PayloadType, StoredMessage} from "./StoredMessageTypes";
+import type {PagedStoredMessagesResponse, StoredMessage} from "./StoredMessageTypes";
 
 const writeTextMock = vi.fn();
 const createObjectUrlMock = vi.fn();
