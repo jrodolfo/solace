@@ -42,6 +42,7 @@ They are meant to give you a small, predictable operator workflow from the repo 
 - `start-all.sh`
   Starts API, UI, and subscriber together.
   It validates the shared Solace environment variables first, streams prefixed logs, and writes a temporary combined-log directory that can also help `status-all.sh`.
+  Once the API and UI are ready, it also prints a clearer readiness block with their URLs.
 
 ## Stop / Restart / Status
 

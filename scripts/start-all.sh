@@ -13,7 +13,13 @@ PROCESS_STATUSES=()
 SHUTTING_DOWN=0
 LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/solace-start-all.XXXXXX")"
 LATEST_LOG_DIR_FILE="${LATEST_START_ALL_FILE:-${TMPDIR:-/tmp}/solace-start-all.latest}"
+API_BASE_URL="${API_BASE_URL:-http://localhost:8081}"
+API_HEALTH_URL="${API_HEALTH_URL:-${API_BASE_URL}/rest/actuator/health}"
+UI_URL_ANNOUNCED=0
+API_URL_ANNOUNCED=0
+WORKSPACE_URLS_ANNOUNCED=0
 
+require_command curl
 require_solace_env_vars "start-all.sh"
 
 print_separator() {
@@ -44,6 +50,65 @@ mark_running_processes_stopped_by_user() {
       PROCESS_STATUSES[$i]="stopped by user"
     fi
   done
+}
+
+find_log_file() {
+  local target_name="$1"
+  local i
+  for i in "${!PROCESS_NAMES[@]}"; do
+    if [[ "${PROCESS_NAMES[$i]}" == "${target_name}" ]]; then
+      printf '%s\n' "${LOG_FILES[$i]}"
+      return
+    fi
+  done
+}
+
+current_ui_local_url() {
+  local ui_log_file=""
+  ui_log_file="$(find_log_file "ui")"
+
+  if [[ -z "${ui_log_file}" || ! -f "${ui_log_file}" ]]; then
+    return
+  fi
+
+  grep 'Local:' "${ui_log_file}" 2>/dev/null \
+    | tail -n 1 \
+    | sed -E 's/.*Local:[[:space:]]*(http:\/\/[^[:space:]]+).*/\1/' \
+    | head -n 1
+}
+
+api_is_ready() {
+  curl -fsS "${API_HEALTH_URL}" >/dev/null 2>&1
+}
+
+announce_workspace_urls_if_ready() {
+  local ui_url=""
+  ui_url="$(current_ui_local_url)"
+  local api_ready=1
+
+  if api_is_ready; then
+    api_ready=0
+  fi
+
+  if [[ ${UI_URL_ANNOUNCED} -eq 0 && -n "${ui_url}" ]]; then
+    print_separator "ui ready"
+    echo "ui url: ${ui_url}"
+    UI_URL_ANNOUNCED=1
+  fi
+
+  if [[ ${API_URL_ANNOUNCED} -eq 0 && ${api_ready} -eq 0 ]]; then
+    print_separator "api ready"
+    echo "api url: ${API_BASE_URL}"
+    echo "health url: ${API_HEALTH_URL}"
+    API_URL_ANNOUNCED=1
+  fi
+
+  if [[ ${WORKSPACE_URLS_ANNOUNCED} -eq 0 && ${api_ready} -eq 0 && -n "${ui_url}" ]]; then
+    print_separator "workspace urls"
+    echo "api: ${API_BASE_URL}"
+    echo "ui: ${ui_url}"
+    WORKSPACE_URLS_ANNOUNCED=1
+  fi
 }
 
 start_process() {
@@ -122,7 +187,7 @@ start_process "subscriber" "${SCRIPT_DIR}/start-subscriber.sh"
 
 print_separator "workspace startup"
 echo "started api, ui, and subscriber; watch the prefixed logs below"
-echo "the ui local url appears in the [ui] vite output and may change if port 5173 is already in use"
+echo "a separate readiness block will print the api and ui urls once they are up"
 echo "press ctrl-c to stop all three processes"
 
 while true; do
@@ -161,5 +226,6 @@ while true; do
       exit "${exit_code}"
     fi
   done
+  announce_workspace_urls_if_ready
   sleep 1
 done
