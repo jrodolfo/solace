@@ -78,10 +78,10 @@ Notes:
 
 - `build-broker-api.sh` runs `mvn clean package` inside `solace-broker-api`.
 - `build-subscriber.sh` runs `mvn clean package` inside `solace-subscriber`.
-- `build-publisher-ui.sh` runs `npm run build` inside `solace-publisher-ui` and expects `node_modules` to already exist.
+- `build-publisher-ui.sh` runs `npm run build` inside `solace-publisher-ui` and runs `npm install` first when `node_modules` is missing.
 - `build-all.sh` runs the three module builds sequentially from the repo root.
 - `start-broker-api.sh` and `start-subscriber.sh` require the shared Solace env vars.
-- `start-publisher-ui.sh` expects `solace-publisher-ui/node_modules` to already exist. If not, run `cd solace-publisher-ui && npm install` once first.
+- `start-publisher-ui.sh` starts the Vite dev server and runs `npm install` first when `solace-publisher-ui/node_modules` is missing.
 - `start-all.sh` validates the shared Solace env vars before starting any child processes, streams prefixed `[api]`, `[ui]`, and `[subscriber]` logs from a temporary combined-log directory, and prints a status summary when it stops.
 - `stop-all.sh` sends `TERM` to the locally detected API, UI, and subscriber processes when they are running and reports which components were stopped versus already down.
 - `restart-all.sh` runs `stop-all.sh`, `build-all.sh`, and `start-all.sh` in that order with clear step separators and fails fast if any step fails.

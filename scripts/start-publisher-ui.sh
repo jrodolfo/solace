@@ -12,8 +12,8 @@ PUBLISHER_UI_DIR="${PUBLISHER_UI_DIR:-solace-publisher-ui}"
 enter_module "${PUBLISHER_UI_DIR}"
 
 if [[ ! -d node_modules ]]; then
-  echo "node_modules is missing in ${PUBLISHER_UI_DIR}; run 'npm install' first" >&2
-  exit 1
+  echo "node_modules is missing in ${PUBLISHER_UI_DIR}; running 'npm install' first"
+  npm install
 fi
 
 echo "starting solace-publisher-ui with vite"

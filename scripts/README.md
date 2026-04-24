@@ -17,7 +17,7 @@ They are meant to give you a small, predictable operator workflow from the repo 
 
 - `build-publisher-ui.sh`
   Builds `solace-publisher-ui` with `npm run build`.
-  This expects `solace-publisher-ui/node_modules` to already exist.
+  If `node_modules` is missing, it runs `npm install` first.
 
 - `build-subscriber.sh`
   Builds `solace-subscriber` with Maven.
@@ -33,7 +33,7 @@ They are meant to give you a small, predictable operator workflow from the repo 
 
 - `start-publisher-ui.sh`
   Starts the Vite dev server for `solace-publisher-ui`.
-  This expects `solace-publisher-ui/node_modules` to already exist.
+  If `node_modules` is missing, it runs `npm install` first.
 
 - `start-subscriber.sh`
   Builds and starts `solace-subscriber`.

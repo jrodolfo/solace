@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 temp_status_dir=""
 temp_ui_dir=""
+temp_fake_bin_dir=""
+temp_npm_log_file=""
 
 cleanup() {
   if [[ -n "${temp_status_dir}" ]]; then
@@ -14,6 +16,10 @@ cleanup() {
 
   if [[ -n "${temp_ui_dir}" ]]; then
     rm -rf "${temp_ui_dir}"
+  fi
+
+  if [[ -n "${temp_fake_bin_dir}" ]]; then
+    rm -rf "${temp_fake_bin_dir}"
   fi
 }
 
@@ -115,17 +121,51 @@ assert_command_fails_with \
   env -u SOLACE_CLOUD_HOST -u SOLACE_CLOUD_VPN -u SOLACE_CLOUD_USERNAME -u SOLACE_CLOUD_PASSWORD \
   "${REPO_ROOT}/scripts/start-subscriber.sh"
 
-echo "checking publisher ui node_modules validation"
+echo "checking publisher ui auto-install behavior"
 temp_ui_dir="$(mktemp -d)"
-assert_command_fails_with \
-  "node_modules is missing in ${temp_ui_dir}" \
-  env PUBLISHER_UI_DIR="${temp_ui_dir}" \
-  "${REPO_ROOT}/scripts/start-publisher-ui.sh"
+temp_fake_bin_dir="$(mktemp -d)"
+temp_npm_log_file="${temp_fake_bin_dir}/npm.log"
+cat >"${temp_fake_bin_dir}/npm" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >>"${temp_npm_log_file}"
+if [[ "\$1" == "install" ]]; then
+  mkdir -p node_modules
+  exit 0
+fi
+if [[ "\$1" == "run" && "\$2" == "dev" ]]; then
+  exit 0
+fi
+echo "unexpected npm invocation: \$*" >&2
+exit 1
+EOF
+chmod +x "${temp_fake_bin_dir}/npm"
+env PATH="${temp_fake_bin_dir}:$PATH" PUBLISHER_UI_DIR="${temp_ui_dir}" \
+  "${REPO_ROOT}/scripts/start-publisher-ui.sh" >/dev/null 2>&1
+publisher_ui_start_npm_log="$(cat "${temp_npm_log_file}")"
+assert_contains "${publisher_ui_start_npm_log}" "install"
+assert_contains "${publisher_ui_start_npm_log}" "run dev"
 
-echo "checking publisher ui build node_modules validation"
-assert_command_fails_with \
-  "node_modules is missing in ${temp_ui_dir}" \
-  env PUBLISHER_UI_DIR="${temp_ui_dir}" \
-  "${REPO_ROOT}/scripts/build-publisher-ui.sh"
+echo "checking publisher ui build auto-install behavior"
+rm -rf "${temp_ui_dir}/node_modules"
+: >"${temp_npm_log_file}"
+cat >"${temp_fake_bin_dir}/npm" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >>"${temp_npm_log_file}"
+if [[ "\$1" == "install" ]]; then
+  mkdir -p node_modules
+  exit 0
+fi
+if [[ "\$1" == "run" && "\$2" == "build" ]]; then
+  exit 0
+fi
+echo "unexpected npm invocation: \$*" >&2
+exit 1
+EOF
+chmod +x "${temp_fake_bin_dir}/npm"
+env PATH="${temp_fake_bin_dir}:$PATH" PUBLISHER_UI_DIR="${temp_ui_dir}" \
+  "${REPO_ROOT}/scripts/build-publisher-ui.sh" >/dev/null 2>&1
+publisher_ui_build_npm_log="$(cat "${temp_npm_log_file}")"
+assert_contains "${publisher_ui_build_npm_log}" "install"
+assert_contains "${publisher_ui_build_npm_log}" "run build"
 
 echo "script smoke tests passed"
