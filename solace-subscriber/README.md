@@ -35,20 +35,6 @@ The module is configured for Java release 21 and currently includes unit coverag
 
 - subscriber connection property resolution
 
-## Contact
-
-- Software Developer: Rod Oliveira
-- GitHub: https://github.com/jrodolfo
-- Webpage: https://jrodolfo.net
-
-## License
-
-- MIT License
-- Copyright (c) 2026 Rod Oliveira
-- See [LICENSE](../LICENSE)
-- missing environment-variable handling
-- direct receiver discard/message-state tracking
-
 ## Run
 
 Export the required environment variables first:
@@ -95,3 +81,15 @@ Press `ENTER` to shut the subscriber down cleanly.
 
 - [Solace connection configuration docs](https://docs.solace.com/Solace-PubSub-Messaging-APIs/API-Developer-Guide/Configuring-Connection-T.htm)
 - [Solace PubSub+ messaging APIs](https://docs.solace.com/Solace-PubSub-Messaging-APIs/Default.htm)
+
+## Contact
+
+- Software Developer: Rod Oliveira
+- GitHub: https://github.com/jrodolfo
+- Webpage: https://jrodolfo.net
+
+## License
+
+- MIT License
+- Copyright (c) 2026 Rod Oliveira
+- See [LICENSE](../LICENSE)

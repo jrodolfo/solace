@@ -145,27 +145,6 @@ java -jar target/solace-subscriber-1.0-SNAPSHOT-all.jar
 - typed configuration failure on missing environment variables
 - clearer lifecycle methods and standardized logging
 
-## Contact
-
-- Software Developer: Rod Oliveira
-- GitHub: https://github.com/jrodolfo
-- Webpage: https://jrodolfo.net
-
-## License
-
-- MIT License
-- Copyright (c) 2026 Rod Oliveira
-- See [LICENSE](./LICENSE)
-- unit tests for config and message-state behavior
-
-## Verification Commands
-
-- Backend: `cd solace-broker-api && mvn test`
-- UI: `cd solace-publisher-ui && npm test -- --run`
-- Subscriber: `cd solace-subscriber && mvn test`
-- Root script smoke tests: `make test-scripts`
-- Whole workspace: `make test`
-
 ## Continuous Integration
 
 GitHub Actions CI runs on every push and pull request through [.github/workflows/ci.yml](.github/workflows/ci.yml).
@@ -186,3 +165,15 @@ The workflow currently covers:
 - Postman, curl, JMeter, MySQL schema, and sample-message artifacts live under `doc/`.
 - The architecture overview lives in [doc/architecture.md](doc/architecture.md).
 - If you want details for one module, use that module’s README rather than relying on this root summary.
+
+## Contact
+
+- Software Developer: Rod Oliveira
+- GitHub: https://github.com/jrodolfo
+- Webpage: https://jrodolfo.net
+
+## License
+
+- MIT License
+- Copyright (c) 2026 Rod Oliveira
+- See [LICENSE](./LICENSE)

@@ -37,18 +37,6 @@ Then open:
 http://localhost:5173/
 ```
 
-## Contact
-
-- Software Developer: Rod Oliveira
-- GitHub: https://github.com/jrodolfo
-- Webpage: https://jrodolfo.net
-
-## License
-
-- MIT License
-- Copyright (c) 2026 Rod Oliveira
-- See [LICENSE](../LICENSE)
-
 ## Test
 
 ```bash
@@ -145,3 +133,15 @@ CSV is intentionally flatter than JSON:
 - Sample destinations used throughout the repo still follow the pattern `solace/java/direct/system-01`.
 - If the backend is unavailable, the UI will surface the backend/network failure in the response area rather than silently swallowing it.
 - For backend env-var setup, see [../solace-broker-api/README.md](../solace-broker-api/README.md).
+
+## Contact
+
+- Software Developer: Rod Oliveira
+- GitHub: https://github.com/jrodolfo
+- Webpage: https://jrodolfo.net
+
+## License
+
+- MIT License
+- Copyright (c) 2026 Rod Oliveira
+- See [LICENSE](../LICENSE)
