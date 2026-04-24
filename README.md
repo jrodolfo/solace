@@ -37,6 +37,8 @@ solace/java/direct/system-0*
 
 This repo includes a root `scripts/` folder plus a `Makefile` so you do not have to remember each module’s startup command.
 
+For a folder-local overview of the repo helper scripts, see [scripts/README.md](scripts/README.md).
+
 Available scripts:
 
 - `scripts/build-broker-api.sh`
