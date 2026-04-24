@@ -1,5 +1,12 @@
 # Solace Broker API
 
+[![CI](https://github.com/jrodolfo/solace/actions/workflows/ci.yml/badge.svg)](https://github.com/jrodolfo/solace/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
+[![Java 21](https://img.shields.io/badge/Java-21-007396?logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Spring Boot 3.3](https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Solace](https://img.shields.io/badge/Solace-PubSub%2B-00C895)](https://solace.com/)
+
 `solace-broker-api` is a Spring Boot service that accepts publish requests, persists them with lifecycle state, sends them to Solace, and exposes a paginated read API for browsing stored messages.
 
 For the repo-level module relationships and flow, see [../doc/architecture.md](../doc/architecture.md).
