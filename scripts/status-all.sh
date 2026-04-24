@@ -70,13 +70,13 @@ ui_url_from_start_all_log() {
   local ui_log_file="${log_dir}/ui.log"
 
   if [[ ! -f "${ui_log_file}" ]]; then
-    return
+    return 0
   fi
 
   grep 'Local:' "${ui_log_file}" 2>/dev/null \
     | tail -n 1 \
     | sed -E 's/.*Local:[[:space:]]*(http:\/\/[^[:space:]]+).*/\1/' \
-    | head -n 1
+    | head -n 1 || true
 }
 
 api_status() {

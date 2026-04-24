@@ -68,13 +68,13 @@ current_ui_local_url() {
   ui_log_file="$(find_log_file "ui")"
 
   if [[ -z "${ui_log_file}" || ! -f "${ui_log_file}" ]]; then
-    return
+    return 0
   fi
 
   grep 'Local:' "${ui_log_file}" 2>/dev/null \
     | tail -n 1 \
     | sed -E 's/.*Local:[[:space:]]*(http:\/\/[^[:space:]]+).*/\1/' \
-    | head -n 1
+    | head -n 1 || true
 }
 
 api_is_ready() {
