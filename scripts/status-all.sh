@@ -142,7 +142,12 @@ ui_status() {
 
   local command
   command="$(command_for_pid "${pid}")"
-  mapfile -t ports < <(listening_ports_for_pid "${pid}")
+  local ports=()
+  while IFS= read -r port; do
+    if [[ -n "${port}" ]]; then
+      ports+=("${port}")
+    fi
+  done < <(listening_ports_for_pid "${pid}")
 
   echo "status: RUNNING"
   echo "pid: ${pid}"
