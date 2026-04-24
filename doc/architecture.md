@@ -214,16 +214,9 @@ Important distinction:
 - JSON preserves the full normalized response shape more naturally, while CSV is flattened client-side for spreadsheet-style inspection
 - CSV flattening turns nested payload fields into explicit columns and serializes `properties` into a single field
 - built-in browser views are shipped UI defaults, while saved browser views are user-defined local state
-- save and rename still replace existing user-defined saved views by name when confirmed
-- save and rename now ask for confirmation before that user-defined saved view overwrite is applied
-- saved-view import merges by name, so imported user-defined views can add new entries or update existing ones
-- invalid saved-view import entries are skipped, and the UI reports added, updated, and skipped counts after import
-- the import feedback also lists which user-defined views were added, updated, or skipped, using fallback entry labels when needed
-- the UI keeps a short local history of recent save, rename, delete, and import actions for saved views
-- that short saved-view history can also be cleared explicitly from the UI
-- the history is intentionally capped to the 5 most recent saved-view actions
-- those recent saved-view history entries are displayed with relative timestamps for quick scanning
-- those relative history timestamps refresh automatically while the browser page stays open
+- save and rename can overwrite existing user-defined saved views by name, but now require confirmation before doing so
+- saved-view import merges by name, skips invalid entries, and reports import outcomes back to the user
+- the UI also keeps a short browser-local saved-view action history for recent save, rename, delete, and import events
 - that saved-view history remains browser-local and is not part of saved-view import/export
 - saved browser views are client-side state only and are not stored by the backend
 

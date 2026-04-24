@@ -49,55 +49,21 @@ This repo includes a root `scripts/` folder plus a `Makefile` so you do not have
 
 For a folder-local overview of the repo helper scripts, see [scripts/README.md](scripts/README.md).
 
-Available scripts:
-
-- `scripts/build-broker-api.sh`
-- `scripts/build-publisher-ui.sh`
-- `scripts/build-subscriber.sh`
-- `scripts/build-all.sh`
-- `scripts/start-broker-api.sh`
-- `scripts/start-publisher-ui.sh`
-- `scripts/start-subscriber.sh`
-- `scripts/start-all.sh`
-- `scripts/stop-all.sh`
-- `scripts/restart-all.sh`
-- `scripts/status-all.sh`
-- `scripts/test-scripts.sh`
-
-Available `make` targets:
-
-- `make help`
-- `make build-api`
-- `make build-ui`
-- `make build-subscriber`
-- `make build-all`
-- `make start-api`
-- `make start-ui`
-- `make start-subscriber`
-- `make start-all`
-- `make stop-all`
-- `make restart-all`
-- `make status-all`
-- `make test-api`
-- `make test-ui`
-- `make test-subscriber`
-- `make test-scripts`
-- `make test`
-
-See [scripts/README.md](scripts/README.md) for the detailed behavior of the root scripts, including:
-
-- build/start/stop/restart orchestration
-- environment-variable expectations
-- status reporting behavior
-- `start-all.sh` and `status-all.sh` logging details
-
 Preferred local entry points:
 
 - `./scripts/start-all.sh`
 - `./scripts/stop-all.sh`
 - `./scripts/restart-all.sh`
 - `./scripts/status-all.sh`
-- or the matching `make` targets from the repo root
+- or the matching `make` targets from the repo root, such as `make start-all`, `make stop-all`, `make restart-all`, and `make status-all`
+
+The root scripts folder and Makefile also cover:
+
+- per-module build/start commands
+- workspace-wide build/test helpers
+- root script smoke tests
+
+See [scripts/README.md](scripts/README.md) for the full script inventory and detailed behavior.
 
 The module-level commands below are still useful when you want to run one component directly.
 
