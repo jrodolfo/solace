@@ -294,6 +294,18 @@ Rejected retry, `400 Bad Request`:
 }
 ```
 
+## Contact
+
+- Software Developer: Rod Oliveira
+- GitHub: https://github.com/jrodolfo
+- Webpage: https://jrodolfo.net
+
+## License
+
+- MIT License
+- Copyright (c) 2026 Rod Oliveira
+- See [LICENSE](../LICENSE)
+
 ### `POST /retry`
 
 Retries multiple stored messages in one request.

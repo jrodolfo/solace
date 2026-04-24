@@ -34,6 +34,18 @@ mvn test
 The module is configured for Java release 21 and currently includes unit coverage for:
 
 - subscriber connection property resolution
+
+## Contact
+
+- Software Developer: Rod Oliveira
+- GitHub: https://github.com/jrodolfo
+- Webpage: https://jrodolfo.net
+
+## License
+
+- MIT License
+- Copyright (c) 2026 Rod Oliveira
+- See [LICENSE](../LICENSE)
 - missing environment-variable handling
 - direct receiver discard/message-state tracking
 

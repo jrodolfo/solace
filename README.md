@@ -156,6 +156,18 @@ java -jar target/solace-subscriber-1.0-SNAPSHOT-all.jar
 - instance-based connection-property access
 - typed configuration failure on missing environment variables
 - clearer lifecycle methods and standardized logging
+
+## Contact
+
+- Software Developer: Rod Oliveira
+- GitHub: https://github.com/jrodolfo
+- Webpage: https://jrodolfo.net
+
+## License
+
+- MIT License
+- Copyright (c) 2026 Rod Oliveira
+- See [LICENSE](./LICENSE)
 - unit tests for config and message-state behavior
 
 ## Verification Commands
