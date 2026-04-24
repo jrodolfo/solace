@@ -6,7 +6,7 @@ spring:
       ddl-auto: update
     show-sql: true
   datasource:
-    url: jdbc:mysql://localhost:3306/mydatabase
+    url: jdbc:mysql://localhost:3307/solace
     username: myuser
     password: secret
     driver-class-name: com.mysql.cj.jdbc.Driver

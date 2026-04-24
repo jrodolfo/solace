@@ -68,6 +68,16 @@ mvn spring-boot:run
 
 The default port is `8081`.
 
+Local MySQL runtime:
+
+- host: `localhost`
+- port: `3307`
+- database: `solace`
+- username: `myuser`
+- password: `secret`
+
+Those values match [docker-compose.yaml](docker-compose.yaml) and the default datasource settings in `application.yml`.
+
 Swagger UI:
 
 ```text
