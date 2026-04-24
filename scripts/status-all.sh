@@ -12,6 +12,7 @@ API_PORT="${API_PORT:-8081}"
 API_HEALTH_URL="${API_HEALTH_URL:-http://localhost:${API_PORT}/rest/actuator/health}"
 SUBSCRIBER_JAR_PATTERN="${SUBSCRIBER_JAR_PATTERN:-solace-subscriber-1.0-SNAPSHOT-all.jar}"
 UI_PROCESS_PATTERN="${UI_PROCESS_PATTERN:-vite}"
+LATEST_LOG_DIR_FILE="${LATEST_START_ALL_FILE:-${TMPDIR:-/tmp}/solace-start-all.latest}"
 
 print_separator() {
   local label="$1"
@@ -49,6 +50,33 @@ command_for_pid() {
 find_matching_pid() {
   local pattern="$1"
   pgrep -f "${pattern}" 2>/dev/null | head -n 1 || true
+}
+
+latest_start_all_log_dir() {
+  if [[ ! -f "${LATEST_LOG_DIR_FILE}" ]]; then
+    return
+  fi
+
+  local log_dir
+  log_dir="$(head -n 1 "${LATEST_LOG_DIR_FILE}" 2>/dev/null | tr -d '\r' || true)"
+
+  if [[ -n "${log_dir}" && -d "${log_dir}" ]]; then
+    printf '%s\n' "${log_dir}"
+  fi
+}
+
+ui_url_from_start_all_log() {
+  local log_dir="$1"
+  local ui_log_file="${log_dir}/ui.log"
+
+  if [[ ! -f "${ui_log_file}" ]]; then
+    return
+  fi
+
+  grep 'Local:' "${ui_log_file}" 2>/dev/null \
+    | tail -n 1 \
+    | sed -E 's/.*Local:[[:space:]]*(http:\/\/[^[:space:]]+).*/\1/' \
+    | head -n 1
 }
 
 api_status() {
@@ -90,6 +118,13 @@ api_status() {
 ui_status() {
   print_separator "ui"
 
+  local latest_log_dir=""
+  latest_log_dir="$(latest_start_all_log_dir)"
+  local hinted_url=""
+  if [[ -n "${latest_log_dir}" ]]; then
+    hinted_url="$(ui_url_from_start_all_log "${latest_log_dir}")"
+  fi
+
   local pid
   pid="$(find_matching_pid "${UI_PROCESS_PATTERN}")"
 
@@ -97,6 +132,11 @@ ui_status() {
     echo "status: NOT RUNNING"
     echo "pid: -"
     echo "url: -"
+    if [[ -n "${hinted_url}" ]]; then
+      echo "last known url: ${hinted_url}"
+      echo "last known source: start-all ui log"
+      echo "log dir: ${latest_log_dir}"
+    fi
     return
   fi
 
@@ -108,6 +148,13 @@ ui_status() {
   echo "pid: ${pid}"
   echo "command: $(first_line_or_dash "${command}")"
 
+  if [[ -n "${hinted_url}" ]]; then
+    echo "url: ${hinted_url}"
+    echo "source: last known start-all ui log"
+    echo "log dir: ${latest_log_dir}"
+    return
+  fi
+
   if [[ ${#ports[@]} -eq 0 ]]; then
     echo "url: unknown"
     echo "note: a matching UI process is running, but no listening TCP port was detected"
@@ -118,6 +165,7 @@ ui_status() {
   for port in "${ports[@]}"; do
     echo "- http://localhost:${port}"
   done
+  echo "source: live port detection"
 }
 
 subscriber_status() {

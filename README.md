@@ -79,9 +79,9 @@ Notes:
 - `start-all.sh` validates the shared Solace env vars before starting any child processes, streams prefixed `[api]`, `[ui]`, and `[subscriber]` logs from a temporary combined-log directory, and prints a status summary when it stops.
 - `status-all.sh` reports local status for the three components using a hybrid model:
   - API via `http://localhost:8081/rest/actuator/health`
-  - UI via matching Vite process plus detected listening port(s)
+  - UI via the last known `start-all.sh` Vite `Local:` URL when available, otherwise matching Vite process plus detected listening port(s)
   - subscriber via matching Java process
-- the Vite UI port is dynamic when `5173` is busy; use the `[ui] Local:` line from `start-all.sh` output to find the actual URL.
+- the Vite UI port is dynamic when `5173` is busy; `status-all.sh` now reuses the latest `start-all.sh` UI log when available so it can show the actual Vite URL more explicitly.
 - if `subscriber` exits, `start-all.sh` prints a large warning block and intentionally leaves `api` and `ui` running.
 - if `api` or `ui` exits, `start-all.sh` still stops the remaining processes intentionally and reports which component failed plus where the combined logs were captured.
 

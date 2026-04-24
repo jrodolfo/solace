@@ -4,6 +4,20 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+temp_status_dir=""
+temp_ui_dir=""
+
+cleanup() {
+  if [[ -n "${temp_status_dir}" ]]; then
+    rm -rf "${temp_status_dir}"
+  fi
+
+  if [[ -n "${temp_ui_dir}" ]]; then
+    rm -rf "${temp_ui_dir}"
+  fi
+}
+
+trap cleanup EXIT
 
 assert_contains() {
   local haystack="$1"
@@ -63,6 +77,21 @@ assert_contains "${status_all_output}" "==================== api ===============
 assert_contains "${status_all_output}" "==================== ui ===================="
 assert_contains "${status_all_output}" "==================== subscriber ===================="
 
+echo "checking status-all ui log hint handling"
+temp_status_dir="$(mktemp -d)"
+temp_status_pointer_file="${temp_status_dir}/latest-start-all.txt"
+mkdir -p "${temp_status_dir}/logs"
+cat >"${temp_status_dir}/logs/ui.log" <<'EOF'
+
+  VITE v6.0.11  ready in 63 ms
+
+  ➜  Local:   http://localhost:5174/
+EOF
+printf '%s\n' "${temp_status_dir}/logs" >"${temp_status_pointer_file}"
+status_all_with_hint_output="$(env LATEST_START_ALL_FILE="${temp_status_pointer_file}" "${REPO_ROOT}/scripts/status-all.sh")"
+assert_contains "${status_all_with_hint_output}" "last known url: http://localhost:5174/"
+assert_contains "${status_all_with_hint_output}" "last known source: start-all ui log"
+
 echo "checking broker api env var validation"
 assert_command_fails_with \
   "start-broker-api.sh cannot continue because a required Solace environment variable is missing: SOLACE_CLOUD_HOST" \
@@ -77,7 +106,6 @@ assert_command_fails_with \
 
 echo "checking publisher ui node_modules validation"
 temp_ui_dir="$(mktemp -d)"
-trap 'rm -rf "${temp_ui_dir}"' EXIT
 assert_command_fails_with \
   "node_modules is missing in ${temp_ui_dir}" \
   env PUBLISHER_UI_DIR="${temp_ui_dir}" \

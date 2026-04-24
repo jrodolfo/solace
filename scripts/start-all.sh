@@ -12,6 +12,7 @@ MONITOR_PIDS=()
 PROCESS_STATUSES=()
 SHUTTING_DOWN=0
 LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/solace-start-all.XXXXXX")"
+LATEST_LOG_DIR_FILE="${LATEST_START_ALL_FILE:-${TMPDIR:-/tmp}/solace-start-all.latest}"
 
 require_solace_env_vars "start-all.sh"
 
@@ -112,6 +113,8 @@ handle_signal() {
 
 trap cleanup EXIT
 trap handle_signal INT TERM
+
+printf '%s\n' "${LOG_DIR}" >"${LATEST_LOG_DIR_FILE}"
 
 start_process "api" "${SCRIPT_DIR}/start-broker-api.sh"
 start_process "ui" "${SCRIPT_DIR}/start-publisher-ui.sh"
