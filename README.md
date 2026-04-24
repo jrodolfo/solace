@@ -91,6 +91,16 @@ See [scripts/README.md](scripts/README.md) for the detailed behavior of the root
 - status reporting behavior
 - `start-all.sh` and `status-all.sh` logging details
 
+Preferred local entry points:
+
+- `./scripts/start-all.sh`
+- `./scripts/stop-all.sh`
+- `./scripts/restart-all.sh`
+- `./scripts/status-all.sh`
+- or the matching `make` targets from the repo root
+
+The module-level commands below are still useful when you want to run one component directly.
+
 ### 1. Start the backend
 
 From `solace-broker-api`:

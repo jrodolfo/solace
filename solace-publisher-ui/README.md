@@ -37,6 +37,8 @@ Then open:
 http://localhost:5173/
 ```
 
+If port `5173` is already in use, Vite will pick another local port. In that case, use the URL printed by `npm run dev` or the repo-level `status-all.sh` script.
+
 ## Test
 
 ```bash

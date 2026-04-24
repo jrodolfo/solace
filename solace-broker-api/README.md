@@ -106,7 +106,7 @@ USE solace;
 Swagger UI:
 
 ```text
-http://localhost:8081/swagger-ui/index.html
+http://localhost:8081/docs
 ```
 
 OpenAPI JSON:

@@ -73,7 +73,7 @@ Press `ENTER` to shut the subscriber down cleanly.
 
 ## Notes
 
-- The subscribed topic pattern is defined in [Constants.java](src/main/java/org/orgname/solace/subscriber/Constants.java).
+- The subscribed topic pattern is defined in [src/main/java/org/orgname/solace/subscriber/Constants.java](src/main/java/org/orgname/solace/subscriber/Constants.java).
 - The receiver is currently a single-process command-line tool, not a Spring service.
 - If you need help obtaining broker credentials or local broker setup guidance, see [../doc/how-to/](../doc/how-to/).
 
