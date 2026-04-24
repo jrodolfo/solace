@@ -54,6 +54,7 @@ make_help_output="$(make -C "${REPO_ROOT}" help)"
 assert_contains "${make_help_output}" "make build-api"
 assert_contains "${make_help_output}" "make build-all"
 assert_contains "${make_help_output}" "make start-api"
+assert_contains "${make_help_output}" "make stop-all"
 assert_contains "${make_help_output}" "make status-all"
 assert_contains "${make_help_output}" "make test-scripts"
 
@@ -64,6 +65,7 @@ bash -n \
   "${REPO_ROOT}/scripts/start-publisher-ui.sh" \
   "${REPO_ROOT}/scripts/start-subscriber.sh" \
   "${REPO_ROOT}/scripts/start-all.sh" \
+  "${REPO_ROOT}/scripts/stop-all.sh" \
   "${REPO_ROOT}/scripts/status-all.sh" \
   "${REPO_ROOT}/scripts/build-broker-api.sh" \
   "${REPO_ROOT}/scripts/build-publisher-ui.sh" \
@@ -91,6 +93,13 @@ printf '%s\n' "${temp_status_dir}/logs" >"${temp_status_pointer_file}"
 status_all_with_hint_output="$(env LATEST_START_ALL_FILE="${temp_status_pointer_file}" "${REPO_ROOT}/scripts/status-all.sh")"
 assert_contains "${status_all_with_hint_output}" "last known url: http://localhost:5174/"
 assert_contains "${status_all_with_hint_output}" "last known source: start-all ui log"
+
+echo "checking stop-all output structure"
+stop_all_output="$("${REPO_ROOT}/scripts/stop-all.sh")"
+assert_contains "${stop_all_output}" "==================== workspace shutdown ===================="
+assert_contains "${stop_all_output}" "==================== api ===================="
+assert_contains "${stop_all_output}" "==================== ui ===================="
+assert_contains "${stop_all_output}" "==================== subscriber ===================="
 
 echo "checking broker api env var validation"
 assert_command_fails_with \
