@@ -41,3 +41,6 @@ Start new records from [template.md](template.md).
 - [0006-use-synchronous-publish-with-pending-first-persistence.md](0006-use-synchronous-publish-with-pending-first-persistence.md)
 - [0007-use-manual-reconciliation-for-stale-pending-messages.md](0007-use-manual-reconciliation-for-stale-pending-messages.md)
 - [0008-keep-browser-saved-views-in-localstorage-not-backend.md](0008-keep-browser-saved-views-in-localstorage-not-backend.md)
+- [0009-support-retry-at-the-stored-message-level.md](0009-support-retry-at-the-stored-message-level.md)
+- [0010-keep-postman-jmeter-and-curl-artifacts-alongside-the-codebase.md](0010-keep-postman-jmeter-and-curl-artifacts-alongside-the-codebase.md)
+- [0011-separate-current-page-export-from-full-filtered-export.md](0011-separate-current-page-export-from-full-filtered-export.md)
