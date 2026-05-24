@@ -15,6 +15,10 @@ What did we decide to do?
 
 Why is this decision preferable to the alternatives in this project context?
 
+## Primary Implementation
+
+- `path/to/main/implementation`
+
 ## Consequences
 
 What becomes simpler, harder, safer, or riskier because of this choice?

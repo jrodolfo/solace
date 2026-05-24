@@ -39,6 +39,12 @@ not become a repository of reusable connection credentials. Keeping overrides
 transient reduces the security and data-handling burden while preserving useful
 runtime flexibility.
 
+## Primary Implementation
+
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/controller/MessageController.java`
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/service/DirectPublisherService.java`
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/service/DirectPublisherServiceImpl.java`
+
 ## Consequences
 
 Benefits:

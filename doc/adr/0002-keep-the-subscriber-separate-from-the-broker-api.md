@@ -37,6 +37,12 @@ This also preserves a clean interview and maintenance story: the subscriber is
 for direct topic visibility, while the backend is the system of record for HTTP
 publish and retry workflows.
 
+## Primary Implementation
+
+- `doc/architecture.md`
+- `solace-subscriber/src/main/java/org/orgname/solace/subscriber/DirectReceiver.java`
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/controller/MessageController.java`
+
 ## Consequences
 
 Benefits:

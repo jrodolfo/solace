@@ -41,6 +41,13 @@ The React UI also creates a clearer separation between backend integration logic
 and user-facing interaction design while still keeping the backend reusable for
 automation and non-browser clients.
 
+## Primary Implementation
+
+- `solace-publisher-ui/src/App.tsx`
+- `solace-publisher-ui/src/ShowOutput.tsx`
+- `README.md`
+- `doc/architecture.md`
+
 ## Consequences
 
 Benefits:

@@ -36,6 +36,14 @@ Keeping those concerns separate makes the repository easier to explain,
 maintain, and evolve. It also lets the backend remain a reusable integration
 surface for tools other than the UI.
 
+## Primary Implementation
+
+- `README.md`
+- `doc/architecture.md`
+- `solace-broker-api/`
+- `solace-publisher-ui/`
+- `solace-subscriber/`
+
 ## Consequences
 
 Benefits:
