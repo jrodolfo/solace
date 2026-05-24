@@ -112,7 +112,7 @@ Each stored message can include:
 
 Lifecycle states:
 
-- `PENDING`: accepted and awaiting broker outcome finalization; in the current implementation this is usually a short-lived synchronous state
+- `PENDING`: accepted and awaiting broker outcome finalization; in the current implementation this is a short-lived synchronous state
 - `PUBLISHED`: successfully published
 - `FAILED`: publish attempt failed
 

@@ -1,6 +1,6 @@
 # ADR-XXXX: Title
 
-- Status: `proposed`
+- Status: `proposed` | `accepted` | `superseded`
 - Date: `YYYY-MM-DD`
 
 ## Context

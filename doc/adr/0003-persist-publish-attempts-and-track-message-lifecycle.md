@@ -49,7 +49,8 @@ The related `stalePending` signal uses a 5-minute threshold as a practical
 operator heuristic for highlighting rows that probably need review. That value
 is not intended as a protocol guarantee; it is simply a conservative cutoff for
 surfacing records that remained unresolved longer than expected in the current
-runtime model.
+runtime model, including cases where process interruption or unusually slow
+runtime recovery leaves the record without a finalized outcome.
 
 ## Consequences
 
