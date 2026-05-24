@@ -85,6 +85,11 @@ The normal publish flow is:
    - `failureReason` is set
    - the API returns a typed error response
 
+Today this lifecycle update is synchronous within the request/response path.
+The record is written as `PENDING` before the publish attempt so the system
+retains evidence of the requested operation even if the process crashes or the
+outcome cannot be finalized cleanly afterward.
+
 Important boundary:
 
 - user-supplied broker credentials may be accepted on publish requests
@@ -107,7 +112,7 @@ Each stored message can include:
 
 Lifecycle states:
 
-- `PENDING`: accepted and waiting for broker outcome
+- `PENDING`: accepted and awaiting broker outcome finalization; in the current implementation this is usually a short-lived synchronous state
 - `PUBLISHED`: successfully published
 - `FAILED`: publish attempt failed
 
@@ -115,7 +120,8 @@ Stale pending signal:
 
 - `stalePending` is derived when a message is still `PENDING` more than 5 minutes after `createdAt`
 - this does not change the stored `publishStatus` by itself
-- it exists to highlight rows that may need operator review after a publish/database inconsistency
+- the 5-minute value is a current operational heuristic, not a broker-level guarantee
+- it exists to highlight rows that may need operator review after a crash, timeout, or publish/database inconsistency
 
 `innerMessageId` is not used as a database or API uniqueness constraint. Multiple stored publish attempts may carry the same `innerMessageId`, and the persisted record `id` remains the actual stored-message identity for lifecycle and retry operations.
 

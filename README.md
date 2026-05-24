@@ -105,6 +105,7 @@ java -jar target/solace-subscriber-1.0-SNAPSHOT-all.jar
 - typed API validation and error responses
 - publish lifecycle tracking with `PENDING`, `PUBLISHED`, and `FAILED`
 - retry support for failed stored messages
+- manual reconciliation support for stale `PENDING` messages
 - paginated, filterable, sortable stored-message reads
 - normalized read DTOs instead of raw JPA serialization
 
@@ -115,6 +116,7 @@ java -jar target/solace-subscriber-1.0-SNAPSHOT-all.jar
 - paginated stored-message browser
 - lifecycle and date-range filter presets
 - single-message and bulk retry actions for failed rows
+- manual reconciliation action for stale pending rows
 
 ### `solace-subscriber`
 

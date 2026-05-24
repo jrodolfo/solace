@@ -4,8 +4,8 @@ This folder stores Architecture Decision Records (ADRs) for the Solace workspace
 
 ADRs capture the architectural decisions that shaped the repository, why those
 decisions were made, and what tradeoffs they introduced. They complement
-[`doc/architecture.md`](../architecture.md), which describes the current design,
- by preserving the decision history behind that design.
+[`doc/architecture.md`](../architecture.md), which describes the current
+design, by preserving the decision history behind that design.
 
 ## Status Values
 
@@ -23,6 +23,9 @@ Use zero-padded numeric prefixes and kebab-case titles:
 
 Each ADR should focus on one decision and stay short enough to scan quickly in
 an interview, maintenance, or onboarding context.
+
+When an ADR is replaced, keep the old file, change its status to `superseded`,
+and add a short note near the top linking to the newer ADR that replaces it.
 
 ## ADR Template
 

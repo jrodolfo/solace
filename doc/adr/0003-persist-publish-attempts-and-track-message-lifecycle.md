@@ -29,7 +29,10 @@ The intended flow is:
 4. mark the record `PUBLISHED` on success or `FAILED` on error
 5. store relevant timestamps and failure information for later reads and retries
 
-The persisted record becomes the source for read APIs, UI browsing, and retry workflows.
+The persisted record becomes the source for read APIs, UI browsing, and retry
+workflows. In the current implementation this lifecycle transition is
+synchronous in the request path, but the initial `PENDING` write is still kept
+to preserve the requested operation before the final outcome is known.
 
 ## Rationale
 
@@ -41,6 +44,12 @@ immediate result of a single HTTP call.
 Persisting the lifecycle also creates a clearer operational and learning model:
 the project can show what was attempted, what succeeded, what failed, and what
 can be retried later.
+
+The related `stalePending` signal uses a 5-minute threshold as a practical
+operator heuristic for highlighting rows that probably need review. That value
+is not intended as a protocol guarantee; it is simply a conservative cutoff for
+surfacing records that remained unresolved longer than expected in the current
+runtime model.
 
 ## Consequences
 
@@ -63,6 +72,7 @@ Tradeoffs:
 - persistence costs or operational complexity outweigh retry and history value
 - lifecycle states need to expand beyond the current model in a way that requires a redesign
 - another storage mechanism becomes a better fit than the current relational model
+- publish volume or latency requirements push the system toward an asynchronous worker-based publish model
 
 ## Alternatives Considered
 
