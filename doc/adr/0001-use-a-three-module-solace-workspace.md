@@ -26,6 +26,16 @@ We organize the repository as a small workspace with three active modules:
 Shared documentation, helper scripts, and integration artifacts stay at the
 repository root under `doc/`, `scripts/`, and the root `Makefile`.
 
+## Rationale
+
+This split matches the actual runtime boundaries in the project. The UI is a
+browser application, the backend is an HTTP and persistence layer, and the
+subscriber is an integration process that observes topic traffic directly.
+
+Keeping those concerns separate makes the repository easier to explain,
+maintain, and evolve. It also lets the backend remain a reusable integration
+surface for tools other than the UI.
+
 ## Consequences
 
 Benefits:
@@ -40,6 +50,13 @@ Tradeoffs:
 - local setup involves multiple runtimes and startup commands
 - cross-module changes require more coordination
 - shared concepts must be documented explicitly rather than implied by one codebase
+
+## Revisit Triggers
+
+- the subscriber becomes tightly coupled to backend persistence or API workflows
+- the UI is replaced with a server-rendered experience inside the backend
+- operational overhead from multiple modules becomes larger than the clarity benefit
+- deployment requirements favor a different packaging boundary
 
 ## Alternatives Considered
 

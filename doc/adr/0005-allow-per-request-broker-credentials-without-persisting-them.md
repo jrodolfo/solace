@@ -28,6 +28,17 @@ The backend therefore separates:
 When per-request credentials are not provided, the backend can rely on the shared
 environment-based configuration boundary already used across the workspace.
 
+## Rationale
+
+This approach balances flexibility and safety. It allows callers to test or
+override broker connection settings for a specific request without forcing those
+secrets into the database.
+
+The project’s stored history should explain message intent and publish outcome,
+not become a repository of reusable connection credentials. Keeping overrides
+transient reduces the security and data-handling burden while preserving useful
+runtime flexibility.
+
 ## Consequences
 
 Benefits:
@@ -41,6 +52,13 @@ Tradeoffs:
 - publish behavior depends on a mix of persisted data and transient runtime input
 - troubleshooting may require remembering whether a failed publish used request overrides
 - future auditing needs may require metadata that identifies override usage without storing secrets
+
+## Revisit Triggers
+
+- security requirements change and per-request credential input is no longer acceptable
+- replay or audit requirements need richer traceability for override usage
+- the project standardizes on environment-only configuration for all publish flows
+- secret-management infrastructure becomes available that supports a better override model
 
 ## Alternatives Considered
 

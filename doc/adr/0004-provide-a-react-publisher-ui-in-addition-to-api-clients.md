@@ -30,6 +30,17 @@ The UI focuses on:
 
 Generic API tools remain supported for backend testing and automation.
 
+## Rationale
+
+Generic API tools are effective for protocol-level testing, but they are weaker
+for repeated exploratory use, demonstrations, and day-to-day manual workflows.
+A dedicated UI lowers the friction for publishing, browsing stored messages, and
+showing the project to other people.
+
+The React UI also creates a clearer separation between backend integration logic
+and user-facing interaction design while still keeping the backend reusable for
+automation and non-browser clients.
+
 ## Consequences
 
 Benefits:
@@ -43,6 +54,13 @@ Tradeoffs:
 - the repository must maintain an additional frontend codebase
 - UI and API contracts must evolve together
 - browser state and UX concerns add a separate testing surface
+
+## Revisit Triggers
+
+- the UI no longer provides enough value beyond Swagger, Postman, JMeter, and `curl`
+- the project shifts away from interactive demo and portfolio use cases
+- maintaining the frontend becomes disproportionate to the rest of the workspace
+- a different frontend delivery model better matches future requirements
 
 ## Alternatives Considered
 

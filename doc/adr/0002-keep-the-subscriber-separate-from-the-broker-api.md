@@ -26,6 +26,17 @@ The subscriber:
 
 It does not own persistence, publish lifecycle state, or API read/query behavior.
 
+## Rationale
+
+The subscriber is most useful when it acts as an independent observer of broker
+traffic rather than as another backend subsystem. That separation makes it
+clearer whether an issue is in the publish path, the persistence model, or the
+broker subscription path.
+
+This also preserves a clean interview and maintenance story: the subscriber is
+for direct topic visibility, while the backend is the system of record for HTTP
+publish and retry workflows.
+
 ## Consequences
 
 Benefits:
@@ -39,6 +50,13 @@ Tradeoffs:
 - another process must be started and configured locally
 - there is no implicit shared in-memory state between publisher workflows and subscriber workflows
 - operators need to correlate subscriber output with API/database state manually
+
+## Revisit Triggers
+
+- the project needs persisted subscriber observations as a first-class feature
+- subscription behavior must participate directly in backend lifecycle decisions
+- operating a separate subscriber process becomes too costly for the project goals
+- the backend evolves toward a unified event-processing runtime
 
 ## Alternatives Considered
 

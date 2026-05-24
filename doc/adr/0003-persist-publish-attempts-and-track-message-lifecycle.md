@@ -31,6 +31,17 @@ The intended flow is:
 
 The persisted record becomes the source for read APIs, UI browsing, and retry workflows.
 
+## Rationale
+
+The repository is designed for more than one-off publishing. It supports
+inspection, retry, filtering, and demonstration of message outcomes over time.
+Those workflows need a stored record with explicit lifecycle state, not only the
+immediate result of a single HTTP call.
+
+Persisting the lifecycle also creates a clearer operational and learning model:
+the project can show what was attempted, what succeeded, what failed, and what
+can be retried later.
+
 ## Consequences
 
 Benefits:
@@ -45,6 +56,13 @@ Tradeoffs:
 - persistence adds schema and state-management complexity
 - lifecycle transitions must be kept consistent with publish behavior
 - database availability becomes part of the publish path
+
+## Revisit Triggers
+
+- the project intentionally shifts to a stateless publish-only API
+- persistence costs or operational complexity outweigh retry and history value
+- lifecycle states need to expand beyond the current model in a way that requires a redesign
+- another storage mechanism becomes a better fit than the current relational model
 
 ## Alternatives Considered
 
