@@ -36,6 +36,13 @@ context across all pages.
 
 This separation keeps each export mode honest about what it represents.
 
+## Primary Implementation
+
+- `solace-publisher-ui/src/App.tsx`
+- `solace-publisher-ui/src/StoredMessageTypes.ts`
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/controller/MessageController.java`
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/service/DatabaseImpl.java`
+
 ## Consequences
 
 Benefits:

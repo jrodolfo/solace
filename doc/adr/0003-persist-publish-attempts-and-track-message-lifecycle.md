@@ -52,6 +52,12 @@ surfacing records that remained unresolved longer than expected in the current
 runtime model, including cases where process interruption or unusually slow
 runtime recovery leaves the record without a finalized outcome.
 
+## Primary Implementation
+
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/controller/MessageController.java`
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/service/DatabaseImpl.java`
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/dto/StoredMessageDTO.java`
+
 ## Consequences
 
 Benefits:

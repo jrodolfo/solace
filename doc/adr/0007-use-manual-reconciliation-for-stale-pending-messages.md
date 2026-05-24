@@ -43,6 +43,12 @@ This also gives the UI and the documentation a clearer operational story:
 - retry is for known failed messages
 - reconciliation is for unresolved pending messages
 
+## Primary Implementation
+
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/controller/MessageController.java`
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/dto/StoredMessageDTO.java`
+- `solace-publisher-ui/src/App.tsx`
+
 ## Consequences
 
 Benefits:

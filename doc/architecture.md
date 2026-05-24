@@ -17,6 +17,11 @@ At a high level:
 
 ![Solace workspace architecture](./solace.png)
 
+Related reading:
+
+- interview summary: [interview-architecture-notes.md](./interview-architecture-notes.md)
+- decision history: [adr/README.md](./adr/README.md)
+
 ## Module Responsibilities
 
 ### `solace-publisher-ui`
@@ -54,6 +59,12 @@ Does not own:
 - long-running subscription behavior
 
 The broker API is not frontend-exclusive. It can be called by `solace-publisher-ui`, Postman, JMeter, or any other HTTP client that speaks the documented request contract.
+
+Related ADRs:
+
+- [ADR-0001](./adr/0001-use-a-three-module-solace-workspace.md)
+- [ADR-0004](./adr/0004-provide-a-react-publisher-ui-in-addition-to-api-clients.md)
+- [ADR-0010](./adr/0010-keep-postman-jmeter-and-curl-artifacts-alongside-the-codebase.md)
 
 ### `solace-subscriber`
 
@@ -95,6 +106,12 @@ Important boundary:
 - user-supplied broker credentials may be accepted on publish requests
 - those connection parameters are not persisted with the stored message
 
+Related ADRs:
+
+- [ADR-0003](./adr/0003-persist-publish-attempts-and-track-message-lifecycle.md)
+- [ADR-0005](./adr/0005-allow-per-request-broker-credentials-without-persisting-them.md)
+- [ADR-0006](./adr/0006-use-synchronous-publish-with-pending-first-persistence.md)
+
 ## Persistence Model And Lifecycle
 
 Stored messages represent publish attempts, not only successful publishes.
@@ -125,6 +142,11 @@ Stale pending signal:
 
 `innerMessageId` is not used as a database or API uniqueness constraint. Multiple stored publish attempts may carry the same `innerMessageId`, and the persisted record `id` remains the actual stored-message identity for lifecycle and retry operations.
 
+Related ADRs:
+
+- [ADR-0003](./adr/0003-persist-publish-attempts-and-track-message-lifecycle.md)
+- [ADR-0006](./adr/0006-use-synchronous-publish-with-pending-first-persistence.md)
+
 ## Retry Flow
 
 Retry is handled by:
@@ -153,6 +175,10 @@ The UI supports both:
 
 The bulk retry action now delegates to the backend batch endpoint instead of sending one browser request per message.
 
+Related ADR:
+
+- [ADR-0009](./adr/0009-support-retry-at-the-stored-message-level.md)
+
 ## Stale Pending Reconciliation Flow
 
 Manual reconciliation is handled by `POST /api/v1/messages/{messageId}/reconcile-stale-pending`.
@@ -177,6 +203,10 @@ Operational distinction:
 
 - retry is for retryable `FAILED` messages
 - manual reconciliation is for stale `PENDING` messages that need operator classification without republishing
+
+Related ADR:
+
+- [ADR-0007](./adr/0007-use-manual-reconciliation-for-stale-pending-messages.md)
 
 ## Read Flow
 
@@ -225,6 +255,11 @@ Important distinction:
 - the UI also keeps a short browser-local saved-view action history for recent save, rename, delete, and import events
 - that saved-view history remains browser-local and is not part of saved-view import/export
 - saved browser views are client-side state only and are not stored by the backend
+
+Related ADRs:
+
+- [ADR-0008](./adr/0008-keep-browser-saved-views-in-localstorage-not-backend.md)
+- [ADR-0011](./adr/0011-separate-current-page-export-from-full-filtered-export.md)
 
 ## Subscriber Role
 

@@ -6,7 +6,7 @@
 ## Context
 
 The backend persists publish attempts as stored messages with lifecycle state,
- timestamps, retryability metadata, and a stable record `id`.
+timestamps, retryability metadata, and a stable record `id`.
 
 This project needs retry behavior that is compatible with:
 
@@ -44,6 +44,13 @@ the retry attempt, and the latest outcome.
 This also matches how operators actually work in the UI. They do not think in
 terms of detached payload blobs; they think in terms of specific failed rows
 that they can inspect, filter, and retry.
+
+## Primary Implementation
+
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/controller/MessageController.java`
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/dto/StoredMessageDTO.java`
+- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/jpa/Message.java`
+- `solace-publisher-ui/src/App.tsx`
 
 ## Consequences
 

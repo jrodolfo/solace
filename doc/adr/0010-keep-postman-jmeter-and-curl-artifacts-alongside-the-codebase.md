@@ -38,6 +38,13 @@ that the backend was designed to be testable and explorable beyond a single UI,
 which reinforces the architecture claim that `solace-broker-api` is not
 frontend-exclusive.
 
+## Primary Implementation
+
+- `doc/postman/solace-producer-emulator.postman_collection.json`
+- `doc/jmeter/solace-producer-emulator.jmx`
+- `doc/curl/curl.txt`
+- `README.md`
+
 ## Consequences
 
 Benefits:

@@ -42,6 +42,11 @@ lightweight in scope.
 This also preserves a cleaner system boundary: the backend owns message data and
 operational workflows, while the UI owns presentation-specific local state.
 
+## Primary Implementation
+
+- `solace-publisher-ui/src/App.tsx`
+- `solace-publisher-ui/src/App.test.tsx`
+
 ## Consequences
 
 Benefits:
