@@ -15,6 +15,7 @@ This repository contains a small Solace-focused workspace with three active modu
 - [solace-subscriber](solace-subscriber/README.md): Java command-line subscriber for direct topic traffic
 
 For the repo-level design, see [doc/architecture.md](doc/architecture.md).
+For architectural decision history, see [doc/adr/README.md](doc/adr/README.md).
 
 ## Shared Solace Contract
 
@@ -140,6 +141,7 @@ The workflow currently covers:
 - Broker setup/how-to material lives under `doc/how-to/`.
 - Postman, curl, JMeter, MySQL schema, and sample-message artifacts live under `doc/`.
 - The architecture overview lives in [doc/architecture.md](doc/architecture.md).
+- Architecture Decision Records live in [doc/adr/README.md](doc/adr/README.md).
 - If you want details for one module, use that module’s README rather than relying on this root summary.
 
 ## Contact
