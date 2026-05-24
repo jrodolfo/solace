@@ -38,3 +38,6 @@ Start new records from [template.md](template.md).
 - [0003-persist-publish-attempts-and-track-message-lifecycle.md](0003-persist-publish-attempts-and-track-message-lifecycle.md)
 - [0004-provide-a-react-publisher-ui-in-addition-to-api-clients.md](0004-provide-a-react-publisher-ui-in-addition-to-api-clients.md)
 - [0005-allow-per-request-broker-credentials-without-persisting-them.md](0005-allow-per-request-broker-credentials-without-persisting-them.md)
+- [0006-use-synchronous-publish-with-pending-first-persistence.md](0006-use-synchronous-publish-with-pending-first-persistence.md)
+- [0007-use-manual-reconciliation-for-stale-pending-messages.md](0007-use-manual-reconciliation-for-stale-pending-messages.md)
+- [0008-keep-browser-saved-views-in-localstorage-not-backend.md](0008-keep-browser-saved-views-in-localstorage-not-backend.md)
