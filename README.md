@@ -16,7 +16,7 @@ This repository contains a small Solace-focused workspace with three active modu
 
 For the repo-level design, see [doc/architecture.md](doc/architecture.md).
 For architectural decision history, see [doc/adr/README.md](doc/adr/README.md).
-For interview-oriented talking points, see [doc/interview-architecture-notes.md](doc/interview-architecture-notes.md).
+For a concise architecture walkthrough, see [doc/architecture-walkthrough.md](doc/architecture-walkthrough.md).
 
 ## Shared Solace Contract
 
@@ -145,7 +145,7 @@ The workflow currently covers:
 - Postman, curl, JMeter, MySQL schema, and sample-message artifacts live under `doc/`.
 - The architecture overview lives in [doc/architecture.md](doc/architecture.md).
 - Architecture Decision Records live in [doc/adr/README.md](doc/adr/README.md).
-- Interview-focused architecture notes live in [doc/interview-architecture-notes.md](doc/interview-architecture-notes.md).
+- A concise architecture walkthrough lives in [doc/architecture-walkthrough.md](doc/architecture-walkthrough.md).
 - If you want details for one module, use that module’s README rather than relying on this root summary.
 
 ## Contact

@@ -19,7 +19,7 @@ At a high level:
 
 Related reading:
 
-- interview summary: [interview-architecture-notes.md](./interview-architecture-notes.md)
+- concise walkthrough: [architecture-walkthrough.md](./architecture-walkthrough.md)
 - decision history: [adr/README.md](./adr/README.md)
 
 ## Module Responsibilities

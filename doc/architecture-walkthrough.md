@@ -1,7 +1,8 @@
-# Interview Architecture Notes
+# Architecture Walkthrough
 
-This document is a quick interview-oriented guide to the Solace workspace. It
-is intentionally shorter and more conversational than
+This document is a concise walkthrough of the Solace workspace for maintainers,
+reviewers, and future contributors. It is intentionally shorter and more
+conversational than
 [`architecture.md`](./architecture.md) and the ADR set in [`adr/`](./adr/).
 
 ## One-Minute System Summary
@@ -52,8 +53,8 @@ Related ADRs:
 
 Why:
 
-- the project needs history, retry, filtering, and interview-ready evidence of
-  what happened
+- the project needs history, retry, filtering, and clear evidence of what
+  happened
 - writing `PENDING` first preserves evidence of intent even if the process
   crashes before finalization
 
@@ -103,7 +104,7 @@ Related ADR:
 
 - [ADR-0008](./adr/0008-keep-browser-saved-views-in-localstorage-not-backend.md)
 
-## What I Would Emphasize In An Interview
+## Key Design Points
 
 ### Clear separation of responsibilities
 
@@ -129,11 +130,11 @@ The project is not only about backend correctness. It also includes a usable UI,
 export behavior, saved views, Postman/JMeter/curl artifacts, and operational
 recovery paths.
 
-## Likely Interview Questions
+## Common Design Questions
 
 ### Why not make publish asynchronous?
 
-Current answer:
+Short answer:
 
 - synchronous publish is simpler and gives immediate feedback
 - the current project scope does not justify queue or worker complexity yet
@@ -145,7 +146,7 @@ Related ADR:
 
 ### Why store `PENDING` first if the flow is synchronous?
 
-Current answer:
+Short answer:
 
 - to preserve evidence of accepted intent before the final outcome is known
 - if the process crashes after the initial write, the system still has a record
@@ -153,7 +154,7 @@ Current answer:
 
 ### Why not auto-retry stale `PENDING` rows?
 
-Current answer:
+Short answer:
 
 - because stale `PENDING` means uncertain outcome, not confirmed failure
 - auto-retrying could republish a message that already reached the broker
@@ -164,7 +165,7 @@ Related ADR:
 
 ### Why is retry tied to the stored message record?
 
-Current answer:
+Short answer:
 
 - the stored message is the operational identity in this system
 - retrying the stored record preserves lifecycle continuity and works naturally
@@ -176,7 +177,7 @@ Related ADR:
 
 ### Why keep saved views in `localStorage`?
 
-Current answer:
+Short answer:
 
 - they are UI convenience state, not shared business data
 - storing them in the backend would add complexity without current value
@@ -187,7 +188,7 @@ Related ADR:
 
 ### Why keep Postman, JMeter, and curl assets in the repo?
 
-Current answer:
+Short answer:
 
 - they prove the backend is reusable outside the UI
 - they make the project easier to validate, demo, and discuss
@@ -196,9 +197,9 @@ Related ADR:
 
 - [ADR-0010](./adr/0010-keep-postman-jmeter-and-curl-artifacts-alongside-the-codebase.md)
 
-## Growth Paths
+## Future Evolution Paths
 
-If asked how I would evolve the system, I would mention:
+If the system needs to evolve, likely next steps would be:
 
 - move publish to an async worker/outbox model if throughput or reliability
   requirements increase
