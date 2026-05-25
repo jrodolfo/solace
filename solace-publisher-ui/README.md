@@ -12,7 +12,7 @@
 - publishing Solace messages with typed form fields
 - browsing stored messages with pagination, filtering, sorting, details expansion, timestamp formatting, and copy actions
 
-For the repo-level data flow and module boundaries, see [../doc/architecture.md](../doc/architecture.md).
+For the repo-level data flow and module boundaries, see [../docs/architecture.md](../docs/architecture.md).
 
 ## Requirements
 

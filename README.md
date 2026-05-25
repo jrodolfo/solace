@@ -14,9 +14,9 @@ This repository contains a small Solace-focused workspace with three active modu
 - [solace-publisher-ui](solace-publisher-ui/README.md): React UI for publishing messages and browsing stored results
 - [solace-subscriber](solace-subscriber/README.md): Java command-line subscriber for direct topic traffic
 
-For the repo-level design, see [doc/architecture.md](doc/architecture.md).
-For architectural decision history, see [doc/adr/README.md](doc/adr/README.md).
-For a concise architecture walkthrough, see [doc/architecture-walkthrough.md](doc/architecture-walkthrough.md).
+For the repo-level design, see [docs/architecture.md](docs/architecture.md).
+For architectural decision history, see [docs/adr/README.md](docs/adr/README.md).
+For a concise architecture walkthrough, see [docs/architecture-walkthrough.md](docs/architecture-walkthrough.md).
 
 ## Shared Solace Contract
 
@@ -141,11 +141,11 @@ The workflow currently covers:
 
 ## Notes
 
-- Broker setup/how-to material lives under `doc/how-to/`.
-- Postman, curl, JMeter, MySQL schema, and sample-message artifacts live under `doc/`.
-- The architecture overview lives in [doc/architecture.md](doc/architecture.md).
-- Architecture Decision Records live in [doc/adr/README.md](doc/adr/README.md).
-- A concise architecture walkthrough lives in [doc/architecture-walkthrough.md](doc/architecture-walkthrough.md).
+- Broker setup/how-to material lives under `docs/how-to/`.
+- Postman, curl, JMeter, MySQL schema, and sample-message artifacts live under `docs/`.
+- The architecture overview lives in [docs/architecture.md](docs/architecture.md).
+- Architecture Decision Records live in [docs/adr/README.md](docs/adr/README.md).
+- A concise architecture walkthrough lives in [docs/architecture-walkthrough.md](docs/architecture-walkthrough.md).
 - If you want details for one module, use that module’s README rather than relying on this root summary.
 
 ## Contact

@@ -24,7 +24,7 @@ We organize the repository as a small workspace with three active modules:
 - `solace-subscriber` for the Java subscriber process
 
 Shared documentation, helper scripts, and integration artifacts stay at the
-repository root under `doc/`, `scripts/`, and the root `Makefile`.
+repository root under `docs/`, `scripts/`, and the root `Makefile`.
 
 ## Rationale
 
@@ -39,7 +39,7 @@ surface for tools other than the UI.
 ## Primary Implementation
 
 - `README.md`
-- `doc/architecture.md`
+- `docs/architecture.md`
 - `solace-broker-api/`
 - `solace-publisher-ui/`
 - `solace-subscriber/`

@@ -39,7 +39,7 @@ publish and retry workflows.
 
 ## Primary Implementation
 
-- `doc/architecture.md`
+- `docs/architecture.md`
 - `solace-subscriber/src/main/java/org/orgname/solace/subscriber/DirectReceiver.java`
 - `solace-broker-api/src/main/java/org/orgname/solace/broker/api/controller/MessageController.java`
 

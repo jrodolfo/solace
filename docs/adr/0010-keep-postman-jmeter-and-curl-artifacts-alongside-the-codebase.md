@@ -14,14 +14,14 @@ general HTTP surface for:
 - troubleshooting without the UI
 - demonstration of multiple ways to exercise the same contract
 
-The repo already includes tooling artifacts and examples under `doc/`, such as
+The repo already includes tooling artifacts and examples under `docs/`, such as
 Postman collections, JMeter assets, curl samples, message examples, and setup
 notes.
 
 ## Decision
 
 We keep Postman, JMeter, curl, and related API exercise artifacts in the
-repository under `doc/` alongside the codebase instead of treating them as
+repository under `docs/` alongside the codebase instead of treating them as
 external or disposable assets.
 
 These artifacts are documentation and operational companions to the backend
@@ -40,9 +40,9 @@ frontend-exclusive.
 
 ## Primary Implementation
 
-- `doc/postman/solace-producer-emulator.postman_collection.json`
-- `doc/jmeter/solace-producer-emulator.jmx`
-- `doc/curl/curl.txt`
+- `docs/postman/solace-producer-emulator.postman_collection.json`
+- `docs/jmeter/solace-producer-emulator.jmx`
+- `docs/curl/curl.txt`
 - `README.md`
 
 ## Consequences
@@ -58,7 +58,7 @@ Tradeoffs:
 
 - documentation artifacts must be maintained as the API evolves
 - duplicated examples across tools can drift if not updated carefully
-- the `doc/` tree grows beyond narrative documentation alone
+- the `docs/` tree grows beyond narrative documentation alone
 
 ## Revisit Triggers
 

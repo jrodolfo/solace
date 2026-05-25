@@ -46,7 +46,7 @@ automation and non-browser clients.
 - `solace-publisher-ui/src/App.tsx`
 - `solace-publisher-ui/src/ShowOutput.tsx`
 - `README.md`
-- `doc/architecture.md`
+- `docs/architecture.md`
 
 ## Consequences
 
