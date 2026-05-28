@@ -14,21 +14,43 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This class provides the values for the parameters to connect to a Solace Broker
+ * Implementation of {@link AccessProperties} that provides connection parameters
+ * for the Solace PubSub+ Broker.
  * <p>
- * See: <a href="https://docs.solace.com/API/API-Developer-Guide/Developer-Guide-Home.htm">...</a>
+ * This service supports retrieving configuration from either system environment
+ * variables or from provided {@link ParameterDTO} objects. It uses the Solace
+ * Java API properties for configuration.
+ * </p>
+ * <p>
+ * See: <a href="https://docs.solace.com/API/API-Developer-Guide/Developer-Guide-Home.htm">Solace Developer Guide</a>
+ * </p>
  */
 @Service
 public class AccessPropertiesImpl implements AccessProperties {
 
     private static final Logger logger = Logger.getLogger(AccessPropertiesImpl.class.getName());
+    /**
+     * Service to retrieve environment variables.
+     */
     private final EnvironmentConfig environmentConfig;
 
+    /**
+     * Constructs a new {@code AccessPropertiesImpl} with the required environment configuration.
+     *
+     * @param environmentConfig the service to retrieve environment variables
+     */
     @Autowired
     public AccessPropertiesImpl(EnvironmentConfig environmentConfig) {
         this.environmentConfig = environmentConfig;
     }
 
+    /**
+     * Extracts connection parameters from the provided DTO and validates them.
+     *
+     * @param parameterDTO the DTO containing host, vpn, username, and password
+     * @return a {@link Properties} object with the extracted values
+     * @throws IllegalArgumentException if any required parameter is missing or empty
+     */
     private Properties getPropertiesFromMethodParameters(ParameterDTO parameterDTO) {
 
         String host = parameterDTO.getHost();
@@ -51,6 +73,16 @@ public class AccessPropertiesImpl implements AccessProperties {
         return getProperties(host, vpnName, userName, password);
     }
 
+    /**
+     * Populates a {@link Properties} object with the core Solace connection settings.
+     * Includes recommended reconnection settings.
+     *
+     * @param host     the Solace broker host and port
+     * @param vpnName  the message VPN name
+     * @param userName the client username
+     * @param password the client password
+     * @return a {@link Properties} object configured for Solace connection
+     */
     @NotNull
     private Properties getProperties(String host, String vpnName, String userName, String password) {
         final Properties properties = new Properties();
@@ -64,6 +96,12 @@ public class AccessPropertiesImpl implements AccessProperties {
     }
 
 
+    /**
+     * Retrieves connection parameters from system environment variables and validates them.
+     *
+     * @return a {@link Properties} object with values from the environment
+     * @throws BrokerConfigurationException if required environment variables are missing
+     */
     private Properties getPropertiesFromEnv() {
 
         // Retrieve environment variables
@@ -105,6 +143,12 @@ public class AccessPropertiesImpl implements AccessProperties {
         return properties;
     }
 
+    /**
+     * Creates a {@link BrokerConfigurationException} with the specified error message.
+     *
+     * @param errorMessage the detail message
+     * @return a new exception instance
+     */
     private BrokerConfigurationException missingEnvironmentConfiguration(String errorMessage) {
         return new BrokerConfigurationException(errorMessage);
     }

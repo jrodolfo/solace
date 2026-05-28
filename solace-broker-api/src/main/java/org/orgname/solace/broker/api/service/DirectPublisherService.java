@@ -20,6 +20,7 @@ public interface DirectPublisherService {
      *
      * @param topicName                Solace destination/topic name
      * @param content                  outbound payload content
+     * @param deliveryMode             the {@link DeliveryMode} to use (Direct or Persistent)
      * @param solaceParametersOptional optional per-request broker parameters;
      *                                 empty means use server-side configuration
      * @return typed success response for the HTTP layer

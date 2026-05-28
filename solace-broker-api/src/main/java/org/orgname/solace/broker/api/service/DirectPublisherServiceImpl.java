@@ -39,18 +39,20 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
     private static final int APPROX_MSG_RATE_PER_SEC = 100;
     private final AccessProperties accessProperties;
 
+    /**
+     * Constructs a new {@code DirectPublisherServiceImpl} with the specified properties access service.
+     *
+     * @param accessProperties the service to retrieve Solace connection properties
+     */
     public DirectPublisherServiceImpl(AccessProperties accessProperties) {
         this.accessProperties = accessProperties;
     }
 
 
-    @Override
     /**
-     * Publishes one message to Solace and returns the typed HTTP success body.
-     *
-     * <p>If explicit broker parameters are supplied they are used only for this
-     * publish attempt. Otherwise server-side configuration is used.
+     * {@inheritDoc}
      */
+    @Override
     public PublishMessageResponseDTO sendMessage(String topicName, String content, DeliveryMode deliveryMode, Optional<ParameterDTO> solaceParametersOptional) {
         validateInput(topicName, content, deliveryMode);
         Properties properties = resolveProperties(solaceParametersOptional);
