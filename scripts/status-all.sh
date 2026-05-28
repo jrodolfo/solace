@@ -1,19 +1,48 @@
 #!/usr/bin/env bash
+#
+# status-all.sh
+#
+# Purpose:
+#   Checks and reports the status of all workspace components (API, UI, and Subscriber).
+#   It uses port checking, process matching, and health endpoints to determine status.
+#
+# Usage:
+#   ./status-all.sh
+#
+# Required tools/dependencies:
+#   - bash
+#   - curl
+#   - lsof
+#   - pgrep
+#   - ps
+#
+# Expected output:
+#   A formatted report showing status (RUNNING/NOT RUNNING), PIDs, health, and URLs.
+#
+# Exit behavior:
+#   Exits with code 0 on success.
 
 set -euo pipefail
 
+# Source common utility functions.
 source "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
+# Ensure required commands are available.
 require_command curl
 require_command lsof
 require_command pgrep
 
+# Configuration for status discovery.
 API_PORT="${API_PORT:-8081}"
 API_HEALTH_URL="${API_HEALTH_URL:-http://localhost:${API_PORT}/rest/actuator/health}"
 SUBSCRIBER_JAR_PATTERN="${SUBSCRIBER_JAR_PATTERN:-solace-subscriber-1.0-SNAPSHOT-all.jar}"
 UI_PROCESS_PATTERN="${UI_PROCESS_PATTERN:-vite}"
 LATEST_LOG_DIR_FILE="${LATEST_START_ALL_FILE:-${TMPDIR:-/tmp}/solace-start-all.latest}"
 
+# Function: print_separator
+# Purpose: Prints a formatted separator line with a label.
+# Inputs:
+#   $1 - The label to display.
 print_separator() {
   local label="$1"
   echo
@@ -21,6 +50,12 @@ print_separator() {
   echo
 }
 
+# Function: first_line_or_dash
+# Purpose: Returns the first line of the input or a dash if empty.
+# Inputs:
+#   $1 - The string to process.
+# Outputs:
+#   The first line or "-" to stdout.
 first_line_or_dash() {
   local value="${1:-}"
   if [[ -n "${value}" ]]; then
@@ -30,11 +65,23 @@ first_line_or_dash() {
   fi
 }
 
+# Function: listening_pid_for_port
+# Purpose: Finds the PID of the process listening on a specific TCP port.
+# Inputs:
+#   $1 - The TCP port number.
+# Outputs:
+#   The PID to stdout, if found.
 listening_pid_for_port() {
   local port="$1"
   lsof -tiTCP:"${port}" -sTCP:LISTEN 2>/dev/null | head -n 1 || true
 }
 
+# Function: listening_ports_for_pid
+# Purpose: Finds all TCP ports a specific PID is listening on.
+# Inputs:
+#   $1 - The PID.
+# Outputs:
+#   List of port numbers to stdout.
 listening_ports_for_pid() {
   local pid="$1"
   lsof -Pan -p "${pid}" -iTCP -sTCP:LISTEN 2>/dev/null \
@@ -42,16 +89,32 @@ listening_ports_for_pid() {
     | sort -u
 }
 
+# Function: command_for_pid
+# Purpose: Retrieves the full command line for a given PID.
+# Inputs:
+#   $1 - The PID.
+# Outputs:
+#   The command string to stdout.
 command_for_pid() {
   local pid="$1"
   ps -p "${pid}" -o command= 2>/dev/null | sed 's/^[[:space:]]*//' || true
 }
 
+# Function: find_matching_pid
+# Purpose: Finds a PID by matching a pattern against the full command line.
+# Inputs:
+#   $1 - The pattern to match.
+# Outputs:
+#   The matching PID to stdout, if found.
 find_matching_pid() {
   local pattern="$1"
   pgrep -f "${pattern}" 2>/dev/null | head -n 1 || true
 }
 
+# Function: latest_start_all_log_dir
+# Purpose: Retrieves the log directory from the last 'start-all.sh' execution.
+# Outputs:
+#   The directory path to stdout, if it exists.
 latest_start_all_log_dir() {
   if [[ ! -f "${LATEST_LOG_DIR_FILE}" ]]; then
     return
@@ -65,6 +128,12 @@ latest_start_all_log_dir() {
   fi
 }
 
+# Function: ui_url_from_start_all_log
+# Purpose: Extracts the UI URL from a component log file.
+# Inputs:
+#   $1 - The log directory path.
+# Outputs:
+#   The detected URL to stdout.
 ui_url_from_start_all_log() {
   local log_dir="$1"
   local ui_log_file="${log_dir}/ui.log"
@@ -79,6 +148,8 @@ ui_url_from_start_all_log() {
     | head -n 1 || true
 }
 
+# Function: api_status
+# Purpose: Checks and prints the status of the API component.
 api_status() {
   print_separator "api"
 
@@ -87,6 +158,7 @@ api_status() {
   local health_response=""
   local curl_exit_code=0
 
+  # Attempt to call health endpoint.
   set +e
   health_response="$(curl -fsS "${API_HEALTH_URL}" 2>/dev/null)"
   curl_exit_code=$?
@@ -115,6 +187,8 @@ api_status() {
   echo "pid: -"
 }
 
+# Function: ui_status
+# Purpose: Checks and prints the status of the UI component.
 ui_status() {
   print_separator "ui"
 
@@ -173,6 +247,8 @@ ui_status() {
   echo "source: live port detection"
 }
 
+# Function: subscriber_status
+# Purpose: Checks and prints the status of the subscriber component.
 subscriber_status() {
   print_separator "subscriber"
 
@@ -194,6 +270,7 @@ subscriber_status() {
   echo "command: $(first_line_or_dash "${command}")"
 }
 
+# Execution starts here.
 print_separator "workspace status"
 echo "checking api, ui, and subscriber"
 

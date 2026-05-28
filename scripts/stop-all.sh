@@ -1,13 +1,37 @@
 #!/usr/bin/env bash
+#
+# stop-all.sh
+#
+# Purpose:
+#   Finds and stops all running workspace components (API, UI, and Subscriber).
+#   It uses port identification and process pattern matching to find targets.
+#
+# Usage:
+#   ./stop-all.sh
+#
+# Required tools/dependencies:
+#   - bash
+#   - kill
+#   - lsof
+#   - pgrep
+#
+# Expected output:
+#   A status report for each component indicating if it was stopped or not running.
+#
+# Exit behavior:
+#   Exits with code 0 on success.
 
 set -euo pipefail
 
+# Source common utility functions.
 source "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
+# Ensure required commands are available.
 require_command kill
 require_command lsof
 require_command pgrep
 
+# Configuration for component discovery.
 API_PORT="${API_PORT:-8081}"
 SUBSCRIBER_JAR_PATTERN="${SUBSCRIBER_JAR_PATTERN:-solace-subscriber-1.0-SNAPSHOT-all.jar}"
 UI_PROCESS_PATTERNS=(
@@ -15,6 +39,10 @@ UI_PROCESS_PATTERNS=(
   "vite"
 )
 
+# Function: print_separator
+# Purpose: Prints a formatted separator line with a label.
+# Inputs:
+#   $1 - The label to display.
 print_separator() {
   local label="$1"
   echo
@@ -22,16 +50,34 @@ print_separator() {
   echo
 }
 
+# Function: listening_pid_for_port
+# Purpose: Finds the PID of the process listening on a specific TCP port.
+# Inputs:
+#   $1 - The TCP port number.
+# Outputs:
+#   The PID to stdout, if found.
 listening_pid_for_port() {
   local port="$1"
   lsof -tiTCP:"${port}" -sTCP:LISTEN 2>/dev/null | head -n 1 || true
 }
 
+# Function: find_matching_pids
+# Purpose: Finds all PIDs matching a pattern.
+# Inputs:
+#   $1 - The pattern to match.
+# Outputs:
+#   List of matching PIDs to stdout.
 find_matching_pids() {
   local pattern="$1"
   pgrep -f "${pattern}" 2>/dev/null || true
 }
 
+# Function: kill_pid_if_running
+# Purpose: Sends a SIGTERM to a PID if it exists.
+# Inputs:
+#   $1 - The PID to kill.
+# Exit behavior:
+#   Returns 0 if the process was killed, 1 otherwise.
 kill_pid_if_running() {
   local pid="$1"
   if [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null; then
@@ -42,6 +88,8 @@ kill_pid_if_running() {
   return 1
 }
 
+# Function: stop_api
+# Purpose: Stops the API component by finding the process listening on API_PORT.
 stop_api() {
   print_separator "api"
 
@@ -66,6 +114,8 @@ stop_api() {
   echo "action: failed to stop the process cleanly"
 }
 
+# Function: stop_ui
+# Purpose: Stops the UI component by matching UI_PROCESS_PATTERNS.
 stop_ui() {
   print_separator "ui"
 
@@ -87,6 +137,7 @@ stop_ui() {
     return
   fi
 
+  # Filter unique PIDs.
   local unique_pids=()
   local seen=" "
   for pid in "${candidate_pids[@]}"; do
@@ -117,6 +168,8 @@ stop_ui() {
   echo "action: sent TERM to matching UI process(es)"
 }
 
+# Function: stop_subscriber
+# Purpose: Stops the subscriber component by matching SUBSCRIBER_JAR_PATTERN.
 stop_subscriber() {
   print_separator "subscriber"
 
@@ -155,6 +208,7 @@ stop_subscriber() {
   echo "action: sent TERM to matching subscriber process(es)"
 }
 
+# Execution starts here.
 print_separator "workspace shutdown"
 echo "stopping api, ui, and subscriber when they are running"
 

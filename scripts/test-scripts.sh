@@ -1,14 +1,41 @@
 #!/usr/bin/env bash
+#
+# test-scripts.sh
+#
+# Purpose:
+#   Performs smoke tests and syntax checks on all scripts in the repository.
+#   It validates 'make help' output, script syntax, and specific behaviors like
+#   environment variable validation and UI auto-installation.
+#
+# Usage:
+#   ./test-scripts.sh
+#
+# Required tools/dependencies:
+#   - bash
+#   - make
+#   - Tools used by scripts (mktemp, etc.).
+#
+# Expected output:
+#   Progress messages for each test and a final "passed" message.
+#
+# Exit behavior:
+#   Exits with code 0 if all tests pass.
+#   Exits with code 1 if any assertion or test fails.
 
 set -euo pipefail
 
+# Directory and repository root discovery.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Temporary directories and files for testing.
 temp_status_dir=""
 temp_ui_dir=""
 temp_fake_bin_dir=""
 temp_npm_log_file=""
 
+# Function: cleanup
+# Purpose: Removes temporary directories and files created during testing.
 cleanup() {
   if [[ -n "${temp_status_dir}" ]]; then
     rm -rf "${temp_status_dir}"
@@ -23,8 +50,16 @@ cleanup() {
   fi
 }
 
+# Register cleanup on exit.
 trap cleanup EXIT
 
+# Function: assert_contains
+# Purpose: Verifies that a string contains a specific substring.
+# Inputs:
+#   $1 - The string to search (haystack).
+#   $2 - The substring to look for (needle).
+# Exit behavior:
+#   Exits with code 1 if the needle is not found.
 assert_contains() {
   local haystack="$1"
   local needle="$2"
@@ -37,6 +72,13 @@ assert_contains() {
   fi
 }
 
+# Function: assert_command_fails_with
+# Purpose: Verifies that a command fails and its output contains expected text.
+# Inputs:
+#   $1 - Expected error message.
+#   $@ - The command and arguments to execute.
+# Exit behavior:
+#   Exits with code 1 if the command succeeds or error message is missing.
 assert_command_fails_with() {
   local expected_text="$1"
   shift
@@ -54,6 +96,8 @@ assert_command_fails_with() {
 
   assert_contains "${output}" "${expected_text}"
 }
+
+# --- Tests ---
 
 echo "checking make help output"
 make_help_output="$(make -C "${REPO_ROOT}" help)"

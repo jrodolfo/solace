@@ -1,27 +1,60 @@
 #!/usr/bin/env bash
+#
+# start-all.sh
+#
+# Purpose:
+#   Starts all three components (API, UI, and Subscriber) in the background and
+#   monitors their logs. It provides a unified view of the workspace logs and
+#   announces readiness when components are healthy.
+#
+# Usage:
+#   ./start-all.sh
+#
+# Required tools/dependencies:
+#   - bash
+#   - curl
+#   - Solace environment variables (validated by common.sh).
+#
+# Expected output:
+#   Prefixed logs from all three components and readiness messages with URLs.
+#
+# Exit behavior:
+#   Runs indefinitely until interrupted (Ctrl+C) or one of the core processes exits.
+#   Cleans up (stops) all background processes on exit.
 
 set -euo pipefail
 
+# Directory where this script is located.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Source common utility functions.
 source "${SCRIPT_DIR}/common.sh"
 
+# State variables for process monitoring.
 PIDS=()
 PROCESS_NAMES=()
 LOG_FILES=()
 MONITOR_PIDS=()
 PROCESS_STATUSES=()
 SHUTTING_DOWN=0
+# Create a temporary directory for component logs.
 LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/solace-start-all.XXXXXX")"
 LATEST_LOG_DIR_FILE="${LATEST_START_ALL_FILE:-${TMPDIR:-/tmp}/solace-start-all.latest}"
+# Configuration for health checks.
 API_BASE_URL="${API_BASE_URL:-http://localhost:8081}"
 API_HEALTH_URL="${API_HEALTH_URL:-${API_BASE_URL}/rest/actuator/health}"
+# Tracking for readiness announcements.
 UI_URL_ANNOUNCED=0
 API_URL_ANNOUNCED=0
 WORKSPACE_URLS_ANNOUNCED=0
 
+# Ensure required tools and environment variables are present.
 require_command curl
 require_solace_env_vars "start-all.sh"
 
+# Function: print_separator
+# Purpose: Prints a formatted separator line with a label.
+# Inputs:
+#   $1 - The label to display.
 print_separator() {
   local label="$1"
   echo
@@ -29,11 +62,19 @@ print_separator() {
   echo
 }
 
+# Function: prefix_log_stream
+# Purpose: Adds a component prefix to each line of an input stream.
+# Inputs:
+#   $1 - The prefix to use (usually the component name).
 prefix_log_stream() {
   local component_name="$1"
   awk -v prefix="[${component_name}] " '{ print prefix $0; fflush() }'
 }
 
+# Function: update_running_process_statuses
+# Purpose: Updates the status of all currently running processes.
+# Inputs:
+#   $1 - The new status string.
 update_running_process_statuses() {
   local replacement_status="$1"
 
@@ -44,6 +85,8 @@ update_running_process_statuses() {
   done
 }
 
+# Function: mark_running_processes_stopped_by_user
+# Purpose: Marks all running processes as stopped by the user.
 mark_running_processes_stopped_by_user() {
   for i in "${!PROCESS_STATUSES[@]}"; do
     if [[ "${PROCESS_STATUSES[$i]}" == "running" ]]; then
@@ -52,6 +95,12 @@ mark_running_processes_stopped_by_user() {
   done
 }
 
+# Function: find_log_file
+# Purpose: Returns the path to the log file for a given component name.
+# Inputs:
+#   $1 - The component name.
+# Outputs:
+#   The log file path to stdout.
 find_log_file() {
   local target_name="$1"
   local i
@@ -63,6 +112,10 @@ find_log_file() {
   done
 }
 
+# Function: current_ui_local_url
+# Purpose: Attempts to extract the UI URL from the UI component logs.
+# Outputs:
+#   The detected URL to stdout, if found.
 current_ui_local_url() {
   local ui_log_file=""
   ui_log_file="$(find_log_file "ui")"
@@ -77,10 +130,16 @@ current_ui_local_url() {
     | head -n 1 || true
 }
 
+# Function: api_is_ready
+# Purpose: Checks if the API is healthy by calling its health endpoint.
+# Exit behavior:
+#   Returns 0 if the API is healthy, non-zero otherwise.
 api_is_ready() {
   curl -fsS "${API_HEALTH_URL}" >/dev/null 2>&1
 }
 
+# Function: announce_workspace_urls_if_ready
+# Purpose: Monitors component readiness and prints URLs once available.
 announce_workspace_urls_if_ready() {
   local ui_url=""
   ui_url="$(current_ui_local_url)"
@@ -111,24 +170,33 @@ announce_workspace_urls_if_ready() {
   fi
 }
 
+# Function: start_process
+# Purpose: Starts a component script in the background and sets up log monitoring.
+# Inputs:
+#   $1 - Component name.
+#   $2 - Path to the script to execute.
 start_process() {
   local name="$1"
   local script_path="$2"
   local log_file="${LOG_DIR}/${name}.log"
 
+  # Initialize/clear the log file.
   : >"${log_file}"
 
   print_separator "starting ${name}"
   echo "[${name}] streaming logs from ${log_file}"
 
+  # Start the component script.
   "${script_path}" >"${log_file}" 2>&1 &
   local process_pid=$!
 
+  # Start a monitor process to tail the logs with a prefix.
   (
     tail -n +1 -f "${log_file}" | prefix_log_stream "${name}"
   ) &
   local monitor_pid=$!
 
+  # Record process metadata.
   PIDS+=("${process_pid}")
   PROCESS_NAMES+=("${name}")
   LOG_FILES+=("${log_file}")
@@ -136,6 +204,8 @@ start_process() {
   PROCESS_STATUSES+=("running")
 }
 
+# Function: stop_log_monitors
+# Purpose: Kills the background log monitoring (tail) processes.
 stop_log_monitors() {
   if [[ "${#MONITOR_PIDS[@]}" -eq 0 ]]; then
     return
@@ -145,6 +215,8 @@ stop_log_monitors() {
   wait "${MONITOR_PIDS[@]}" 2>/dev/null || true
 }
 
+# Function: print_status_summary
+# Purpose: Prints the final status of all managed processes.
 print_status_summary() {
   print_separator "status summary"
   for i in "${!PROCESS_NAMES[@]}"; do
@@ -153,6 +225,8 @@ print_status_summary() {
   echo "- combined logs: ${LOG_DIR}"
 }
 
+# Function: cleanup
+# Purpose: Stops all components and log monitors on script exit.
 cleanup() {
   if [[ "${SHUTTING_DOWN}" -eq 1 ]]; then
     return
@@ -171,16 +245,21 @@ cleanup() {
   print_status_summary
 }
 
+# Function: handle_signal
+# Purpose: Handles termination signals (SIGINT, SIGTERM).
 handle_signal() {
   mark_running_processes_stopped_by_user
   exit 130
 }
 
+# Set up exit and signal traps.
 trap cleanup EXIT
 trap handle_signal INT TERM
 
+# Store the latest log directory for other scripts to reference.
 printf '%s\n' "${LOG_DIR}" >"${LATEST_LOG_DIR_FILE}"
 
+# Start all three components.
 start_process "api" "${SCRIPT_DIR}/start-broker-api.sh"
 start_process "ui" "${SCRIPT_DIR}/start-publisher-ui.sh"
 start_process "subscriber" "${SCRIPT_DIR}/start-subscriber.sh"
@@ -190,6 +269,7 @@ echo "started api, ui, and subscriber; watch the prefixed logs below"
 echo "a separate readiness block will print the api and ui urls once they are up"
 echo "press ctrl-c to stop all three processes"
 
+# Monitoring loop: check for process exits and readiness.
 while true; do
   for i in "${!PIDS[@]}"; do
     pid="${PIDS[$i]}"
@@ -207,6 +287,7 @@ while true; do
       PROCESS_STATUSES[$i]="exited with code ${exit_code}"
       PIDS[$i]=""
 
+      # The subscriber exiting is a warning but doesn't stop the whole stack.
       if [[ "${PROCESS_NAMES[$i]}" == "subscriber" ]]; then
         print_separator "subscriber warning"
         echo "subscriber exited with code ${exit_code}"
@@ -219,6 +300,7 @@ while true; do
         continue
       fi
 
+      # For other processes, failure triggers a full shutdown.
       update_running_process_statuses "stopped after ${PROCESS_NAMES[$i]} exited"
 
       echo
