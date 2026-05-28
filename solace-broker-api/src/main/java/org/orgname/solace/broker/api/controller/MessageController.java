@@ -48,6 +48,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
+/**
+ * REST controller for managing and publishing messages through the Solace PubSub+ Broker.
+ * <p>
+ * This controller provides endpoints for:
+ * <ul>
+ *   <li>Retrieving and exporting paged message history from the local database.</li>
+ *   <li>Publishing new messages to the Solace broker (DIRECT or PERSISTENT).</li>
+ *   <li>Retrying failed message publications.</li>
+ *   <li>Reconciling stale message states.</li>
+ * </ul>
+ * It integrates with {@link DirectPublisherService} for broker interactions and
+ * {@link Database} for message persistence and tracking.
+ */
 @RestController
 @RequestMapping("/api/v1/messages")
 @Tag(name = "messages", description = "the Solace Broker API")
@@ -64,13 +77,24 @@ public class MessageController {
     private final Database database;
     private final DirectPublisherService directPublisherService;
 
-    // The final field is initialized via this constructor
+    /**
+     * Constructs a new {@code MessageController} with the required services.
+     *
+     * @param database               the database service for message persistence.
+     * @param directPublisherService the service for publishing messages to Solace.
+     */
     @Autowired
     public MessageController(Database database, DirectPublisherService directPublisherService) {
         this.database = database;
         this.directPublisherService = directPublisherService;
     }
 
+    /**
+     * Extracts {@link ParameterDTO} (broker credentials) from a {@link MessageWrapperDTO}.
+     *
+     * @param wrapper the message wrapper containing the credentials.
+     * @return a {@link ParameterDTO} populated with the credentials.
+     */
     private static ParameterDTO getParameterDTO(MessageWrapperDTO wrapper) {
         ParameterDTO parameterDTO = new ParameterDTO();
         parameterDTO.setHost(wrapper.getHost());
@@ -80,6 +104,13 @@ public class MessageController {
         return parameterDTO;
     }
 
+    /**
+     * Parses a string into a {@link PublishStatus}.
+     *
+     * @param publishStatus the string to parse.
+     * @return the corresponding {@link PublishStatus}, or {@code null} if the input is empty.
+     * @throws BadRequestException if the input is not a valid status.
+     */
     private static PublishStatus parsePublishStatus(String publishStatus) {
         if (publishStatus == null || publishStatus.trim().isEmpty()) {
             return null;
@@ -92,6 +123,13 @@ public class MessageController {
         }
     }
 
+    /**
+     * Parses a string into a {@link DeliveryMode}.
+     *
+     * @param deliveryMode the string to parse.
+     * @return the corresponding {@link DeliveryMode}, or {@code null} if the input is empty.
+     * @throws BadRequestException if the input is not a valid delivery mode.
+     */
     private static DeliveryMode parseDeliveryMode(String deliveryMode) {
         if (deliveryMode == null || deliveryMode.trim().isEmpty()) {
             return null;
@@ -104,6 +142,13 @@ public class MessageController {
         }
     }
 
+    /**
+     * Parses a string into a {@link PayloadType}.
+     *
+     * @param payloadType the string to parse.
+     * @return the corresponding {@link PayloadType}, or {@code null} if the input is empty.
+     * @throws BadRequestException if the input is not a valid payload type.
+     */
     private static PayloadType parsePayloadType(String payloadType) {
         if (payloadType == null || payloadType.trim().isEmpty()) {
             return null;
@@ -116,6 +161,14 @@ public class MessageController {
         }
     }
 
+    /**
+     * Parses a string into a {@link LocalDateTime}.
+     *
+     * @param fieldName the name of the field being parsed (for error reporting).
+     * @param value     the string to parse (ISO-8601).
+     * @return the corresponding {@link LocalDateTime}, or {@code null} if the input is empty.
+     * @throws BadRequestException if the input is not a valid date-time.
+     */
     private static LocalDateTime parseDateTime(String fieldName, String value) {
         if (value == null || value.trim().isEmpty()) {
             return null;
@@ -128,6 +181,15 @@ public class MessageController {
         }
     }
 
+    /**
+     * Validates pagination and sorting parameters.
+     *
+     * @param page          the page index.
+     * @param size          the number of items per page.
+     * @param sortBy        the field to sort by.
+     * @param sortDirection the sort direction (ASC or DESC).
+     * @throws BadRequestException if any parameter is invalid.
+     */
     private static void validateReadParameters(int page, int size, String sortBy, String sortDirection) {
         if (page < 0) {
             throw new BadRequestException("page must be greater than or equal to 0");
@@ -146,6 +208,25 @@ public class MessageController {
         }
     }
 
+    /**
+     * Retrieves a paged list of stored messages based on various filters.
+     *
+     * @param page              zero-based page index.
+     * @param size              number of messages per page (max 100).
+     * @param destination       optional filter for message destination (topic).
+     * @param deliveryMode      optional filter for delivery mode (DIRECT, PERSISTENT).
+     * @param payloadType       optional filter for payload type (TEXT, BINARY, etc.).
+     * @param innerMessageId    optional filter for inner message ID.
+     * @param publishStatus     optional filter for publish status (PENDING, PUBLISHED, FAILED).
+     * @param stalePendingOnly  if true, returns only stale pending messages.
+     * @param createdAtFrom     optional lower bound for creation timestamp (ISO-8601).
+     * @param createdAtTo       optional upper bound for creation timestamp (ISO-8601).
+     * @param publishedAtFrom   optional lower bound for publication timestamp (ISO-8601).
+     * @param publishedAtTo     optional upper bound for publication timestamp (ISO-8601).
+     * @param sortBy            field to sort by (createdAt, priority, destination, innerMessageId).
+     * @param sortDirection     sort direction (asc, desc).
+     * @return a {@link PagedMessagesResponseDTO} containing the requested page of messages and summary counts.
+     */
     @Operation(summary = "List stored messages", description = "Return stored messages using paginated reads", tags = {"messages"})
     @ApiResponses(value = {
             @ApiResponse(
@@ -269,6 +350,23 @@ public class MessageController {
                 sortDirection);
     }
 
+    /**
+     * Exports filtered stored messages as a single JSON payload.
+     *
+     * @param destination       optional filter for message destination (topic).
+     * @param deliveryMode      optional filter for delivery mode (DIRECT, PERSISTENT).
+     * @param payloadType       optional filter for payload type (TEXT, BINARY, etc.).
+     * @param innerMessageId    optional filter for inner message ID.
+     * @param publishStatus     optional filter for publish status (PENDING, PUBLISHED, FAILED).
+     * @param stalePendingOnly  if true, returns only stale pending messages.
+     * @param createdAtFrom     optional lower bound for creation timestamp (ISO-8601).
+     * @param createdAtTo       optional upper bound for creation timestamp (ISO-8601).
+     * @param publishedAtFrom   optional lower bound for publication timestamp (ISO-8601).
+     * @param publishedAtTo     optional upper bound for publication timestamp (ISO-8601).
+     * @param sortBy            field to sort by (createdAt, priority, destination, innerMessageId).
+     * @param sortDirection     sort direction (asc, desc).
+     * @return a {@link FilteredMessagesExportResponseDTO} containing all matching messages.
+     */
     @Operation(summary = "Export filtered stored messages", description = "Return all stored messages matching the active filters as one JSON export payload", tags = {"messages"})
     @ApiResponses(value = {
             @ApiResponse(
@@ -379,6 +477,17 @@ public class MessageController {
         );
     }
 
+    /**
+     * Publishes a message to the Solace Broker.
+     * <p>
+     * The message is first persisted in the local database with a {@code PENDING} status.
+     * Then, it is sent to the broker via {@link DirectPublisherService}.
+     * Depending on the outcome, the database status is updated to {@code PUBLISHED} or {@code FAILED}.
+     *
+     * @param wrapper the message wrapper containing the payload, destination, and optional broker credentials.
+     * @return a {@link ResponseEntity} containing the publish result.
+     * @throws BadRequestException if the request is invalid.
+     */
     @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}) // Allow React app origin
     @Operation(summary = "Send a message", description = "Send a message to the Solace Broker", tags = {"messages"})
     @ApiResponses(value = {
@@ -538,12 +647,30 @@ public class MessageController {
         return ResponseEntity.status(201).body(responseMessage);
     }
 
+    /**
+     * Retries the publication of a previously failed message.
+     * <p>
+     * Only messages with a {@code FAILED} status that were published using server-side
+     * configuration are eligible for retry.
+     *
+     * @param messageId the ID of the message to retry.
+     * @return a {@link ResponseEntity} containing the publish result of the retry attempt.
+     */
     @PostMapping("/{messageId}/retry")
     public ResponseEntity<PublishMessageResponseDTO> retryMessage(@PathVariable Long messageId) {
         RetryExecutionResult retryResult = executeRetry(messageId);
         return ResponseEntity.ok(retryResult.response());
     }
 
+    /**
+     * Retries multiple stored messages in a single batch request.
+     * <p>
+     * Each message is processed according to the same eligibility rules as {@link #retryMessage(Long)}.
+     * The response contains the individual outcome for each requested ID.
+     *
+     * @param request a {@link BulkRetryRequestDTO} containing the list of message IDs to retry.
+     * @return a {@link ResponseEntity} with the batch results.
+     */
     @Operation(
             summary = "Retry multiple stored messages",
             description = "Retry multiple stored messages by id using the same eligibility rules as single-message retry",
@@ -684,6 +811,15 @@ public class MessageController {
         ));
     }
 
+    /**
+     * Reconciles a message that has been stuck in {@code PENDING} status for too long.
+     * <p>
+     * If a message is considered stale (exceeds the time-to-live threshold), this endpoint
+     * allows marking it as {@code FAILED} so it can be potentially retried or discarded.
+     *
+     * @param messageId the ID of the stale pending message.
+     * @return a {@link ResponseEntity} containing the updated {@link StoredMessageDTO}.
+     */
     @PostMapping("/{messageId}/reconcile-stale-pending")
     public ResponseEntity<StoredMessageDTO> reconcileStalePendingMessage(@PathVariable Long messageId) {
         Message storedMessage = database.findMessageById(messageId);
@@ -699,6 +835,13 @@ public class MessageController {
         return ResponseEntity.ok(new StoredMessageDTO(reconciledMessage));
     }
 
+    /**
+     * Marks a message as {@code PUBLISHED} in the database.
+     *
+     * @param messageId the ID of the message to update.
+     * @param topicName the destination topic (for logging).
+     * @throws IllegalStateException if the database update fails.
+     */
     private void markPublishedOrThrow(Long messageId, String topicName) {
         try {
             database.markMessagePublished(messageId);
@@ -712,6 +855,13 @@ public class MessageController {
         }
     }
 
+    /**
+     * Marks a message as {@code FAILED} in the database, handling any secondary errors.
+     *
+     * @param messageId     the ID of the message to update.
+     * @param topicName     the destination topic (for logging).
+     * @param failureReason the reason for the failure.
+     */
     private void markFailedSafely(Long messageId, String topicName, String failureReason) {
         try {
             database.markMessageFailed(messageId, failureReason);
@@ -724,6 +874,13 @@ public class MessageController {
         }
     }
 
+    /**
+     * Executes the retry logic for a single message.
+     *
+     * @param messageId the ID of the message to retry.
+     * @return the result of the retry attempt.
+     * @throws BadRequestException if the message is not eligible for retry.
+     */
     private RetryExecutionResult executeRetry(Long messageId) {
         Message storedMessage = database.findMessageById(messageId);
         if (storedMessage.getPublishStatus() != PublishStatus.FAILED) {
@@ -756,6 +913,12 @@ public class MessageController {
         return new RetryExecutionResult(responseMessage);
     }
 
+    /**
+     * Retrieves the current publish status of a message.
+     *
+     * @param messageId the ID of the message.
+     * @return the current {@link PublishStatus}, or {@code null} if the message is not found.
+     */
     private PublishStatus getCurrentPublishStatus(Long messageId) {
         try {
             return database.findMessageById(messageId).getPublishStatus();
@@ -764,6 +927,11 @@ public class MessageController {
         }
     }
 
+    /**
+     * Internal record to hold the result of a retry execution.
+     *
+     * @param response the response from the broker.
+     */
     private record RetryExecutionResult(PublishMessageResponseDTO response) {
     }
 }

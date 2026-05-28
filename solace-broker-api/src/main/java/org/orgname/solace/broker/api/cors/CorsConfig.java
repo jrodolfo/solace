@@ -6,14 +6,21 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * What is Cross-Origin Resource Sharing? Cross-origin resource sharing (CORS)
- * is a mechanism for integrating applications. CORS defines a way for client
- * web applications that are loaded in one domain to interact with resources
- * in a different domain.
+ * Configuration for Cross-Origin Resource Sharing (CORS).
+ * <p>
+ * CORS is a mechanism that allows client web applications loaded in one domain
+ * to interact with resources in a different domain. This class configures
+ * the allowed origins, methods, and headers for the API.
  */
 @Configuration
 public class CorsConfig {
 
+    /**
+     * Configures CORS mappings for the application.
+     * Allows requests from specified local development origins and supports common HTTP methods.
+     *
+     * @return a {@link WebMvcConfigurer} with CORS configurations applied.
+     */
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
