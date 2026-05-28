@@ -1,13 +1,17 @@
 package org.orgname.solace.broker.api.dto;
 
-import org.orgname.solace.broker.api.jpa.Message;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.orgname.solace.broker.api.jpa.DeliveryMode;
+import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.PayloadType;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Data
+@AllArgsConstructor
 public class FilteredMessagesExportResponseDTO {
 
     public record FiltersDTO(
@@ -31,19 +35,6 @@ public class FilteredMessagesExportResponseDTO {
     private final PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts;
     private final List<StoredMessageDTO> items;
 
-    public FilteredMessagesExportResponseDTO(
-            LocalDateTime exportedAt,
-            FiltersDTO filters,
-            long totalElements,
-            PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts,
-            List<StoredMessageDTO> items) {
-        this.exportedAt = exportedAt;
-        this.filters = filters;
-        this.totalElements = totalElements;
-        this.lifecycleCounts = lifecycleCounts;
-        this.items = items;
-    }
-
     public static FilteredMessagesExportResponseDTO fromMessages(
             LocalDateTime exportedAt,
             FiltersDTO filters,
@@ -56,25 +47,5 @@ public class FilteredMessagesExportResponseDTO {
                 lifecycleCounts,
                 messages.stream().map(StoredMessageDTO::new).toList()
         );
-    }
-
-    public LocalDateTime getExportedAt() {
-        return exportedAt;
-    }
-
-    public FiltersDTO getFilters() {
-        return filters;
-    }
-
-    public long getTotalElements() {
-        return totalElements;
-    }
-
-    public PagedMessagesResponseDTO.LifecycleCountsDTO getLifecycleCounts() {
-        return lifecycleCounts;
-    }
-
-    public List<StoredMessageDTO> getItems() {
-        return items;
     }
 }

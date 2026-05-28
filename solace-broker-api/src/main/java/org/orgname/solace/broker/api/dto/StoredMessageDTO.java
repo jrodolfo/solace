@@ -1,9 +1,11 @@
 package org.orgname.solace.broker.api.dto;
 
-import org.orgname.solace.broker.api.jpa.Message;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.orgname.solace.broker.api.jpa.DeliveryMode;
-import org.orgname.solace.broker.api.jpa.PublishStatus;
+import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Property;
+import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.service.MessageLifecycleSupport;
 
 import java.time.LocalDateTime;
@@ -11,6 +13,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Data
+@AllArgsConstructor
 public class StoredMessageDTO {
 
     private final Long id;
@@ -57,66 +61,6 @@ public class StoredMessageDTO {
             propertyMap.put(property.getPropertyKey(), property.getPropertyValue());
         }
         return propertyMap;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getInnerMessageId() {
-        return innerMessageId;
-    }
-
-    public String getDestination() {
-        return destination;
-    }
-
-    public DeliveryMode getDeliveryMode() {
-        return deliveryMode;
-    }
-
-    public Integer getPriority() {
-        return priority;
-    }
-
-    public PublishStatus getPublishStatus() {
-        return publishStatus;
-    }
-
-    public boolean isStalePending() {
-        return stalePending;
-    }
-
-    public String getFailureReason() {
-        return failureReason;
-    }
-
-    public LocalDateTime getPublishedAt() {
-        return publishedAt;
-    }
-
-    public boolean isRetrySupported() {
-        return retrySupported;
-    }
-
-    public String getRetryBlockedReason() {
-        return retryBlockedReason;
-    }
-
-    public Map<String, String> getProperties() {
-        return properties;
-    }
-
-    public StoredMessagePayloadDTO getPayload() {
-        return payload;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 
     private static boolean isStalePending(Message message) {

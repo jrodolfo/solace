@@ -18,14 +18,14 @@ public interface DirectPublisherService {
     /**
      * Publishes a message to the supplied Solace topic.
      *
-     * @param topicName Solace destination/topic name
-     * @param content outbound payload content
+     * @param topicName                Solace destination/topic name
+     * @param content                  outbound payload content
      * @param solaceParametersOptional optional per-request broker parameters;
      *                                 empty means use server-side configuration
      * @return typed success response for the HTTP layer
      * @throws IllegalArgumentException when input is invalid
-     * @throws RuntimeException when broker configuration, connection, or publish
-     *                          steps fail
+     * @throws RuntimeException         when broker configuration, connection, or publish
+     *                                  steps fail
      */
     PublishMessageResponseDTO sendMessage(String topicName, String content, DeliveryMode deliveryMode, Optional<ParameterDTO> solaceParametersOptional);
 }

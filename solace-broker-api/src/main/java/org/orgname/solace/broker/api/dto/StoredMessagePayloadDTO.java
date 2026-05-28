@@ -1,10 +1,14 @@
 package org.orgname.solace.broker.api.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.orgname.solace.broker.api.jpa.Payload;
 import org.orgname.solace.broker.api.jpa.PayloadType;
 
 import java.time.LocalDateTime;
 
+@Data
+@AllArgsConstructor
 public class StoredMessagePayloadDTO {
 
     private final PayloadType type;
@@ -17,21 +21,5 @@ public class StoredMessagePayloadDTO {
         this.content = payload.getContent();
         this.createdAt = payload.getCreatedAt();
         this.updatedAt = payload.getUpdatedAt();
-    }
-
-    public PayloadType getType() {
-        return type;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 }

@@ -1,7 +1,16 @@
 package org.orgname.solace.broker.api.jpa;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -9,7 +18,8 @@ import lombok.ToString;
 
 @Data
 @ToString(exclude = "message")
-@EqualsAndHashCode(callSuper = true, exclude = "message") // explicitly indicated that I want the call to the superclass’s equals and hashCode implementations
+@EqualsAndHashCode(callSuper = true, exclude = "message")
+// explicitly indicated that I want the call to the superclass’s equals and hashCode implementations
 @NoArgsConstructor
 @Entity
 @Table(name = "Payload")

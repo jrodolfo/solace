@@ -1,11 +1,11 @@
 package org.orgname.solace.broker.api.service;
 
-import org.orgname.solace.broker.api.dto.ParameterDTO;
-import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
 import com.solace.messaging.config.SolaceProperties;
 import com.solace.messaging.config.SolaceProperties.AuthenticationProperties;
 import com.solace.messaging.config.SolaceProperties.TransportLayerProperties;
 import jakarta.validation.constraints.NotNull;
+import org.orgname.solace.broker.api.dto.ParameterDTO;
+import org.orgname.solace.broker.api.exception.BrokerConfigurationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +15,8 @@ import java.util.logging.Logger;
 
 /**
  * This class provides the values for the parameters to connect to a Solace Broker
- *
- * See: https://docs.solace.com/Solace-PubSub-Messaging-APIs/API-Developer-Guide/Configuring-Connection-T.htm
+ * <p>
+ * See: <a href="https://docs.solace.com/API/API-Developer-Guide/Developer-Guide-Home.htm">...</a>
  */
 @Service
 public class AccessPropertiesImpl implements AccessProperties {

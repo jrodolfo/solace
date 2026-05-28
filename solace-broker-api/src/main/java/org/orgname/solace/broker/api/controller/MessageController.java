@@ -1,23 +1,22 @@
-
 package org.orgname.solace.broker.api.controller;
 
-import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
+import jakarta.validation.Valid;
 import org.orgname.solace.broker.api.dto.BulkRetryRequestDTO;
 import org.orgname.solace.broker.api.dto.BulkRetryResponseDTO;
 import org.orgname.solace.broker.api.dto.BulkRetryResultItemDTO;
 import org.orgname.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
-import org.orgname.solace.broker.api.dto.ParameterDTO;
+import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
+import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.dto.StoredMessageDTO;
 import org.orgname.solace.broker.api.exception.BadRequestException;
@@ -31,7 +30,13 @@ import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.orgname.solace.broker.api.service.MessageLifecycleSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -64,6 +69,81 @@ public class MessageController {
     public MessageController(Database database, DirectPublisherService directPublisherService) {
         this.database = database;
         this.directPublisherService = directPublisherService;
+    }
+
+    private static ParameterDTO getParameterDTO(MessageWrapperDTO wrapper) {
+        ParameterDTO parameterDTO = new ParameterDTO();
+        parameterDTO.setHost(wrapper.getHost());
+        parameterDTO.setVpnName(wrapper.getVpnName());
+        parameterDTO.setUserName(wrapper.getUserName());
+        parameterDTO.setPassword(wrapper.getPassword());
+        return parameterDTO;
+    }
+
+    private static PublishStatus parsePublishStatus(String publishStatus) {
+        if (publishStatus == null || publishStatus.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return PublishStatus.valueOf(publishStatus.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("publishStatus must be one of PENDING, PUBLISHED, FAILED", e);
+        }
+    }
+
+    private static DeliveryMode parseDeliveryMode(String deliveryMode) {
+        if (deliveryMode == null || deliveryMode.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return DeliveryMode.fromString(deliveryMode);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("deliveryMode must be one of DIRECT, NON_PERSISTENT, PERSISTENT", e);
+        }
+    }
+
+    private static PayloadType parsePayloadType(String payloadType) {
+        if (payloadType == null || payloadType.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return PayloadType.fromString(payloadType);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("payloadType must be one of TEXT, BINARY, JSON, XML", e);
+        }
+    }
+
+    private static LocalDateTime parseDateTime(String fieldName, String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            return LocalDateTime.parse(value.trim());
+        } catch (DateTimeParseException e) {
+            throw new BadRequestException(fieldName + " must be a valid ISO-8601 date-time", e);
+        }
+    }
+
+    private static void validateReadParameters(int page, int size, String sortBy, String sortDirection) {
+        if (page < 0) {
+            throw new BadRequestException("page must be greater than or equal to 0");
+        }
+        if (size < 1) {
+            throw new BadRequestException("size must be greater than or equal to 1");
+        }
+        if (size > MAX_PAGE_SIZE) {
+            throw new BadRequestException("size must be less than or equal to 100");
+        }
+        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
+            throw new BadRequestException("sortBy must be one of createdAt, priority, destination, innerMessageId");
+        }
+        if (!"asc".equalsIgnoreCase(sortDirection) && !"desc".equalsIgnoreCase(sortDirection)) {
+            throw new BadRequestException("sortDirection must be asc or desc");
+        }
     }
 
     @Operation(summary = "List stored messages", description = "Return stored messages using paginated reads", tags = {"messages"})
@@ -617,81 +697,6 @@ public class MessageController {
         Message reconciledMessage = database.markMessageFailed(messageId, STALE_PENDING_RECONCILIATION_REASON);
         logger.log(Level.INFO, "Reconciled stale pending message {0} as FAILED", messageId);
         return ResponseEntity.ok(new StoredMessageDTO(reconciledMessage));
-    }
-
-    private static ParameterDTO getParameterDTO(MessageWrapperDTO wrapper) {
-        ParameterDTO parameterDTO = new ParameterDTO();
-        parameterDTO.setHost(wrapper.getHost());
-        parameterDTO.setVpnName(wrapper.getVpnName());
-        parameterDTO.setUserName(wrapper.getUserName());
-        parameterDTO.setPassword(wrapper.getPassword());
-        return parameterDTO;
-    }
-
-    private static PublishStatus parsePublishStatus(String publishStatus) {
-        if (publishStatus == null || publishStatus.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            return PublishStatus.valueOf(publishStatus.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("publishStatus must be one of PENDING, PUBLISHED, FAILED", e);
-        }
-    }
-
-    private static DeliveryMode parseDeliveryMode(String deliveryMode) {
-        if (deliveryMode == null || deliveryMode.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            return DeliveryMode.fromString(deliveryMode);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("deliveryMode must be one of DIRECT, NON_PERSISTENT, PERSISTENT", e);
-        }
-    }
-
-    private static PayloadType parsePayloadType(String payloadType) {
-        if (payloadType == null || payloadType.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            return PayloadType.fromString(payloadType);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("payloadType must be one of TEXT, BINARY, JSON, XML", e);
-        }
-    }
-
-    private static LocalDateTime parseDateTime(String fieldName, String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return null;
-        }
-
-        try {
-            return LocalDateTime.parse(value.trim());
-        } catch (DateTimeParseException e) {
-            throw new BadRequestException(fieldName + " must be a valid ISO-8601 date-time", e);
-        }
-    }
-
-    private static void validateReadParameters(int page, int size, String sortBy, String sortDirection) {
-        if (page < 0) {
-            throw new BadRequestException("page must be greater than or equal to 0");
-        }
-        if (size < 1) {
-            throw new BadRequestException("size must be greater than or equal to 1");
-        }
-        if (size > MAX_PAGE_SIZE) {
-            throw new BadRequestException("size must be less than or equal to 100");
-        }
-        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
-            throw new BadRequestException("sortBy must be one of createdAt, priority, destination, innerMessageId");
-        }
-        if (!"asc".equalsIgnoreCase(sortDirection) && !"desc".equalsIgnoreCase(sortDirection)) {
-            throw new BadRequestException("sortDirection must be asc or desc");
-        }
     }
 
     private void markPublishedOrThrow(Long messageId, String topicName) {
