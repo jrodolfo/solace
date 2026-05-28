@@ -41,6 +41,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Unit tests for {@link MessageController}.
+ * This class uses a {@link MockMvc} setup with {@link StubDatabase} and {@link StubDirectPublisherService}
+ * to verify the controller's behavior, including message retrieval, filtering, and publishing flow.
+ */
 class MessageControllerTest {
 
     private StubDatabase database;
@@ -612,6 +617,10 @@ class MessageControllerTest {
         return message;
     }
 
+    /**
+     * Stub implementation of {@link DirectPublisherService} for testing.
+     * Allows simulating successful or failed message publication to a Solace broker.
+     */
     private static final class StubDirectPublisherService implements DirectPublisherService {
         private PublishMessageResponseDTO response;
         private IllegalArgumentException illegalArgumentException;
@@ -629,6 +638,9 @@ class MessageControllerTest {
         }
     }
 
+    /**
+     * In-memory database stub for testing the controller's logic without a real database.
+     */
     private static final class StubDatabase implements Database {
         private final List<Message> storedMessages = new ArrayList<>();
         private Message lastSavedMessage;

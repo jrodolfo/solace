@@ -13,6 +13,11 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+/**
+ * Unit tests for {@link AccessPropertiesImpl}.
+ * Verifies that broker connection properties are correctly extracted from environment variables
+ * or provided parameters.
+ */
 class AccessPropertiesImplTest {
 
     private static final String HOST = "test-host";

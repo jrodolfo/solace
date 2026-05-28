@@ -36,6 +36,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Integration tests for the Message API contract.
+ * This class verifies the full flow from the REST controller through the service layer
+ * to the database, ensuring that the API contract is respected and that messages
+ * are correctly persisted and retrieved. It uses an in-memory database and mocks
+ * the Solace broker integration.
+ */
 @SpringBootTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:message-api-contract-test;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false",
         "spring.datasource.driver-class-name=org.h2.Driver",

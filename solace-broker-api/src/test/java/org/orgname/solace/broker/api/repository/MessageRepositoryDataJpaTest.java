@@ -17,6 +17,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Data JPA tests for {@link MessageRepository}.
+ * This class tests the persistence layer and filtering capabilities of the message repository
+ * using an in-memory H2 database configured to mimic MySQL behavior.
+ */
 @DataJpaTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:message-repository-test;MODE=MySQL;DB_CLOSE_DELAY=-1",
         "spring.datasource.driver-class-name=org.h2.Driver",
@@ -168,6 +173,9 @@ class MessageRepositoryDataJpaTest {
         assertEquals(true, response.getItems().getFirst().isStalePending());
     }
 
+    /**
+     * Persists a message with default payload type (BINARY) and status (PUBLISHED).
+     */
     private void persistMessage(
             String innerMessageId,
             String destination,
@@ -177,6 +185,9 @@ class MessageRepositoryDataJpaTest {
         persistMessage(innerMessageId, destination, deliveryMode, PayloadType.BINARY, priority, PublishStatus.PUBLISHED, createdAt);
     }
 
+    /**
+     * Persists a message with the default payload type (BINARY).
+     */
     private void persistMessage(
             String innerMessageId,
             String destination,
@@ -187,6 +198,19 @@ class MessageRepositoryDataJpaTest {
         persistMessage(innerMessageId, destination, deliveryMode, PayloadType.BINARY, priority, publishStatus, createdAt);
     }
 
+    /**
+     * Persists a message to the database for testing purposes.
+     * This method directly interacts with the {@link EntityManager} to ensure that timestamps
+     * are correctly set, as they are often handled by JPA/Hibernate lifecycle events.
+     *
+     * @param innerMessageId the unique identifier for the message
+     * @param destination the Solace topic destination
+     * @param deliveryMode the delivery mode (e.g., PERSISTENT, DIRECT)
+     * @param payloadType the type of payload (e.g., TEXT, JSON, BINARY)
+     * @param priority the message priority
+     * @param publishStatus the current publish status
+     * @param createdAt the creation timestamp
+     */
     private void persistMessage(
             String innerMessageId,
             String destination,

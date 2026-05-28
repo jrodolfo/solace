@@ -13,6 +13,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.orgname.solace.broker.api.constants.Constants.ERROR_EMPTY_MESSAGE_OR_TOPIC_NAME;
 
+/**
+ * Unit tests for {@link DirectPublisherServiceImpl}.
+ * Verifies message publishing logic, input validation, and configuration handling
+ * for the Solace broker integration.
+ */
 class DirectPublisherServiceImplTest {
 
     private final DirectPublisherServiceImpl directPublisherService = new DirectPublisherServiceImpl(new StubAccessProperties());

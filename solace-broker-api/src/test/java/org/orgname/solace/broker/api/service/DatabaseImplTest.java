@@ -28,6 +28,11 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * Unit tests for {@link DatabaseImpl}.
+ * This class verifies the business logic for message persistence, status updates,
+ * and filtering, mocking the {@link MessageRepository}.
+ */
 class DatabaseImplTest {
 
     private MessageRepository messageRepository;

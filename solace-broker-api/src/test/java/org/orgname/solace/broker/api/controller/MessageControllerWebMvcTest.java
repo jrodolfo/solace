@@ -44,6 +44,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Web MVC tests for {@link MessageController}.
+ * This class uses {@link WebMvcTest} to perform integration tests on the web layer,
+ * mocking the service dependencies to verify request mapping, validation, and JSON serialization.
+ */
 @WebMvcTest(controllers = MessageController.class)
 @Import(ApiExceptionHandler.class)
 class MessageControllerWebMvcTest {
