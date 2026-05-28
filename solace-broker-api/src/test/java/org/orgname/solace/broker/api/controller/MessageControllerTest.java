@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.orgname.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import org.orgname.solace.broker.api.dto.InnerMessageDTO;
 import org.orgname.solace.broker.api.dto.MessageWrapperDTO;
-import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
+import org.orgname.solace.broker.api.dto.ParameterDTO;
 import org.orgname.solace.broker.api.dto.PayloadDTO;
 import org.orgname.solace.broker.api.dto.PublishMessageResponseDTO;
 import org.orgname.solace.broker.api.exception.ApiExceptionHandler;
@@ -16,8 +16,8 @@ import org.orgname.solace.broker.api.jpa.DeliveryMode;
 import org.orgname.solace.broker.api.jpa.Message;
 import org.orgname.solace.broker.api.jpa.Payload;
 import org.orgname.solace.broker.api.jpa.PayloadType;
-import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.jpa.Property;
+import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.service.Database;
 import org.orgname.solace.broker.api.service.DirectPublisherService;
 import org.orgname.solace.broker.api.service.MessageLifecycleSupport;
@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -807,7 +806,8 @@ class MessageControllerTest {
             Comparator<Message> comparator = switch (sortBy) {
                 case "priority" -> Comparator.comparing(Message::getPriority);
                 case "destination" -> Comparator.comparing(Message::getDestination, String.CASE_INSENSITIVE_ORDER);
-                case "innerMessageId" -> Comparator.comparing(Message::getInnerMessageId, String.CASE_INSENSITIVE_ORDER);
+                case "innerMessageId" ->
+                        Comparator.comparing(Message::getInnerMessageId, String.CASE_INSENSITIVE_ORDER);
                 default -> Comparator.comparing(Message::getCreatedAt);
             };
             return "asc".equalsIgnoreCase(sortDirection) ? comparator : comparator.reversed();

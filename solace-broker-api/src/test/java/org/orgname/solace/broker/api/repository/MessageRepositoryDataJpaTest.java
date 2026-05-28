@@ -1,5 +1,6 @@
 package org.orgname.solace.broker.api.repository;
 
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.orgname.solace.broker.api.dto.PagedMessagesResponseDTO;
 import org.orgname.solace.broker.api.jpa.DeliveryMode;
@@ -8,7 +9,6 @@ import org.orgname.solace.broker.api.jpa.Payload;
 import org.orgname.solace.broker.api.jpa.PayloadType;
 import org.orgname.solace.broker.api.jpa.PublishStatus;
 import org.orgname.solace.broker.api.service.DatabaseImpl;
-import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
@@ -219,12 +219,12 @@ class MessageRepositoryDataJpaTest {
 
         Message savedMessage = messageRepository.saveAndFlush(message);
         entityManager.createNativeQuery("""
-                update message
-                   set created_at = ?,
-                       updated_at = ?,
-                       published_at = ?
-                 where id = ?
-                """)
+                        update message
+                           set created_at = ?,
+                               updated_at = ?,
+                               published_at = ?
+                         where id = ?
+                        """)
                 .setParameter(1, createdAt)
                 .setParameter(2, createdAt)
                 .setParameter(3, publishStatus == PublishStatus.PUBLISHED ? createdAt : null)
