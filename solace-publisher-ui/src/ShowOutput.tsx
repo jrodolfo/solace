@@ -1,9 +1,19 @@
 import {AxiosResponse} from "axios";
 
+/**
+ * Properties for the ShowOutput component.
+ */
 interface ShowOutputProps {
+    /** The axios response to display. */
     res: AxiosResponse<any, any> | null;
 }
 
+/**
+ * Component that displays the details of an Axios response, including status, headers, data, and configuration.
+ * 
+ * @param props - Component properties.
+ * @returns A JSX element displaying the response details or a message if no response is provided.
+ */
 const ShowOutput: React.FC<ShowOutputProps> = ({ res }) => {
     if (!res) {
         return <div>No response to show</div>;

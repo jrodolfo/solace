@@ -8,17 +8,28 @@ import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
 import type {BulkRetryResponse, BulkRetryResultItem, DeliveryMode, FilteredMessagesExportResponse, PagedStoredMessagesResponse, PayloadType, StoredMessage} from "./StoredMessageTypes.ts";
 
+/**
+ * Represents a row in the message properties form.
+ */
 type MessagePropertyFormRow = {
+    /** The property key. */
     key: string;
+    /** The property value. */
     value: string;
 };
 
+/**
+ * Predefined browser view presets.
+ */
 type BrowserPreset =
     | "FAILED_TODAY"
     | "PUBLISHED_TODAY"
     | "PENDING_NOW"
     | "FAILED_LAST_24H";
 
+/**
+ * Keys for built-in browser views.
+ */
 type BuiltInBrowserViewKey =
     | "FAILED_TODAY"
     | "STALE_PENDING_ONLY"
@@ -51,52 +62,108 @@ const isAllowedDeliveryMode = (value: unknown): value is DeliveryMode =>
 const isAllowedPayloadType = (value: unknown): value is PayloadType =>
     typeof value === "string" && PAYLOAD_TYPE_OPTIONS.includes(value as PayloadType);
 
+/**
+ * The state of the browser query filters.
+ */
 type BrowserQueryState = {
+    /** Page number to fetch. */
     page: number;
+    /** Number of items per page. */
     size: number;
+    /** Destination filter. */
     destination: string;
+    /** Delivery mode filter. */
     deliveryMode: DeliveryMode | "";
+    /** Payload type filter. */
     payloadType?: PayloadType | "";
+    /** Inner message ID filter. */
     innerMessageId: string;
+    /** Publish status filter. */
     publishStatus: string;
+    /** Filter for stale pending messages only. */
     stalePendingOnly: boolean;
+    /** Creation date from filter (ISO). */
     createdAtFrom: string;
+    /** Creation date to filter (ISO). */
     createdAtTo: string;
+    /** Published date from filter (ISO). */
     publishedAtFrom: string;
+    /** Published date to filter (ISO). */
     publishedAtTo: string;
+    /** Field to sort by. */
     sortBy: string;
+    /** Sort direction ("asc" or "desc"). */
     sortDirection: string;
 };
 
+/**
+ * A user-saved browser view.
+ */
 type SavedBrowserView = {
+    /** The name given to the saved view. */
     name: string;
+    /** The query state associated with the view. */
     query: BrowserQueryState;
 };
 
+/**
+ * A built-in system browser view.
+ */
 type BuiltInBrowserView = {
+    /** The unique key for the built-in view. */
     key: BuiltInBrowserViewKey;
+    /** The display name of the view. */
     name: string;
+    /** The query state associated with the view. */
     query: BrowserQueryState;
 };
 
+/**
+ * Sections of the workspace.
+ */
 type WorkspaceSection = "PUBLISH" | "BROWSER";
 
+/**
+ * Details of the feedback after a browser-related action.
+ */
 type BrowserFeedbackDetails = {
+    /** List of added items. */
     added?: string[];
+    /** List of updated items. */
     updated?: string[];
+    /** List of skipped items. */
     skipped?: string[];
 };
 
+/**
+ * Entry in the history of actions performed on saved views.
+ */
 type SavedViewActionHistoryEntry = {
+    /** Unique identifier for the history entry. */
     id: string;
+    /** The action performed. */
     action: "saved" | "renamed" | "deleted" | "imported";
+    /** The label or name of the affected view. */
     label: string;
+    /** ISO timestamp when the action occurred. */
     timestamp: string;
 };
 
+/**
+ * Sorts an array of saved browser views by name alphabetically.
+ * 
+ * @param savedViews - The array of saved views to sort.
+ * @returns A new array of sorted saved views.
+ */
 const sortSavedViews = (savedViews: SavedBrowserView[]) =>
     [...savedViews].sort((left, right) => left.name.localeCompare(right.name));
 
+/**
+ * Normalizes a browser query state for persistence by removing empty optional fields.
+ * 
+ * @param query - The query state to normalize.
+ * @returns The normalized query state.
+ */
 const normalizeBrowserQueryForPersistence = (query: BrowserQueryState): BrowserQueryState => {
     const normalizedQuery: BrowserQueryState = {...query};
     if (!normalizedQuery.payloadType) {
@@ -105,6 +172,12 @@ const normalizeBrowserQueryForPersistence = (query: BrowserQueryState): BrowserQ
     return normalizedQuery;
 };
 
+/**
+ * Reads a File object as a text string.
+ * 
+ * @param file - The file to read.
+ * @returns A promise that resolves to the file content as text.
+ */
 const readFileAsText = (file: File) =>
     new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -113,6 +186,12 @@ const readFileAsText = (file: File) =>
         reader.readAsText(file);
     });
 
+/**
+ * Formats a saved view action history entry into a human-readable string.
+ * 
+ * @param entry - The history entry to format.
+ * @returns A formatted string describing the action.
+ */
 const formatSavedViewAction = (entry: SavedViewActionHistoryEntry) => {
     if (entry.action === "saved") {
         return `Saved "${entry.label}"`;
@@ -126,6 +205,12 @@ const formatSavedViewAction = (entry: SavedViewActionHistoryEntry) => {
     return `Imported ${entry.label}`;
 };
 
+/**
+ * Formats a timestamp into a relative time string (e.g., "5 minutes ago").
+ * 
+ * @param value - The ISO timestamp to format.
+ * @returns A relative time string.
+ */
 const formatSavedViewActionTimestamp = (value: string) => {
     const timestamp = new Date(value).getTime();
     const diffMs = Date.now() - timestamp;
@@ -148,6 +233,12 @@ const formatSavedViewActionTimestamp = (value: string) => {
     return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
 };
 
+/**
+ * Formats a timestamp into an absolute, human-readable date and time string.
+ * 
+ * @param value - The ISO timestamp to format.
+ * @returns An absolute time string.
+ */
 const formatSavedViewActionAbsoluteTimestamp = (value: string) =>
     new Intl.DateTimeFormat(undefined, {
         month: "short",
@@ -156,6 +247,10 @@ const formatSavedViewActionAbsoluteTimestamp = (value: string) =>
         minute: "2-digit"
     }).format(new Date(value));
 
+/**
+ * The main application component for the Solace Publisher UI.
+ * Provides functionality for publishing messages and browsing stored messages.
+ */
 function App() {
     const apiUrl = "http://localhost:8081/api/v1/messages/message";
     const messagesBaseUrl = "http://localhost:8081/api/v1/messages";
@@ -281,6 +376,11 @@ function App() {
 
     const builtInBrowserViews = getBuiltInBrowserViews();
 
+    /**
+     * Persists the list of saved browser views to local storage.
+     * 
+     * @param nextSavedViews - The array of saved views to persist.
+     */
     const persistSavedViews = (nextSavedViews: SavedBrowserView[]) => {
         const sortedSavedViews = sortSavedViews(nextSavedViews);
         setSavedViews(sortedSavedViews);
@@ -288,6 +388,12 @@ function App() {
         return sortedSavedViews;
     };
 
+    /**
+     * Records an action performed on a saved view in the action history.
+     * 
+     * @param action - The type of action performed.
+     * @param label - The label or name of the affected view.
+     */
     const recordSavedViewAction = (action: SavedViewActionHistoryEntry["action"], label: string) => {
         const nextHistory = [
             {
@@ -352,6 +458,12 @@ function App() {
         });
     };
 
+    /**
+     * Fetches messages from the Solace Broker API based on current filters and pagination.
+     * 
+     * @param overrides - Optional partial query state to override current filters.
+     * @returns A promise that resolves when the messages are fetched and state is updated.
+     */
     const fetchMessages = async (overrides?: Partial<BrowserQueryState>) => {
         const query = currentBrowserQuery(overrides);
         const nextPage = query.page;
@@ -815,6 +927,12 @@ function App() {
         setFilterPublishedAtTo(DEFAULT_BROWSER_PUBLISHED_AT_TO);
     };
 
+    /**
+     * Retries publishing a failed message.
+     * 
+     * @param message - The message object to retry.
+     * @returns A promise that resolves when the retry operation is complete.
+     */
     const retryFailedMessage = async (message: PagedStoredMessagesResponse["items"][number]) => {
         if (!message.id) {
             setBrowserMessage("Only stored messages with ids can be retried.");
@@ -851,6 +969,11 @@ function App() {
         }
     };
 
+    /**
+     * Retries all visible failed messages on the current page.
+     * 
+     * @returns A promise that resolves when the bulk retry operation is complete.
+     */
     const retryVisibleFailedMessages = async () => {
         const failedMessages = (messagesResponse?.items ?? []).filter(
             (message) => message.publishStatus === "FAILED" && message.retrySupported
@@ -911,6 +1034,12 @@ function App() {
         }
     };
 
+    /**
+     * Reconciles a message that is stuck in "PENDING" status.
+     * 
+     * @param message - The message object to reconcile.
+     * @returns A promise that resolves when the reconciliation is complete.
+     */
     const reconcileStalePendingMessage = async (message: PagedStoredMessagesResponse["items"][number]) => {
         const messageKey = String(message.id ?? message.innerMessageId);
         setReconcilingMessageId(messageKey);
@@ -940,6 +1069,13 @@ function App() {
         }
     };
 
+    /**
+     * Copies a string value to the system clipboard and shows feedback.
+     * 
+     * @param label - A label for the value being copied (used for feedback).
+     * @param value - The string value to copy.
+     * @returns A promise that resolves when the copy operation is complete.
+     */
     const copyToClipboard = async (label: string, value: string) => {
         try {
             await navigator.clipboard.writeText(value);
@@ -1166,6 +1302,12 @@ function App() {
     };
 
     // Submit handler
+    /**
+     * Handles the form submission for publishing a new message.
+     * 
+     * @param e - The form event.
+     * @returns A promise that resolves when the submission is complete.
+     */
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault(); // Stop browser refresh
         setShowResponse(false);
@@ -2590,6 +2732,12 @@ function toIsoLocalDateTime(value: string): string {
     return value.length === 16 ? `${value}:00` : value;
 }
 
+/**
+ * Converts a Date object to a string format compatible with datetime-local input fields.
+ * 
+ * @param value - The date to convert.
+ * @returns A string in "YYYY-MM-DDTHH:mm" format.
+ */
 function toDateTimeLocalValue(value: Date): string {
     const year = value.getFullYear();
     const month = `${value.getMonth() + 1}`.padStart(2, "0");
@@ -2599,18 +2747,36 @@ function toDateTimeLocalValue(value: Date): string {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+/**
+ * Returns a new Date object representing the start of the day (00:00:00.000) for the given date.
+ * 
+ * @param value - The reference date.
+ * @returns A new Date object at the start of the day.
+ */
 function startOfDay(value: Date): Date {
     const nextValue = new Date(value);
     nextValue.setHours(0, 0, 0, 0);
     return nextValue;
 }
 
+/**
+ * Returns a new Date object representing the end of the day (23:59:00.000) for the given date.
+ * 
+ * @param value - The reference date.
+ * @returns A new Date object at the end of the day.
+ */
 function endOfDay(value: Date): Date {
     const nextValue = new Date(value);
     nextValue.setHours(23, 59, 0, 0);
     return nextValue;
 }
 
+/**
+ * Generates the list of built-in browser views based on the current time.
+ * 
+ * @param now - The reference time (defaults to current time).
+ * @returns An array of built-in browser views.
+ */
 function getBuiltInBrowserViews(now: Date = new Date()): BuiltInBrowserView[] {
     const todayStart = startOfDay(now);
     const todayEnd = endOfDay(now);
@@ -2695,6 +2861,12 @@ function getBuiltInBrowserViews(now: Date = new Date()): BuiltInBrowserView[] {
     ];
 }
 
+/**
+ * Formats an ISO timestamp into a human-readable date and time string.
+ * 
+ * @param value - The ISO timestamp to format.
+ * @returns A formatted date string, or "not available" if the value is missing.
+ */
 function formatTimestamp(value?: string | null): string {
     if (!value) {
         return "not available";
