@@ -30,10 +30,18 @@ public class DirectReceiver {
     private volatile boolean hasDetectedDiscard = false;  // detected any discards yet?
     private volatile boolean isShutdown = false;          // are we done yet?
 
+    /**
+     * Default constructor for {@link DirectReceiver} using default {@link AccessProperties}.
+     */
     public DirectReceiver() {
         this(new AccessProperties());
     }
 
+    /**
+     * Constructor for {@link DirectReceiver} with a custom {@link AccessProperties}.
+     *
+     * @param accessProperties the properties resolver for Solace connection
+     */
     DirectReceiver(AccessProperties accessProperties) {
         this.accessProperties = accessProperties;
     }
@@ -48,6 +56,8 @@ public class DirectReceiver {
     /**
      * Runs the subscriber and converts fatal startup/runtime errors into a
      * process exit code suitable for wrapper scripts.
+     *
+     * @return 0 if the subscriber runs and shuts down successfully, 1 otherwise
      */
     int runSafely() {
         try {
@@ -64,6 +74,10 @@ public class DirectReceiver {
 
     /**
      * Runs the subscriber lifecycle until shutdown is requested.
+     * <p>This method connects to the broker, starts the receiver, and waits for a shutdown signal.
+     *
+     * @throws SubscriberConfigurationException if the connection properties are invalid
+     * @throws RuntimeException if a fatal error occurs during execution
      */
     void run() {
         logger.log(Level.INFO, "Initializing subscriber.");
@@ -85,6 +99,9 @@ public class DirectReceiver {
     /**
      * Builds the Solace messaging service from already-resolved connection
      * properties.
+     *
+     * @param properties the {@link Properties} for the Solace connection
+     * @return a configured {@link MessagingService} instance
      */
     MessagingService buildMessagingService(Properties properties) {
         return MessagingService.builder(ConfigurationProfile.V1)
@@ -95,6 +112,8 @@ public class DirectReceiver {
     /**
      * Registers runtime listeners used for interruption and reconnection
      * visibility.
+     *
+     * @param messagingService the service to attach listeners to
      */
     void configureMessagingServiceListeners(MessagingService messagingService) {
         messagingService.addServiceInterruptionListener(serviceEvent ->
@@ -107,6 +126,9 @@ public class DirectReceiver {
 
     /**
      * Creates and starts the direct receiver subscribed to the configured topic.
+     *
+     * @param messagingService the connected messaging service
+     * @return the started {@link DirectMessageReceiver}
      */
     DirectMessageReceiver createAndStartReceiver(MessagingService messagingService) {
         final DirectMessageReceiver receiver = messagingService.createDirectMessageReceiverBuilder()
@@ -121,6 +143,8 @@ public class DirectReceiver {
 
     /**
      * Creates the async inbound-message handler used during normal runtime.
+     *
+     * @return a {@link MessageHandler} for processing inbound messages
      */
     MessageHandler createMessageHandler() {
         return inboundMessage -> {
@@ -134,6 +158,9 @@ public class DirectReceiver {
 
     /**
      * Updates in-memory counters for throughput and discard reporting.
+     *
+     * @param brokerDiscardIndication true if the broker indicated a message discard
+     * @param internalDiscardIndication true if the internal API indicated a message discard
      */
     void handleInboundMessageState(boolean brokerDiscardIndication, boolean internalDiscardIndication) {
         msgRecvCounter++;
@@ -173,6 +200,9 @@ public class DirectReceiver {
 
     /**
      * Terminates receiver resources and disconnects from the broker.
+     *
+     * @param receiver the receiver to terminate
+     * @param messagingService the service to disconnect
      */
     void shutdown(DirectMessageReceiver receiver, MessagingService messagingService) {
         if (!shutdownTriggered.compareAndSet(false, true)) {
@@ -196,6 +226,10 @@ public class DirectReceiver {
     /**
      * Registers a JVM shutdown hook so SIGTERM and normal JVM shutdown paths use
      * the same cleanup sequence as interactive shutdown.
+     *
+     * @param receiver the receiver to terminate on shutdown
+     * @param messagingService the service to disconnect on shutdown
+     * @return the created {@link Thread} used as a shutdown hook
      */
     Thread registerShutdownHook(DirectMessageReceiver receiver, MessagingService messagingService) {
         Thread shutdownHook = new Thread(
@@ -206,6 +240,11 @@ public class DirectReceiver {
         return shutdownHook;
     }
 
+    /**
+     * Removes a previously registered shutdown hook.
+     *
+     * @param shutdownHook the hook to remove
+     */
     void removeShutdownHook(Thread shutdownHook) {
         try {
             Runtime.getRuntime().removeShutdownHook(shutdownHook);

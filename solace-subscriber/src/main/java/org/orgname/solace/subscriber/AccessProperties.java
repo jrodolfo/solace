@@ -24,10 +24,20 @@ public class AccessProperties {
     private static final Logger logger = Logger.getLogger(AccessProperties.class.getName());
     private final Function<String, String> environmentProvider;
 
+    /**
+     * Default constructor for creating an instance of {@link AccessProperties}
+     * that uses {@link System#getenv(String)} as the environment variable provider.
+     */
     public AccessProperties() {
         this(System::getenv);
     }
 
+    /**
+     * Constructor for creating an instance of {@link AccessProperties} with a
+     * custom environment variable provider.
+     *
+     * @param environmentProvider the function used to resolve environment variables
+     */
     AccessProperties(Function<String, String> environmentProvider) {
         this.environmentProvider = environmentProvider;
     }
@@ -71,6 +81,9 @@ public class AccessProperties {
     /**
      * Returns publisher-style properties. This exists for naming parity with
      * the broker API access-properties service.
+     *
+     * @return a {@link Properties} object containing Solace connection properties
+     * @throws SubscriberConfigurationException if required environment variables are missing
      */
     public Properties getPropertiesPublisher() {
         return getProperties();
@@ -79,6 +92,15 @@ public class AccessProperties {
     /**
      * Returns receiver properties, including direct-subscription reapply after
      * reconnect so the subscriber resumes topic observation automatically.
+     *
+     * <p>The {@code SolaceProperties.ServiceProperties.RECEIVER_DIRECT_SUBSCRIPTION_REAPPLY}
+     * property is set to {@code true} to ensure that if the connection to the Solace
+     * broker is lost and then re-established, the subscriber will automatically
+     * re-subscribe to its topics.
+     *
+     * @return a {@link Properties} object containing Solace connection properties
+     *         configured for a receiver
+     * @throws SubscriberConfigurationException if required environment variables are missing
      */
     public Properties getPropertiesReceiver() {
         final Properties properties = getProperties();
