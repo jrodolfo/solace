@@ -1,13 +1,16 @@
 -- Reference schema for the current solace-broker-api persistence model.
 -- This file documents the table structure implied by the JPA entities.
--- The application model is the source of truth; keep this file aligned with:
---   - src/main/java/.../jpa/Message.java
---   - src/main/java/.../jpa/Payload.java
---   - src/main/java/.../jpa/Property.java
---   - src/main/java/.../jpa/Auditable.java
+-- This is documentation, not a migration script. The application model is the
+-- source of truth; keep this file aligned with:
+--   - solace-broker-api/src/main/java/net/jrodolfo/solace/broker/api/jpa/Message.java
+--   - solace-broker-api/src/main/java/net/jrodolfo/solace/broker/api/jpa/Payload.java
+--   - solace-broker-api/src/main/java/net/jrodolfo/solace/broker/api/jpa/Property.java
+--   - solace-broker-api/src/main/java/net/jrodolfo/solace/broker/api/jpa/Auditable.java
 
 -- Main Message table.
 -- Each row represents one stored publish attempt and its lifecycle state.
+-- delivery_mode stores one of: DIRECT, NON_PERSISTENT, PERSISTENT.
+-- publish_status stores one of: PENDING, PUBLISHED, FAILED.
 CREATE TABLE Message (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     inner_message_id VARCHAR(255) NOT NULL,
@@ -41,6 +44,7 @@ CREATE TABLE Property (
 );
 
 -- One-to-One: each Message must have exactly one payload.
+-- type stores one of: TEXT, BINARY, JSON, XML.
 CREATE TABLE Payload (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     type VARCHAR(255) NOT NULL,
@@ -53,7 +57,5 @@ CREATE TABLE Payload (
 );
 
 -- Notes:
--- 1. The older Parameter table was intentionally removed. Connection parameters
---    are no longer persisted with stored messages.
--- 2. publish_status currently stores one of: PENDING, PUBLISHED, FAILED.
--- 3. inner_message_id is required but intentionally not unique.
+-- 1. Connection parameters are not persisted with stored messages.
+-- 2. inner_message_id is required but intentionally not unique.
