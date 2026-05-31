@@ -23,7 +23,7 @@ Example JSON request:
       "property02": "value02"
     },
     "payload": {
-      "type": "binary",
+      "type": "BINARY",
       "content": "01001000 01100101 01101100 01101100"
     }
   }

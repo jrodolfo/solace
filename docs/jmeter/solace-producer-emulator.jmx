@@ -197,7 +197,7 @@
       &quot;thread&quot;: &quot;${__threadNum}&quot;&#xd;
     },&#xd;
     &quot;payload&quot;: {&#xd;
-      &quot;type&quot;: &quot;binary&quot;,&#xd;
+      &quot;type&quot;: &quot;BINARY&quot;,&#xd;
       &quot;content&quot;: &quot;01001000 01100101 01101100 01101100&quot;&#xd;
     }&#xd;
   }&#xd;

@@ -41,9 +41,9 @@ runtime flexibility.
 
 ## Primary Implementation
 
-- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/controller/MessageController.java`
-- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/service/DirectPublisherService.java`
-- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/service/DirectPublisherServiceImpl.java`
+- `solace-broker-api/src/main/java/net/jrodolfo/solace/broker/api/controller/MessageController.java`
+- `solace-broker-api/src/main/java/net/jrodolfo/solace/broker/api/service/DirectPublisherService.java`
+- `solace-broker-api/src/main/java/net/jrodolfo/solace/broker/api/service/DirectPublisherServiceImpl.java`
 
 ## Consequences
 

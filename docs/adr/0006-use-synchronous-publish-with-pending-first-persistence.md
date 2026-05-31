@@ -47,8 +47,8 @@ attempt that only writes after the broker outcome is known.
 
 ## Primary Implementation
 
-- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/controller/MessageController.java`
-- `solace-broker-api/src/main/java/org/orgname/solace/broker/api/service/DatabaseImpl.java`
+- `solace-broker-api/src/main/java/net/jrodolfo/solace/broker/api/controller/MessageController.java`
+- `solace-broker-api/src/main/java/net/jrodolfo/solace/broker/api/service/DatabaseImpl.java`
 
 ## Consequences
 

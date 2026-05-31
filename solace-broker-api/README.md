@@ -159,6 +159,8 @@ Successful response, `201 Created`:
 }
 ```
 
+This publish response is intentionally small. Stored-message lifecycle details are available through `GET /all` and `GET /export`.
+
 `innerMessageId` is required as part of the request payload, but it is treated as descriptive message metadata. The API does not enforce uniqueness for this field, and duplicate `innerMessageId` values are allowed across separate stored publish attempts.
 
 `payload.type` is a typed application field, not free text. Supported values are:
@@ -258,6 +260,8 @@ Successful response, `200 OK`:
   "content": "01001000 01100101 01101100"
 }
 ```
+
+This retry response is intentionally small. The updated stored-message lifecycle state is available through `GET /all` and `GET /export`.
 
 Rejected retry, `400 Bad Request`:
 
@@ -369,7 +373,18 @@ Successful response, `200 OK`:
   "publishStatus": "FAILED",
   "failureReason": "Marked as FAILED after manual reconciliation of a stale PENDING message",
   "publishedAt": null,
-  "stalePending": false
+  "stalePending": false,
+  "retrySupported": true,
+  "retryBlockedReason": null,
+  "properties": {},
+  "payload": {
+    "type": "BINARY",
+    "content": "01001000 01100101 01101100",
+    "createdAt": "2026-04-21T09:55:00",
+    "updatedAt": "2026-04-21T09:55:00"
+  },
+  "createdAt": "2026-04-21T09:55:00",
+  "updatedAt": "2026-04-21T10:05:00"
 }
 ```
 
@@ -513,6 +528,8 @@ Representative response:
       "failureReason": null,
       "publishedAt": "2026-04-20T19:55:10",
       "stalePending": false,
+      "retrySupported": false,
+      "retryBlockedReason": "Message is already published.",
       "properties": {
         "property01": "value01"
       },
@@ -535,6 +552,8 @@ Representative response:
       "failureReason": "Failed to publish message to Solace broker",
       "publishedAt": null,
       "stalePending": false,
+      "retrySupported": true,
+      "retryBlockedReason": null,
       "properties": {},
       "payload": {
         "type": "BINARY",

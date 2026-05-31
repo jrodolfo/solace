@@ -67,7 +67,7 @@ Command:
                   "property02": "value02"
                 },
                 "payload": {
-                  "type": "binary",
+                  "type": "BINARY",
                   "content": "01001000 01100101 01101100 01101100"
                 }
               }
@@ -123,11 +123,11 @@ Response example:
      "first": true,
      "last": true,
      "lifecycleCounts": {
-       "pending": 0,
-       "published": 1,
-       "failed": 0,
-       "stalePending": 0,
-       "retryable": 0,
-       "notRetryable": 1
+       "publishedCount": 1,
+       "failedCount": 0,
+       "pendingCount": 0,
+       "stalePendingCount": 0,
+       "retryableFailedCount": 0,
+       "nonRetryableFailedCount": 1
      }
    }
