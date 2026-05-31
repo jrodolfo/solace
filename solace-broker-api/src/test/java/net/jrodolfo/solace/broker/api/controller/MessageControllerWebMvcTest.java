@@ -3,6 +3,7 @@ package net.jrodolfo.solace.broker.api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import net.jrodolfo.solace.broker.api.config.BrokerApiProperties;
 import net.jrodolfo.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import net.jrodolfo.solace.broker.api.dto.InnerMessageDTO;
 import net.jrodolfo.solace.broker.api.dto.MessageWrapperDTO;
@@ -25,11 +26,11 @@ import net.jrodolfo.solace.broker.api.service.MessageLifecycleSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -53,6 +54,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(controllers = MessageController.class)
 @Import(ApiExceptionHandler.class)
+@EnableConfigurationProperties(BrokerApiProperties.class)
 class MessageControllerWebMvcTest {
 
     @Autowired
@@ -62,7 +64,7 @@ class MessageControllerWebMvcTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private MessageController controller;
+    private BrokerApiProperties brokerApiProperties;
 
     @MockBean
     private Database database;
@@ -72,8 +74,8 @@ class MessageControllerWebMvcTest {
 
     @AfterEach
     void resetControllerTuning() {
-        ReflectionTestUtils.setField(controller, "maxBulkRetryBatchSize", 100);
-        ReflectionTestUtils.setField(controller, "stalePendingThreshold", MessageLifecycleSupport.DEFAULT_STALE_PENDING_THRESHOLD);
+        brokerApiProperties.getRetry().setMaxBatchSize(100);
+        brokerApiProperties.getLifecycle().setStalePendingThreshold(MessageLifecycleSupport.DEFAULT_STALE_PENDING_THRESHOLD);
     }
 
     @Test
@@ -468,7 +470,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldReturnBadRequestWhenBulkRetryRequestExceedsConfiguredLimit() throws Exception {
-        ReflectionTestUtils.setField(controller, "maxBulkRetryBatchSize", 2);
+        brokerApiProperties.getRetry().setMaxBatchSize(2);
 
         mockMvc.perform(post("/api/v1/messages/retry")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -3,6 +3,7 @@ package net.jrodolfo.solace.broker.api.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import net.jrodolfo.solace.broker.api.config.BrokerApiProperties;
 import net.jrodolfo.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import net.jrodolfo.solace.broker.api.dto.InnerMessageDTO;
 import net.jrodolfo.solace.broker.api.dto.MessageWrapperDTO;
@@ -26,7 +27,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.time.Duration;
@@ -52,6 +52,7 @@ class MessageControllerTest {
 
     private StubDatabase database;
     private StubDirectPublisherService directPublisherService;
+    private BrokerApiProperties brokerApiProperties;
     private MessageController controller;
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
@@ -61,7 +62,8 @@ class MessageControllerTest {
     void setUp() {
         database = new StubDatabase();
         directPublisherService = new StubDirectPublisherService();
-        controller = new MessageController(database, directPublisherService);
+        brokerApiProperties = new BrokerApiProperties();
+        controller = new MessageController(database, directPublisherService, brokerApiProperties);
         validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
@@ -492,7 +494,7 @@ class MessageControllerTest {
 
     @Test
     void shouldReturnBadRequestWhenBulkRetryRequestExceedsConfiguredLimit() throws Exception {
-        ReflectionTestUtils.setField(controller, "maxBulkRetryBatchSize", 2);
+        brokerApiProperties.getRetry().setMaxBatchSize(2);
 
         mockMvc.perform(post("/api/v1/messages/retry")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -539,7 +541,7 @@ class MessageControllerTest {
 
     @Test
     void shouldUseConfiguredThresholdWhenReconcilingPendingMessage() throws Exception {
-        ReflectionTestUtils.setField(controller, "stalePendingThreshold", Duration.ofDays(3650));
+        brokerApiProperties.getLifecycle().setStalePendingThreshold(Duration.ofDays(3650));
         Message pendingMessage = storedMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
         pendingMessage.setId(3L);
         pendingMessage.setPublishStatus(PublishStatus.PENDING);

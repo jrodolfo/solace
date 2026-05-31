@@ -2,6 +2,7 @@ package net.jrodolfo.solace.broker.api;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
  * The entry point for the Solace Broker API Spring Boot application.
@@ -9,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * allowing for message publishing and management.
  */
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class SolaceBrokerAPIApplication {
     /**
      * Main method to start the Solace Broker API application.

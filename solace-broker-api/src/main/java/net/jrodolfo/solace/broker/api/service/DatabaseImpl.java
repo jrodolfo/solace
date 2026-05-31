@@ -2,11 +2,13 @@ package net.jrodolfo.solace.broker.api.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import net.jrodolfo.solace.broker.api.config.BrokerApiProperties;
 import net.jrodolfo.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import net.jrodolfo.solace.broker.api.dto.InnerMessageDTO;
 import net.jrodolfo.solace.broker.api.dto.MessageWrapperDTO;
 import net.jrodolfo.solace.broker.api.dto.PagedMessagesResponseDTO;
 import net.jrodolfo.solace.broker.api.dto.PayloadDTO;
+import net.jrodolfo.solace.broker.api.dto.StoredMessageDTO;
 import net.jrodolfo.solace.broker.api.jpa.DeliveryMode;
 import net.jrodolfo.solace.broker.api.jpa.Message;
 import net.jrodolfo.solace.broker.api.jpa.Payload;
@@ -14,14 +16,12 @@ import net.jrodolfo.solace.broker.api.jpa.PayloadType;
 import net.jrodolfo.solace.broker.api.jpa.Property;
 import net.jrodolfo.solace.broker.api.jpa.PublishStatus;
 import net.jrodolfo.solace.broker.api.repository.MessageRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,20 +55,16 @@ public class DatabaseImpl implements Database {
      * Repository for performing CRUD operations on {@link Message} entities.
      */
     private final MessageRepository messageRepository;
-
-    /**
-     * Threshold after which a pending message is considered stale.
-     */
-    @Value("${app.lifecycle.stale-pending-threshold:PT5M}")
-    private Duration stalePendingThreshold = MessageLifecycleSupport.DEFAULT_STALE_PENDING_THRESHOLD;
+    private final BrokerApiProperties brokerApiProperties;
 
     /**
      * Constructs a new {@code DatabaseImpl} with the specified message repository.
      *
      * @param messageRepository the repository for {@link Message} entities
      */
-    public DatabaseImpl(MessageRepository messageRepository) {
+    public DatabaseImpl(MessageRepository messageRepository, BrokerApiProperties brokerApiProperties) {
         this.messageRepository = messageRepository;
+        this.brokerApiProperties = brokerApiProperties;
     }
 
 
@@ -107,7 +103,7 @@ public class DatabaseImpl implements Database {
         PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts = lifecycleCounts(specification);
         return new PagedMessagesResponseDTO(
                 messageRepository.findAll(specification, pageRequest),
-                message -> new net.jrodolfo.solace.broker.api.dto.StoredMessageDTO(message, stalePendingThreshold),
+                message -> new StoredMessageDTO(message, brokerApiProperties.getLifecycle().getStalePendingThreshold()),
                 lifecycleCounts
         );
     }
@@ -160,7 +156,7 @@ public class DatabaseImpl implements Database {
                 ),
                 lifecycleCounts(specification),
                 messages,
-                stalePendingThreshold
+                brokerApiProperties.getLifecycle().getStalePendingThreshold()
         );
     }
 
@@ -351,7 +347,7 @@ public class DatabaseImpl implements Database {
      * @return a {@link Specification} for stale pending messages
      */
     private Specification<Message> stalePendingOnly() {
-        LocalDateTime cutoff = LocalDateTime.now().minus(stalePendingThreshold);
+        LocalDateTime cutoff = LocalDateTime.now().minus(brokerApiProperties.getLifecycle().getStalePendingThreshold());
         return (root, query, criteriaBuilder) -> criteriaBuilder.and(
                 criteriaBuilder.equal(root.get("publishStatus"), PublishStatus.PENDING),
                 criteriaBuilder.isNotNull(root.get("createdAt")),

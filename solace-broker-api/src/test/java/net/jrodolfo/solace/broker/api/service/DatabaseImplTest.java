@@ -2,6 +2,7 @@ package net.jrodolfo.solace.broker.api.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import net.jrodolfo.solace.broker.api.config.BrokerApiProperties;
 import net.jrodolfo.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import net.jrodolfo.solace.broker.api.dto.InnerMessageDTO;
 import net.jrodolfo.solace.broker.api.dto.MessageWrapperDTO;
@@ -41,7 +42,7 @@ class DatabaseImplTest {
     @BeforeEach
     void setUp() {
         messageRepository = mock(MessageRepository.class);
-        database = new DatabaseImpl(messageRepository);
+        database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
         when(messageRepository.save(any(Message.class))).thenAnswer(invocation -> {
             Message message = invocation.getArgument(0);
             if (message.getId() == null) {

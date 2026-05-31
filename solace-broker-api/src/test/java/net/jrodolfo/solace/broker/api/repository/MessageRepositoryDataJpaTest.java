@@ -2,6 +2,7 @@ package net.jrodolfo.solace.broker.api.repository;
 
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
+import net.jrodolfo.solace.broker.api.config.BrokerApiProperties;
 import net.jrodolfo.solace.broker.api.dto.PagedMessagesResponseDTO;
 import net.jrodolfo.solace.broker.api.jpa.DeliveryMode;
 import net.jrodolfo.solace.broker.api.jpa.Message;
@@ -39,7 +40,7 @@ class MessageRepositoryDataJpaTest {
 
     @Test
     void shouldFilterMessagesCaseInsensitivelyByStoredFields() {
-        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
         persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 20, 10, 0));
         persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("abc-003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 18, 10, 0));
@@ -55,7 +56,7 @@ class MessageRepositoryDataJpaTest {
 
     @Test
     void shouldSortMessagesByPriorityAscending() {
-        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
         persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 20, 10, 0));
         persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 18, 10, 0));
@@ -70,7 +71,7 @@ class MessageRepositoryDataJpaTest {
 
     @Test
     void shouldSortMessagesByCreatedAtDescendingAndPaginateResults() {
-        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
         persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 18, 10, 0));
         persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 20, 10, 0));
@@ -88,7 +89,7 @@ class MessageRepositoryDataJpaTest {
 
     @Test
     void shouldFilterMessagesByPublishStatus() {
-        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
         persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
         persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
@@ -104,7 +105,7 @@ class MessageRepositoryDataJpaTest {
 
     @Test
     void shouldFilterMessagesByPayloadType() {
-        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
         persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, PayloadType.TEXT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
         persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, PayloadType.JSON, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, PayloadType.XML, 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
@@ -120,7 +121,7 @@ class MessageRepositoryDataJpaTest {
 
     @Test
     void shouldFilterMessagesByCreatedAtRange() {
-        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
         persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 18, 10, 0));
         persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 20, 10, 0));
@@ -140,7 +141,7 @@ class MessageRepositoryDataJpaTest {
 
     @Test
     void shouldFilterMessagesByPublishedAtRangeAndPublishStatus() {
-        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
         persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 18, 10, 0));
         persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
@@ -160,7 +161,7 @@ class MessageRepositoryDataJpaTest {
 
     @Test
     void shouldFilterMessagesByStalePendingOnly() {
-        DatabaseImpl database = new DatabaseImpl(messageRepository);
+        DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
         persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
         persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, PublishStatus.PENDING, LocalDateTime.now().minusMinutes(1));
         persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));

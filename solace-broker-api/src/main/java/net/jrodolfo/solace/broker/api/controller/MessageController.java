@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import net.jrodolfo.solace.broker.api.config.BrokerApiProperties;
 import net.jrodolfo.solace.broker.api.dto.BulkRetryRequestDTO;
 import net.jrodolfo.solace.broker.api.dto.BulkRetryResponseDTO;
 import net.jrodolfo.solace.broker.api.dto.BulkRetryResultItemDTO;
@@ -29,7 +30,6 @@ import net.jrodolfo.solace.broker.api.service.Database;
 import net.jrodolfo.solace.broker.api.service.DirectPublisherService;
 import net.jrodolfo.solace.broker.api.service.MessageLifecycleSupport;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,7 +39,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -78,12 +77,7 @@ public class MessageController {
             "Marked as FAILED after manual reconciliation of a stale PENDING message";
     private final Database database;
     private final DirectPublisherService directPublisherService;
-
-    @Value("${app.retry.max-batch-size:100}")
-    private int maxBulkRetryBatchSize = 100;
-
-    @Value("${app.lifecycle.stale-pending-threshold:PT5M}")
-    private Duration stalePendingThreshold = MessageLifecycleSupport.DEFAULT_STALE_PENDING_THRESHOLD;
+    private final BrokerApiProperties brokerApiProperties;
 
     /**
      * Constructs a new {@code MessageController} with the required services.
@@ -92,9 +86,10 @@ public class MessageController {
      * @param directPublisherService the service for publishing messages to Solace.
      */
     @Autowired
-    public MessageController(Database database, DirectPublisherService directPublisherService) {
+    public MessageController(Database database, DirectPublisherService directPublisherService, BrokerApiProperties brokerApiProperties) {
         this.database = database;
         this.directPublisherService = directPublisherService;
+        this.brokerApiProperties = brokerApiProperties;
     }
 
     /**
@@ -776,8 +771,9 @@ public class MessageController {
         if (request == null || request.getMessageIds() == null || request.getMessageIds().isEmpty()) {
             throw new BadRequestException("messageIds must contain at least one id");
         }
-        if (request.getMessageIds().size() > maxBulkRetryBatchSize) {
-            throw new BadRequestException("messageIds must contain no more than " + maxBulkRetryBatchSize + " ids");
+        int maxBatchSize = brokerApiProperties.getRetry().getMaxBatchSize();
+        if (request.getMessageIds().size() > maxBatchSize) {
+            throw new BadRequestException("messageIds must contain no more than " + maxBatchSize + " ids");
         }
 
         List<BulkRetryResultItemDTO> results = new ArrayList<>();
@@ -837,7 +833,10 @@ public class MessageController {
         if (storedMessage.getPublishStatus() != PublishStatus.PENDING) {
             throw new BadRequestException("Only PENDING messages can be reconciled");
         }
-        if (!MessageLifecycleSupport.isStalePending(storedMessage.getPublishStatus(), storedMessage.getCreatedAt(), stalePendingThreshold)) {
+        if (!MessageLifecycleSupport.isStalePending(
+                storedMessage.getPublishStatus(),
+                storedMessage.getCreatedAt(),
+                brokerApiProperties.getLifecycle().getStalePendingThreshold())) {
             throw new BadRequestException("Only stale PENDING messages can be reconciled");
         }
 

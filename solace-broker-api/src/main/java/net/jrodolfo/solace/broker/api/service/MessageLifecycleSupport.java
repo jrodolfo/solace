@@ -11,8 +11,7 @@ import java.time.LocalDateTime;
 public final class MessageLifecycleSupport {
 
     /**
-     * The threshold after which a message in {@code PENDING} state is considered stale.
-     * Currently set to 5 minutes.
+     * The default threshold after which a message in {@code PENDING} state is considered stale.
      */
     public static final Duration DEFAULT_STALE_PENDING_THRESHOLD = Duration.ofMinutes(5);
 
