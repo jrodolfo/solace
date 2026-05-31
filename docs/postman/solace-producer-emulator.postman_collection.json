@@ -2,69 +2,268 @@
 	"info": {
 		"_postman_id": "6c765f14-e668-474a-a161-02edb602610e",
 		"name": "solace-producer-emulator",
+		"description": "Postman collection for exercising the solace-broker-api message endpoints. Broker connection values are read from server-side SOLACE_CLOUD_* environment variables.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5262710"
 	},
-	"item": [
+	"variable": [
 		{
-			"name": "post message",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"message\": {\r\n    \"innerMessageId\": \"001\",\r\n    \"destination\": \"solace/java/direct/system-01\",\r\n    \"deliveryMode\": \"PERSISTENT\",\r\n    \"priority\": 3,\r\n\r\n    \"properties\": {\r\n      \"property01\": \"value01\",\r\n      \"property02\": \"value02\"\r\n    },\r\n\r\n    \"payload\": {\r\n      \"type\": \"binary\",\r\n      \"content\": \"01001000 01100101 01101100 01101100\"\r\n    }\r\n  }\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "localhost:8081/api/v1/messages/message",
-					"host": [
-						"localhost"
-					],
-					"port": "8081",
-					"path": [
-						"api",
-						"v1",
-						"messages",
-						"message"
-					]
-				}
-			},
-			"response": []
+			"key": "baseUrl",
+			"value": "http://localhost:8081",
+			"type": "string"
 		},
 		{
-			"name": "post message without field message",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"innerMessageId\": \"001\",\r\n    \"destination\": \"solace/java/direct/system-01\",\r\n    \"deliveryMode\": \"PERSISTENT\",\r\n    \"priority\": 3,\r\n\r\n    \"properties\": {\r\n      \"property01\": \"value01\",\r\n      \"property02\": \"value02\"\r\n    },\r\n\r\n    \"payload\": {\r\n      \"type\": \"binary\",\r\n      \"content\": \"01001000 01100101 01101100 01101100\"\r\n    }\r\n}\r\n",
-					"options": {
-						"raw": {
-							"language": "json"
+			"key": "messageId",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "messages",
+			"item": [
+				{
+					"name": "list stored messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/messages/all",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"messages",
+								"all"
+							]
 						}
-					}
+					},
+					"response": []
 				},
-				"url": {
-					"raw": "localhost:8081/api/v1/messages/message",
-					"host": [
-						"localhost"
-					],
-					"port": "8081",
-					"path": [
-						"api",
-						"v1",
-						"messages",
-						"message"
-					]
+				{
+					"name": "list stored messages with paging",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/messages/all?page=0&size=20&sortBy=createdAt&sortDirection=desc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"messages",
+								"all"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "20"
+								},
+								{
+									"key": "sortBy",
+									"value": "createdAt"
+								},
+								{
+									"key": "sortDirection",
+									"value": "desc"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "publish message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": {\n    \"innerMessageId\": \"001\",\n    \"destination\": \"solace/java/direct/system-01\",\n    \"deliveryMode\": \"PERSISTENT\",\n    \"priority\": 3,\n    \"properties\": {\n      \"property01\": \"value01\",\n      \"property02\": \"value02\"\n    },\n    \"payload\": {\n      \"type\": \"binary\",\n      \"content\": \"01001000 01100101 01101100 01101100\"\n    }\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/messages/message",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"messages",
+								"message"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "export filtered messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/messages/export?sortBy=createdAt&sortDirection=desc",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"messages",
+								"export"
+							],
+							"query": [
+								{
+									"key": "sortBy",
+									"value": "createdAt"
+								},
+								{
+									"key": "sortDirection",
+									"value": "desc"
+								}
+							]
+						}
+					},
+					"response": []
 				}
-			},
-			"response": []
+			]
+		},
+		{
+			"name": "retry",
+			"item": [
+				{
+					"name": "retry one failed message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/messages/{{messageId}}/retry",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"messages",
+								"{{messageId}}",
+								"retry"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "retry multiple failed messages",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"messageIds\": [1, 2]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/messages/retry",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"messages",
+								"retry"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "reconciliation",
+			"item": [
+				{
+					"name": "reconcile stale pending message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/messages/{{messageId}}/reconcile-stale-pending",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"messages",
+								"{{messageId}}",
+								"reconcile-stale-pending"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }
