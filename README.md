@@ -32,7 +32,7 @@ The UI does not read those variables directly. It talks to `solace-broker-api`, 
 For a screenshot-based walkthrough that shows how to create a Solace Cloud
 account, create a demo broker service, find these four values, and register them
 on Windows, Linux, or macOS, see
-[docs/how-to/14-solace-cloud-account-demo-and-env-vars.md](docs/how-to/14-solace-cloud-account-demo-and-env-vars.md).
+[docs/how-to/01-solace-cloud-account-demo-and-env-vars.md](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md).
 
 For the local MySQL runtime used by `solace-broker-api`, including host, port, credentials, and a sample `mysql` command, see [solace-broker-api/README.md](solace-broker-api/README.md).
 
@@ -146,7 +146,7 @@ The workflow currently covers:
 
 ## Notes
 
-- Solace Cloud setup material lives in [docs/how-to/14-solace-cloud-account-demo-and-env-vars.md](docs/how-to/14-solace-cloud-account-demo-and-env-vars.md).
+- Solace Cloud setup material lives in [docs/how-to/01-solace-cloud-account-demo-and-env-vars.md](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md).
 - Postman, curl, JMeter, MySQL schema, and sample-message artifacts live under `docs/`.
 - The architecture overview lives in [docs/architecture.md](docs/architecture.md).
 - Architecture Decision Records live in [docs/adr/README.md](docs/adr/README.md).
