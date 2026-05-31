@@ -1,78 +1,68 @@
-[
-  {
-    "createdAt": "2025-02-24T16:07:48.798977",
-    "updatedAt": "2025-02-24T16:07:48.798977",
-    "id": 4,
-    "innerMessageId": "001",
-    "destination": "solace/java/direct/system-01",
-    "deliveryMode": "PERSISTENT",
-    "priority": 3,
-    "properties": [
-      {
-        "createdAt": "2025-02-24T16:07:48.926256",
-        "updatedAt": "2025-02-24T16:07:48.926256",
-        "id": 7,
-        "propertyKey": "property01",
-        "propertyValue": "value01"
+{
+  "items": [
+    {
+      "id": 1,
+      "innerMessageId": "001",
+      "destination": "solace/java/direct/system-01",
+      "deliveryMode": "PERSISTENT",
+      "priority": 3,
+      "publishStatus": "PUBLISHED",
+      "stalePending": false,
+      "failureReason": null,
+      "publishedAt": "2026-05-31T15:45:00.123456",
+      "retrySupported": false,
+      "retryBlockedReason": "Message is already published.",
+      "properties": {
+        "property01": "value01",
+        "property02": "value02"
       },
-      {
-        "createdAt": "2025-02-24T16:07:48.93463",
-        "updatedAt": "2025-02-24T16:07:48.93463",
-        "id": 8,
-        "propertyKey": "property02",
-        "propertyValue": "value02"
-      }
-    ],
-    "payload": {
-      "createdAt": "2025-02-24T16:07:48.91584",
-      "updatedAt": "2025-02-24T16:07:48.91584",
-      "id": 4,
-      "type": "binary",
-      "content": "01001000 01100101 01101100 01101100"
-    },
-    "status": "PUBLISHED",
-    "publishedAt": "2025-02-24T16:07:48.90408",
-    "failureReason": null,
-    "retrySupported": true,
-    "retryBlockedReason": null,
-    "stalePending": false
-  },
-  {
-    "createdAt": "2025-02-25T09:35:13.086787",
-    "updatedAt": "2025-02-25T09:35:13.086787",
-    "id": 5,
-    "innerMessageId": "001",
-    "destination": "solace/java/direct/system-01",
-    "deliveryMode": "PERSISTENT",
-    "priority": 3,
-    "properties": [
-      {
-        "createdAt": "2025-02-25T09:35:13.165876",
-        "updatedAt": "2025-02-25T09:35:13.165876",
-        "id": 9,
-        "propertyKey": "property01",
-        "propertyValue": "value01"
+      "payload": {
+        "type": "BINARY",
+        "content": "01001000 01100101 01101100 01101100",
+        "createdAt": "2026-05-31T15:45:00.100000",
+        "updatedAt": "2026-05-31T15:45:00.100000"
       },
-      {
-        "createdAt": "2025-02-25T09:35:13.174617",
-        "updatedAt": "2025-02-25T09:35:13.174617",
-        "id": 10,
-        "propertyKey": "property02",
-        "propertyValue": "value02"
-      }
-    ],
-    "payload": {
-      "createdAt": "2025-02-25T09:35:13.157267",
-      "updatedAt": "2025-02-25T09:35:13.157267",
-      "id": 5,
-      "type": "binary",
-      "content": "01001000 01100101 01101100 01101100"
+      "createdAt": "2026-05-31T15:45:00.090000",
+      "updatedAt": "2026-05-31T15:45:00.123456"
     },
-    "status": "PUBLISHED",
-    "publishedAt": "2025-02-25T09:35:13.147121",
-    "failureReason": null,
-    "retrySupported": true,
-    "retryBlockedReason": null,
-    "stalePending": false
+    {
+      "id": 2,
+      "innerMessageId": "002",
+      "destination": "solace/java/direct/system-02",
+      "deliveryMode": "DIRECT",
+      "priority": 1,
+      "publishStatus": "FAILED",
+      "stalePending": false,
+      "failureReason": "Failed to connect to Solace broker",
+      "publishedAt": null,
+      "retrySupported": true,
+      "retryBlockedReason": null,
+      "properties": {
+        "source": "curl",
+        "environment": "local"
+      },
+      "payload": {
+        "type": "TEXT",
+        "content": "hello from curl",
+        "createdAt": "2026-05-31T15:46:00.100000",
+        "updatedAt": "2026-05-31T15:46:00.100000"
+      },
+      "createdAt": "2026-05-31T15:46:00.090000",
+      "updatedAt": "2026-05-31T15:46:00.123456"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 2,
+  "totalPages": 1,
+  "first": true,
+  "last": true,
+  "lifecycleCounts": {
+    "publishedCount": 1,
+    "failedCount": 1,
+    "pendingCount": 0,
+    "stalePendingCount": 0,
+    "retryableFailedCount": 1,
+    "nonRetryableFailedCount": 0
   }
-]
+}
