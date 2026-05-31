@@ -146,8 +146,7 @@ The workflow currently covers:
 
 ## Notes
 
-- Broker setup/how-to material lives under `docs/how-to/`.
-- The Solace Cloud account and environment variable walkthrough lives in [docs/how-to/14-solace-cloud-account-demo-and-env-vars.md](docs/how-to/14-solace-cloud-account-demo-and-env-vars.md).
+- Solace Cloud setup material lives in [docs/how-to/14-solace-cloud-account-demo-and-env-vars.md](docs/how-to/14-solace-cloud-account-demo-and-env-vars.md).
 - Postman, curl, JMeter, MySQL schema, and sample-message artifacts live under `docs/`.
 - The architecture overview lives in [docs/architecture.md](docs/architecture.md).
 - Architecture Decision Records live in [docs/adr/README.md](docs/adr/README.md).
