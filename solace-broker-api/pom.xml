@@ -13,7 +13,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>org.orgname.solace.broker.api</groupId>
+    <groupId>net.jrodolfo.solace.broker.api</groupId>
     <artifactId>solace.broker.api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>solace.broker.api</name>
