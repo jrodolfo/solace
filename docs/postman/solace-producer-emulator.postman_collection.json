@@ -106,7 +106,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"message\": {\n    \"innerMessageId\": \"001\",\n    \"destination\": \"solace/java/direct/system-01\",\n    \"deliveryMode\": \"PERSISTENT\",\n    \"priority\": 3,\n    \"properties\": {\n      \"property01\": \"value01\",\n      \"property02\": \"value02\"\n    },\n    \"payload\": {\n      \"type\": \"binary\",\n      \"content\": \"01001000 01100101 01101100 01101100\"\n    }\n  }\n}",
+							"raw": "{\n  \"message\": {\n    \"innerMessageId\": \"001\",\n    \"destination\": \"solace/java/direct/system-01\",\n    \"deliveryMode\": \"PERSISTENT\",\n    \"priority\": 3,\n    \"properties\": {\n      \"property01\": \"value01\",\n      \"property02\": \"value02\"\n    },\n    \"payload\": {\n      \"type\": \"BINARY\",\n      \"content\": \"01001000 01100101 01101100 01101100\"\n    }\n  }\n}",
 							"options": {
 								"raw": {
 									"language": "json"

@@ -39,7 +39,7 @@ Example JSON request:
 - `priority`: Numeric priority for the message.
 - `properties`: Optional custom key/value metadata for the message.
 - `payload`: Required payload object containing the payload type and content.
-- `payload.type`: The payload format. This project supports `TEXT`, `BINARY`, `JSON`, and `XML`. Lowercase values are accepted and normalized by the API.
+- `payload.type`: The payload format. Use uppercase enum values: `TEXT`, `BINARY`, `JSON`, or `XML`.
 - `payload.content`: The message payload content to publish.
 
 This is the HTTP request contract used by the application. It is not intended to describe the full Solace Message Format wire-level structure.
