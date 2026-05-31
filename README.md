@@ -8,19 +8,27 @@
 [![Vite 6](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
 [![Solace](https://img.shields.io/badge/Solace-PubSub%2B-00C895)](https://solace.com/)
 
-This repository contains a small Solace-focused workspace with three active modules:
+Solace Workspace is a small full-stack PubSub+ project for publishing messages,
+tracking publish lifecycle state, retrying failed sends, and observing direct
+topic traffic end to end.
 
-- [solace-broker-api](solace-broker-api/README.md): Spring Boot backend for publishing, storing, retrying, and querying messages
-- [solace-publisher-ui](solace-publisher-ui/README.md): React UI for publishing messages and browsing stored results
-- [solace-subscriber](solace-subscriber/README.md): Java command-line subscriber for direct topic traffic
+It is organized as three active modules:
 
-For the repo-level design, see [docs/architecture.md](docs/architecture.md).
-For architectural decision history, see [docs/adr/README.md](docs/adr/README.md).
-For a concise architecture walkthrough, see [docs/architecture-walkthrough.md](docs/architecture-walkthrough.md).
+- [solace-broker-api](solace-broker-api/README.md): Spring Boot backend for publishing, storing, retrying, reconciling, and querying messages
+- [solace-publisher-ui](solace-publisher-ui/README.md): React UI for publishing messages and browsing stored message history
+- [solace-subscriber](solace-subscriber/README.md): Java command-line subscriber for direct Solace topic traffic
+
+## What This Project Demonstrates
+
+- Solace PubSub+ publishing and direct topic subscription from Java
+- a Spring Boot API that persists publish attempts before broker delivery
+- lifecycle tracking with `PENDING`, `PUBLISHED`, `FAILED`, stale-pending detection, retry, and manual reconciliation
+- a React/Vite publisher UI with filters, pagination, saved views, retry actions, and export flows
+- practical project documentation through architecture notes, ADRs, curl/Postman/JMeter artifacts, and setup walkthroughs
 
 ## Shared Solace Contract
 
-The backend and subscriber both use the same environment-variable names for broker connectivity:
+The backend and subscriber both use the same environment-variable names for Solace Cloud connectivity:
 
 - `SOLACE_CLOUD_HOST`
 - `SOLACE_CLOUD_VPN`
@@ -29,12 +37,7 @@ The backend and subscriber both use the same environment-variable names for brok
 
 The UI does not read those variables directly. It talks to `solace-broker-api`, which uses them on the server side.
 
-For a screenshot-based walkthrough that shows how to create a Solace Cloud
-account, create a demo broker service, find these four values, and register them
-on Windows, Linux, or macOS, see
-[docs/how-to/01-solace-cloud-account-demo-and-env-vars.md](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md).
-
-For the local MySQL runtime used by `solace-broker-api`, including host, port, credentials, and a sample `mysql` command, see [solace-broker-api/README.md](solace-broker-api/README.md).
+For a screenshot-based walkthrough that shows how to create a Solace Cloud account, create a demo broker service, find these four values, and register them on Windows, Linux, or macOS, see [docs/how-to/01-solace-cloud-account-demo-and-env-vars.md](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md).
 
 Sample destinations across the workspace use values like:
 
@@ -48,58 +51,69 @@ The subscriber listens to the broader direct topic pattern:
 solace/java/direct/system-0*
 ```
 
-## Recommended Local Workflow
+## Quick Start
 
-### Root Scripts And Makefile
+### 1. Configure Solace Cloud
 
-This repo includes a root `scripts/` folder plus a `Makefile` so you do not have to remember each module’s startup command.
-
-For a folder-local overview of the repo helper scripts, see [scripts/README.md](scripts/README.md).
-
-Preferred local entry points:
-
-- `./scripts/start-all.sh`
-- `./scripts/stop-all.sh`
-- `./scripts/restart-all.sh`
-- `./scripts/status-all.sh`
-- or the matching `make` targets from the repo root, such as `make start-all`, `make stop-all`, `make restart-all`, and `make status-all`
-
-The root scripts folder and Makefile also cover:
-
-- per-module build/start commands
-- workspace-wide build/test helpers
-- root script smoke tests
-
-See [scripts/README.md](scripts/README.md) for the full script inventory and detailed behavior.
-
-The module-level commands below are still useful when you want to run one component directly.
-
-### 1. Start the backend
-
-From `solace-broker-api`:
+Set the shared Solace environment variables:
 
 ```bash
+export SOLACE_CLOUD_HOST="tcps://..."
+export SOLACE_CLOUD_VPN="..."
+export SOLACE_CLOUD_USERNAME="..."
+export SOLACE_CLOUD_PASSWORD="..."
+```
+
+Use the Solace Cloud setup guide if you need help finding those values: [docs/how-to/01-solace-cloud-account-demo-and-env-vars.md](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md).
+
+### 2. Start the workspace
+
+From the repo root:
+
+```bash
+./scripts/start-all.sh
+```
+
+This starts the API, UI, and subscriber together. The script prints the API health URL and the actual Vite UI URL when ready.
+
+Common root commands:
+
+- `./scripts/status-all.sh`: show local API, UI, and subscriber status
+- `./scripts/stop-all.sh`: stop running workspace processes
+- `./scripts/restart-all.sh`: stop, build, and start all modules
+- `make test`: run API, UI, subscriber, and script tests
+
+For the full script inventory, see [scripts/README.md](scripts/README.md).
+
+### 3. Open the tools
+
+- API health: `http://localhost:8081/rest/actuator/health`
+- API docs: `http://localhost:8081/docs`
+- Publisher UI: `http://localhost:5173` unless Vite selects another available port
+
+### Module-Level Commands
+
+The root scripts are the preferred workflow. These commands are useful when running one module directly.
+
+Backend:
+
+```bash
+cd solace-broker-api
 mvn spring-boot:run
 ```
 
-The backend runs on `http://localhost:8081` by default.
-
-### 2. Start the UI
-
-From `solace-publisher-ui`:
+UI:
 
 ```bash
+cd solace-publisher-ui
 npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`.
-
-### 3. Start the subscriber
-
-From `solace-subscriber`:
+Subscriber:
 
 ```bash
+cd solace-subscriber
 mvn package
 java -jar target/solace-subscriber-1.0-SNAPSHOT-all.jar
 ```
@@ -144,14 +158,31 @@ The workflow currently covers:
 - `solace-subscriber` tests
 - `solace-subscriber` build
 
-## Notes
+## Documentation Map
 
-- Solace Cloud setup material lives in [docs/how-to/01-solace-cloud-account-demo-and-env-vars.md](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md).
-- Postman, curl, JMeter, MySQL schema, and project how-to documents live under `docs/`.
-- The architecture overview lives in [docs/architecture.md](docs/architecture.md).
-- Architecture Decision Records live in [docs/adr/README.md](docs/adr/README.md).
-- A concise architecture walkthrough lives in [docs/architecture-walkthrough.md](docs/architecture-walkthrough.md).
-- If you want details for one module, use that module’s README rather than relying on this root summary.
+- [Architecture overview](docs/architecture.md): current module boundaries, publish flow, lifecycle model, retry, reconciliation, and export behavior
+- [Architecture walkthrough](docs/architecture-walkthrough.md): concise technical narrative for understanding the design quickly
+- [Architecture Decision Records](docs/adr/README.md): why the major design decisions were made
+- [Solace Cloud setup guide](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md): account, demo broker, credentials, and OS environment variables
+- [Broker API README](solace-broker-api/README.md): backend API contract, MySQL runtime, request/response examples, and tuning settings
+- [Publisher UI README](solace-publisher-ui/README.md): frontend behavior and development commands
+- [Subscriber README](solace-subscriber/README.md): subscriber configuration and runtime behavior
+- `docs/curl`, `docs/postman`, and `docs/jmeter`: ready-to-use API exercise artifacts
+- `docs/mysql/mysql-schema.sql`: schema reference for the broker API database
+
+## GitHub About
+
+Suggested repository description:
+
+```text
+Full-stack Solace PubSub+ workspace with a Spring Boot broker API, React publisher UI, Java subscriber, lifecycle tracking, retry, reconciliation, and architecture documentation.
+```
+
+Suggested topics:
+
+```text
+solace, pubsub, pubsubplus, spring-boot, java, react, vite, mysql, messaging, event-driven-architecture, rest-api, jms, publisher-subscriber, architecture-decision-records
+```
 
 ## Contact
 
