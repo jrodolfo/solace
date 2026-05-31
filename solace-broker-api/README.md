@@ -127,14 +127,12 @@ http://localhost:8081/api/v1/messages
 
 Sends a message to Solace and stores the publish attempt.
 
-Sample request with explicit connection parameters:
+Broker connection values are read from the `SOLACE_CLOUD_*` environment variables. Do not send Solace usernames or passwords in the request body.
+
+Sample request:
 
 ```json
 {
-  "userName": "solace-cloud-client",
-  "password": "super-difficult",
-  "host": "wss://example.messaging.solace.cloud:443",
-  "vpnName": "my-solace-broker-on-aws",
   "message": {
     "innerMessageId": "001",
     "destination": "solace/java/direct/system-01",
@@ -143,26 +141,6 @@ Sample request with explicit connection parameters:
     "properties": {
       "property01": "value01",
       "property02": "value02"
-    },
-    "payload": {
-      "type": "BINARY",
-      "content": "01001000 01100101 01101100 01101100"
-    }
-  }
-}
-```
-
-Sample request using server-side Solace environment variables:
-
-```json
-{
-  "message": {
-    "innerMessageId": "001",
-    "destination": "solace/java/direct/system-01",
-    "deliveryMode": "PERSISTENT",
-    "priority": 3,
-    "properties": {
-      "property01": "value01"
     },
     "payload": {
       "type": "BINARY",

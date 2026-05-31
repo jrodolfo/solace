@@ -18,33 +18,8 @@ First of all:
 $ curl http://localhost:8081/api/v1/messages/all
 []
 
-$ curl -X POST http://localhost:8081/api/v1/messages/message \
-     -H "Content-Type: application/json" \
-     -d '{
-           "userName": "solace-cloud-client",
-           "password": "super-difficult",
-           "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
-           "vpnName": "my-solace-broker-on-aws",
-           "topicName": "solace/java/direct/system-01",
-
-           "message": {
-             "innerMessageId": "001",
-             "destination": "solace/java/direct/system-01",
-             "deliveryMode": "PERSISTENT",
-             "priority": 3,
-
-             "properties": {
-               "property01": "value01",
-               "property02": "value02"
-             },
-
-             "payload": {
-               "type": "binary",
-               "content": "01001000 01100101 01101100 01101100"
-             }
-
-           }
-         }'
+Broker connection values are read from the SOLACE_CLOUD_* environment variables.
+Do not send Solace usernames or passwords in the request body.
 
 $ curl -X POST http://localhost:8081/api/v1/messages/message \
      -H "Content-Type: application/json" \
@@ -105,16 +80,12 @@ $ curl http://localhost:8081/api/v1/messages/all
       "type": "binary",
       "content": "01001000 01100101 01101100 01101100"
     },
-    "parameter": {
-      "createdAt": "2025-02-24T15:51:15.03017",
-      "updatedAt": "2025-02-24T15:51:15.03017",
-      "id": 1,
-      "userName": "solace-cloud-client",
-      "password": "super-difficult",
-      "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
-      "vpnName": "my-solace-broker-on-aws",
-      "topicName": "solace/java/direct/system-01"
-    }
+    "status": "PUBLISHED",
+    "publishedAt": "2025-02-24T15:51:15.03017",
+    "failureReason": null,
+    "retrySupported": true,
+    "retryBlockedReason": null,
+    "stalePending": false
   },
   {
     "createdAt": "2025-02-24T15:51:32.507615",
@@ -147,15 +118,11 @@ $ curl http://localhost:8081/api/v1/messages/all
       "type": "binary",
       "content": "01001000 01100101 01101100 01101100"
     },
-    "parameter": {
-      "createdAt": "2025-02-24T15:51:32.511855",
-      "updatedAt": "2025-02-24T15:51:32.511855",
-      "id": 2,
-      "userName": "solace-cloud-client",
-      "password": "super-difficult",
-      "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
-      "vpnName": "my-solace-broker-on-aws",
-      "topicName": "solace/java/direct/system-01"
-    }
+    "status": "PUBLISHED",
+    "publishedAt": "2025-02-24T15:51:32.511855",
+    "failureReason": null,
+    "retrySupported": true,
+    "retryBlockedReason": null,
+    "stalePending": false
   }
 ]

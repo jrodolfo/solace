@@ -65,36 +65,6 @@
 				}
 			},
 			"response": []
-		},
-		{
-			"name": "post message with parameters",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"userName\": \"solace-cloud-client\",\r\n  \"password\": \"super-difficult\",\r\n  \"host\": \"wss://mr-connection-blahblahblah.messaging.solace.cloud:443\",\r\n  \"vpnName\": \"my-solace-broker-on-aws\",\r\n\r\n  \"message\": {\r\n    \"innerMessageId\": \"001\",\r\n    \"destination\": \"solace/java/direct/system-01\",\r\n    \"deliveryMode\": \"PERSISTENT\",\r\n    \"priority\": 3,\r\n\r\n    \"properties\": {\r\n      \"property01\": \"value01\",\r\n      \"property02\": \"value02\"\r\n    },\r\n\r\n    \"payload\": {\r\n      \"type\": \"binary\",\r\n      \"content\": \"01001000 01100101 01101100 01101100\"\r\n    }\r\n\r\n  }\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "localhost:8081/api/v1/messages/message",
-					"host": [
-						"localhost"
-					],
-					"port": "8081",
-					"path": [
-						"api",
-						"v1",
-						"messages",
-						"message"
-					]
-				}
-			},
-			"response": []
 		}
 	]
 }

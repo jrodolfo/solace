@@ -30,16 +30,12 @@
       "type": "binary",
       "content": "01001000 01100101 01101100 01101100"
     },
-    "parameter": {
-      "createdAt": "2025-02-24T16:07:48.90408",
-      "updatedAt": "2025-02-24T16:07:48.90408",
-      "id": 4,
-      "userName": "solace-cloud-client",
-      "password": "super-difficult",
-      "host": "wss://mr-connection-blahblahblah.messaging.solace.cloud:443",
-      "vpnName": "my-solace-broker-on-aws",
-      "topicName": "solace/java/direct/system-01"
-    }
+    "status": "PUBLISHED",
+    "publishedAt": "2025-02-24T16:07:48.90408",
+    "failureReason": null,
+    "retrySupported": true,
+    "retryBlockedReason": null,
+    "stalePending": false
   },
   {
     "createdAt": "2025-02-25T09:35:13.086787",
@@ -72,15 +68,11 @@
       "type": "binary",
       "content": "01001000 01100101 01101100 01101100"
     },
-    "parameter": {
-      "createdAt": "2025-02-25T09:35:13.147121",
-      "updatedAt": "2025-02-25T09:35:13.147121",
-      "id": 5,
-      "userName": null,
-      "password": null,
-      "host": null,
-      "vpnName": null,
-      "topicName": null
-    }
+    "status": "PUBLISHED",
+    "publishedAt": "2025-02-25T09:35:13.147121",
+    "failureReason": null,
+    "retrySupported": true,
+    "retryBlockedReason": null,
+    "stalePending": false
   }
 ]
