@@ -118,18 +118,20 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-	&quot;messageId&quot;: &quot;002&quot;,&#xd;
-	&quot;destination&quot;: &quot;solace/java/direct/system-02&quot;,&#xd;
-	&quot;deliveryMode&quot;: &quot;PERSISTENT&quot;,&#xd;
-	&quot;priority&quot;: 5,&#xd;
-	&quot;properties&quot;: {&#xd;
-		&quot;property01&quot;: &quot;value01&quot;,&#xd;
-		&quot;property02&quot;: &quot;value02&quot;&#xd;
-		},&#xd;
-	&quot;payload&quot;: {&#xd;
-			&quot;type&quot;: &quot;binary&quot;,&#xd;
-			&quot;content&quot;: &quot;01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001&quot;&#xd;
-		}&#xd;
+  &quot;message&quot;: {&#xd;
+    &quot;innerMessageId&quot;: &quot;002&quot;,&#xd;
+    &quot;destination&quot;: &quot;solace/java/direct/system-02&quot;,&#xd;
+    &quot;deliveryMode&quot;: &quot;PERSISTENT&quot;,&#xd;
+    &quot;priority&quot;: 5,&#xd;
+    &quot;properties&quot;: {&#xd;
+      &quot;property01&quot;: &quot;value01&quot;,&#xd;
+      &quot;property02&quot;: &quot;value02&quot;&#xd;
+    },&#xd;
+    &quot;payload&quot;: {&#xd;
+      &quot;type&quot;: &quot;binary&quot;,&#xd;
+      &quot;content&quot;: &quot;01001000 01100101 01101100 01101100&quot;&#xd;
+    }&#xd;
+  }&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>

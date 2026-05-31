@@ -1,37 +1,50 @@
+Publish message request format used by this project
 
-	Example of a json file that complies with the Solace Message Format (SMF)
+The broker API publishes messages through:
+
+POST /api/v1/messages/message
+
+Broker connection values are read from the SOLACE_CLOUD_* environment variables.
+Do not send Solace usernames or passwords in the request body.
+
+Example JSON request:
 
 {
-	"messageId": "001",
-	"destination": "solace/java/direct/system-01",
-	"deliveryMode": "PERSISTENT",
-	"priority": 3,
-	"properties": {
-		"property01": "value01",
-		"property02": "value02"
-		},
-	"payload": {
-			"type": "binary",
-			"content": "01001000 01100101 01101100 01101100 01101111 00101100 00100000 01010111 01101111 01110010 01101100 01100100 00100001"
-		}
+  "message": {
+    "innerMessageId": "001",
+    "destination": "solace/java/direct/system-01",
+    "deliveryMode": "PERSISTENT",
+    "priority": 3,
+    "properties": {
+      "property01": "value01",
+      "property02": "value02"
+    },
+    "payload": {
+      "type": "binary",
+      "content": "01001000 01100101 01101100 01101100"
+    }
+  }
 }
 
 In this example:
 
-•  messageId: A unique identifier for the message.
+- message: Required outer wrapper expected by the broker API.
+- innerMessageId: Descriptive message identifier provided by the caller. It is
+  stored with the publish attempt, but it is not used as a uniqueness constraint.
+- destination: The Solace topic or queue where the message should be published.
+- deliveryMode: The requested Solace delivery mode. This project supports
+  PERSISTENT and DIRECT.
+- priority: Numeric priority for the message.
+- properties: Optional custom key/value metadata for the message.
+- payload: Required payload object containing the payload type and content.
+- payload.type: The payload format. This project supports TEXT, BINARY, JSON,
+  and XML. Lowercase values are accepted and normalized by the API.
+- payload.content: The message payload content to publish.
 
-•  destination: The topic or queue to which the message is sent.
+This is the HTTP request contract used by the application. It is not intended
+to describe the full Solace Message Format wire-level structure.
 
-•  deliveryMode: Indicates whether the message is persistent or non-persistent.
-
-•  priority: The priority level of the message.
-
-•  properties: Custom properties that can be added to the message.
-
-•  payload: The actual content of the message, which can be of various types (e.g., text, binary).
-
-This structure ensures that the message contains all necessary metadata and
-payload information required by Solace PubSub+
+Related Solace background:
 
 https://solace.com/blog/inside-solace-message-introduction
 
