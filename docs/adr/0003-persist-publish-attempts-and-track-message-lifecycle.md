@@ -45,7 +45,7 @@ Persisting the lifecycle also creates a clearer operational and learning model:
 the project can show what was attempted, what succeeded, what failed, and what
 can be retried later.
 
-The related `stalePending` signal uses a 5-minute threshold as a practical
+The related `stalePending` signal uses a configurable threshold, defaulting to 5 minutes, as a practical
 operator heuristic for highlighting rows that probably need review. That value
 is not intended as a protocol guarantee; it is simply a conservative cutoff for
 surfacing records that remained unresolved longer than expected in the current

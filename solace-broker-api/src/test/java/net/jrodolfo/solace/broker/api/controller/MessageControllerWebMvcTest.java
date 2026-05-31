@@ -1,6 +1,7 @@
 package net.jrodolfo.solace.broker.api.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import net.jrodolfo.solace.broker.api.dto.FilteredMessagesExportResponseDTO;
 import net.jrodolfo.solace.broker.api.dto.InnerMessageDTO;
@@ -28,6 +29,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -59,11 +61,20 @@ class MessageControllerWebMvcTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private MessageController controller;
+
     @MockBean
     private Database database;
 
     @MockBean
     private DirectPublisherService directPublisherService;
+
+    @AfterEach
+    void resetControllerTuning() {
+        ReflectionTestUtils.setField(controller, "maxBulkRetryBatchSize", 100);
+        ReflectionTestUtils.setField(controller, "stalePendingThreshold", MessageLifecycleSupport.DEFAULT_STALE_PENDING_THRESHOLD);
+    }
 
     @Test
     void shouldReturnStoredMessagesJsonContract() throws Exception {
@@ -453,6 +464,19 @@ class MessageControllerWebMvcTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("messageIds must contain at least one id"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenBulkRetryRequestExceedsConfiguredLimit() throws Exception {
+        ReflectionTestUtils.setField(controller, "maxBulkRetryBatchSize", 2);
+
+        mockMvc.perform(post("/api/v1/messages/retry")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"messageIds":[1,2,3]}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("messageIds must contain no more than 2 ids"));
     }
 
     @Test

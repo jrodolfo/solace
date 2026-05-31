@@ -41,3 +41,9 @@ management:
       base-path: /rest/actuator
       exposure:
         include: health
+
+app:
+  lifecycle:
+    stale-pending-threshold: PT5M
+  retry:
+    max-batch-size: 100

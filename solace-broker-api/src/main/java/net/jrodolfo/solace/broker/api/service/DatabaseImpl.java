@@ -14,12 +14,14 @@ import net.jrodolfo.solace.broker.api.jpa.PayloadType;
 import net.jrodolfo.solace.broker.api.jpa.Property;
 import net.jrodolfo.solace.broker.api.jpa.PublishStatus;
 import net.jrodolfo.solace.broker.api.repository.MessageRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +55,12 @@ public class DatabaseImpl implements Database {
      * Repository for performing CRUD operations on {@link Message} entities.
      */
     private final MessageRepository messageRepository;
+
+    /**
+     * Threshold after which a pending message is considered stale.
+     */
+    @Value("${app.lifecycle.stale-pending-threshold:PT5M}")
+    private Duration stalePendingThreshold = MessageLifecycleSupport.DEFAULT_STALE_PENDING_THRESHOLD;
 
     /**
      * Constructs a new {@code DatabaseImpl} with the specified message repository.
@@ -97,7 +105,11 @@ public class DatabaseImpl implements Database {
         );
         PageRequest pageRequest = PageRequest.of(page, size, buildSort(sortBy, sortDirection));
         PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts = lifecycleCounts(specification);
-        return PagedMessagesResponseDTO.fromMessages(messageRepository.findAll(specification, pageRequest), lifecycleCounts);
+        return new PagedMessagesResponseDTO(
+                messageRepository.findAll(specification, pageRequest),
+                message -> new net.jrodolfo.solace.broker.api.dto.StoredMessageDTO(message, stalePendingThreshold),
+                lifecycleCounts
+        );
     }
 
     /**
@@ -147,7 +159,8 @@ public class DatabaseImpl implements Database {
                         sortDirection
                 ),
                 lifecycleCounts(specification),
-                messages
+                messages,
+                stalePendingThreshold
         );
     }
 
@@ -337,8 +350,8 @@ public class DatabaseImpl implements Database {
      *
      * @return a {@link Specification} for stale pending messages
      */
-    private static Specification<Message> stalePendingOnly() {
-        LocalDateTime cutoff = LocalDateTime.now().minus(MessageLifecycleSupport.STALE_PENDING_THRESHOLD);
+    private Specification<Message> stalePendingOnly() {
+        LocalDateTime cutoff = LocalDateTime.now().minus(stalePendingThreshold);
         return (root, query, criteriaBuilder) -> criteriaBuilder.and(
                 criteriaBuilder.equal(root.get("publishStatus"), PublishStatus.PENDING),
                 criteriaBuilder.isNotNull(root.get("createdAt")),

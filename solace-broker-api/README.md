@@ -40,7 +40,7 @@ Each stored message has:
 - `publishStatus`: `PENDING`, `PUBLISHED`, or `FAILED`
 - `failureReason`: present when publish fails
 - `publishedAt`: present when publish succeeds
-- `stalePending`: derived `true` when the message is still `PENDING` more than 5 minutes after `createdAt`
+- `stalePending`: derived `true` when the message is still `PENDING` longer than the configured stale-pending threshold after `createdAt`
 
 This means the database represents publish attempts and their outcomes, not only successful publishes.
 
@@ -84,6 +84,11 @@ Local MySQL runtime:
 - password: `secret`
 
 Those values match [docker-compose.yaml](docker-compose.yaml) and the default datasource settings in `application.yml`.
+
+Application tuning settings:
+
+- `app.lifecycle.stale-pending-threshold`: duration after which a `PENDING` row is considered stale. Default: `PT5M`.
+- `app.retry.max-batch-size`: maximum number of ids accepted by `POST /api/v1/messages/retry`. Default: `100`.
 
 To connect from your machine:
 
@@ -295,6 +300,7 @@ Contract:
 - retries only `FAILED` messages
 - skips non-retryable or non-`FAILED` rows without aborting the whole batch
 - returns a structured result summary plus one result entry per requested id
+- rejects requests larger than `app.retry.max-batch-size`
 
 Successful response with mixed outcomes, `200 OK`:
 
@@ -346,6 +352,19 @@ Rejected batch request, `400 Bad Request`:
 }
 ```
 
+Rejected oversized batch request, `400 Bad Request`:
+
+```json
+{
+  "timestamp": "2026-04-22T09:35:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "messageIds must contain no more than 100 ids",
+  "path": "/api/v1/messages/retry",
+  "validationErrors": null
+}
+```
+
 ## Stale pending reconciliation endpoint
 
 ### `POST /{messageId}/reconcile-stale-pending`
@@ -356,7 +375,7 @@ Contract:
 
 - loads the stored message by id
 - rejects unless the message is currently `PENDING`
-- rejects unless the message is stale under the 5-minute stale-pending threshold
+- rejects unless the message is stale under the configured stale-pending threshold
 - updates the same record to `FAILED`
 - sets `failureReason` to `Marked as FAILED after manual reconciliation of a stale PENDING message`
 - returns the updated stored-message DTO
@@ -615,7 +634,7 @@ mvn test
 - Stored connection parameters are not persisted with the message.
 - Retry uses server-side Solace configuration, not the original request credentials.
 - The read API returns normalized DTOs, including `properties` as a plain object map.
-- `stalePending` is a derived operational signal for `PENDING` rows older than 5 minutes.
+- `stalePending` is a derived operational signal for `PENDING` rows older than the configured stale-pending threshold.
 - Manual reconciliation is for stale `PENDING` messages; retry is for retryable `FAILED` messages.
 
 ## Contact

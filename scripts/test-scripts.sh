@@ -124,6 +124,33 @@ bash -n \
   "${REPO_ROOT}/scripts/build-subscriber.sh" \
   "${REPO_ROOT}/scripts/build-all.sh"
 
+echo "checking legacy package namespace is absent"
+legacy_dot_pattern="org[.]orgname"
+legacy_path_pattern="org""/""orgname"
+set +e
+legacy_namespace_matches="$(
+  grep -R -n -E "${legacy_dot_pattern}|${legacy_path_pattern}" "${REPO_ROOT}" \
+    --exclude-dir=.git \
+    --exclude-dir=.idea \
+    --exclude-dir=target \
+    --exclude-dir=node_modules \
+    --exclude-dir=dist \
+    --exclude='*.class' \
+    --exclude='*.jar' \
+    --exclude='*.war' 2>/dev/null
+)"
+legacy_namespace_exit_code=$?
+set -e
+if [[ ${legacy_namespace_exit_code} -eq 0 ]]; then
+  echo "legacy package namespace references found:" >&2
+  echo "${legacy_namespace_matches}" >&2
+  exit 1
+fi
+if [[ ${legacy_namespace_exit_code} -ne 1 ]]; then
+  echo "legacy package namespace check failed" >&2
+  exit 1
+fi
+
 echo "checking status-all output structure"
 status_all_output="$("${REPO_ROOT}/scripts/status-all.sh")"
 assert_contains "${status_all_output}" "==================== workspace status ===================="

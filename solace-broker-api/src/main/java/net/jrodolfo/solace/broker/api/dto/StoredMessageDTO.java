@@ -8,6 +8,7 @@ import net.jrodolfo.solace.broker.api.jpa.Property;
 import net.jrodolfo.solace.broker.api.jpa.PublishStatus;
 import net.jrodolfo.solace.broker.api.service.MessageLifecycleSupport;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -104,13 +105,23 @@ public class StoredMessageDTO {
      * @param message The message entity to map.
      */
     public StoredMessageDTO(Message message) {
+        this(message, MessageLifecycleSupport.DEFAULT_STALE_PENDING_THRESHOLD);
+    }
+
+    /**
+     * Constructs a {@link StoredMessageDTO} from a JPA {@link Message} entity.
+     *
+     * @param message               The message entity to map.
+     * @param stalePendingThreshold The threshold used to derive the stale pending flag.
+     */
+    public StoredMessageDTO(Message message, Duration stalePendingThreshold) {
         this.id = message.getId();
         this.innerMessageId = message.getInnerMessageId();
         this.destination = message.getDestination();
         this.deliveryMode = message.getDeliveryMode();
         this.priority = message.getPriority();
         this.publishStatus = message.getPublishStatus();
-        this.stalePending = isStalePending(message);
+        this.stalePending = isStalePending(message, stalePendingThreshold);
         this.failureReason = message.getFailureReason();
         this.publishedAt = message.getPublishedAt();
         this.retrySupported = message.isRetrySupported();
@@ -146,7 +157,7 @@ public class StoredMessageDTO {
      * @return {@code true} if the message status is PENDING and its creation time
      *         exceeds the staleness threshold; {@code false} otherwise.
      */
-    private static boolean isStalePending(Message message) {
-        return MessageLifecycleSupport.isStalePending(message.getPublishStatus(), message.getCreatedAt());
+    private static boolean isStalePending(Message message, Duration stalePendingThreshold) {
+        return MessageLifecycleSupport.isStalePending(message.getPublishStatus(), message.getCreatedAt(), stalePendingThreshold);
     }
 }

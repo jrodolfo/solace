@@ -26,8 +26,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -489,6 +491,19 @@ class MessageControllerTest {
     }
 
     @Test
+    void shouldReturnBadRequestWhenBulkRetryRequestExceedsConfiguredLimit() throws Exception {
+        ReflectionTestUtils.setField(controller, "maxBulkRetryBatchSize", 2);
+
+        mockMvc.perform(post("/api/v1/messages/retry")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"messageIds":[1,2,3]}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("messageIds must contain no more than 2 ids"));
+    }
+
+    @Test
     void shouldReconcileStalePendingMessage() throws Exception {
         Message stalePendingMessage = storedMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
         stalePendingMessage.setId(3L);
@@ -516,6 +531,21 @@ class MessageControllerTest {
         freshPendingMessage.setCreatedAt(LocalDateTime.now());
         freshPendingMessage.setUpdatedAt(LocalDateTime.now());
         database.storedMessages.add(freshPendingMessage);
+
+        mockMvc.perform(post("/api/v1/messages/3/reconcile-stale-pending"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Only stale PENDING messages can be reconciled"));
+    }
+
+    @Test
+    void shouldUseConfiguredThresholdWhenReconcilingPendingMessage() throws Exception {
+        ReflectionTestUtils.setField(controller, "stalePendingThreshold", Duration.ofDays(3650));
+        Message pendingMessage = storedMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
+        pendingMessage.setId(3L);
+        pendingMessage.setPublishStatus(PublishStatus.PENDING);
+        pendingMessage.setFailureReason(null);
+        pendingMessage.setPublishedAt(null);
+        database.storedMessages.add(pendingMessage);
 
         mockMvc.perform(post("/api/v1/messages/3/reconcile-stale-pending"))
                 .andExpect(status().isBadRequest())

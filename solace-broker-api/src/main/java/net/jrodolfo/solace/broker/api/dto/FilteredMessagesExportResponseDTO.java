@@ -6,7 +6,9 @@ import net.jrodolfo.solace.broker.api.jpa.DeliveryMode;
 import net.jrodolfo.solace.broker.api.jpa.Message;
 import net.jrodolfo.solace.broker.api.jpa.PayloadType;
 import net.jrodolfo.solace.broker.api.jpa.PublishStatus;
+import net.jrodolfo.solace.broker.api.service.MessageLifecycleSupport;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -75,12 +77,37 @@ public class FilteredMessagesExportResponseDTO {
             FiltersDTO filters,
             PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts,
             List<Message> messages) {
+        return fromMessages(
+                exportedAt,
+                filters,
+                lifecycleCounts,
+                messages,
+                MessageLifecycleSupport.DEFAULT_STALE_PENDING_THRESHOLD
+        );
+    }
+
+    /**
+     * Factory method to create an export response from a list of JPA {@link Message} entities.
+     *
+     * @param exportedAt            The export generation timestamp.
+     * @param filters               The filters applied.
+     * @param lifecycleCounts       The aggregated lifecycle counts.
+     * @param messages              The list of message entities to export.
+     * @param stalePendingThreshold The threshold used to derive stale pending flags.
+     * @return A new instance of {@link FilteredMessagesExportResponseDTO}.
+     */
+    public static FilteredMessagesExportResponseDTO fromMessages(
+            LocalDateTime exportedAt,
+            FiltersDTO filters,
+            PagedMessagesResponseDTO.LifecycleCountsDTO lifecycleCounts,
+            List<Message> messages,
+            Duration stalePendingThreshold) {
         return new FilteredMessagesExportResponseDTO(
                 exportedAt,
                 filters,
                 messages.size(),
                 lifecycleCounts,
-                messages.stream().map(StoredMessageDTO::new).toList()
+                messages.stream().map(message -> new StoredMessageDTO(message, stalePendingThreshold)).toList()
         );
     }
 }

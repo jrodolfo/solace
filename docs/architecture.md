@@ -135,9 +135,9 @@ Lifecycle states:
 
 Stale pending signal:
 
-- `stalePending` is derived when a message is still `PENDING` more than 5 minutes after `createdAt`
+- `stalePending` is derived when a message is still `PENDING` longer than the configured stale-pending threshold after `createdAt`
 - this does not change the stored `publishStatus` by itself
-- the 5-minute value is a current operational heuristic, not a broker-level guarantee
+- the default `PT5M` value is a current operational heuristic, not a broker-level guarantee
 - it exists to highlight rows that may need operator review after a crash, timeout, or publish/database inconsistency
 
 `innerMessageId` is not used as a database or API uniqueness constraint. Multiple stored publish attempts may carry the same `innerMessageId`, and the persisted record `id` remains the actual stored-message identity for lifecycle and retry operations.
@@ -174,6 +174,7 @@ The UI supports both:
 - retrying all currently visible failed messages in the browser
 
 The bulk retry action now delegates to the backend batch endpoint instead of sending one browser request per message.
+The backend also enforces `app.retry.max-batch-size` to prevent accidental large retry bursts.
 
 Related ADR:
 
@@ -186,7 +187,7 @@ Manual reconciliation is handled by `POST /api/v1/messages/{messageId}/reconcile
 Rules:
 
 - only `PENDING` messages can be reconciled
-- the message must be stale under the same 5-minute threshold used by the read DTO
+- the message must be stale under the same configured threshold used by the read DTO
 - reconciliation does not attempt another broker publish
 - the same stored message record is updated to `FAILED`
 - `failureReason` is set to an explicit manual reconciliation message
