@@ -15,6 +15,10 @@ import java.time.LocalDateTime;
  * <p>
  * Provides standard CRUD operations and custom update methods to manage message publishing state.
  * This repository is used to track the lifecycle of messages as they are processed and sent to the Solace broker.
+ *
+ * <p>The custom update queries intentionally update lifecycle fields without
+ * loading the full aggregate. Callers that need the updated entity should clear
+ * the persistence context before re-reading it.
  */
 public interface MessageRepository extends JpaRepository<Message, Long>, JpaSpecificationExecutor<Message> {
 

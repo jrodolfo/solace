@@ -24,7 +24,6 @@ import lombok.ToString;
 @Data
 @ToString(exclude = "message")
 @EqualsAndHashCode(callSuper = true, exclude = "message")
-// explicitly indicated that I want the call to the superclass’s equals and hashCode implementations
 @NoArgsConstructor
 @Entity
 @Table(name = "Payload")

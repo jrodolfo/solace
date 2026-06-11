@@ -31,7 +31,6 @@ import java.util.List;
 @Data
 @ToString(exclude = {"properties", "payload"})
 @EqualsAndHashCode(callSuper = true, exclude = {"properties", "payload"})
-// explicitly indicated that I want the call to the superclass’s equals and hashCode implementations
 @NoArgsConstructor
 @Entity
 @Table(
@@ -49,14 +48,14 @@ public class Message extends Auditable {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;  // Primary key for our table
+    private Long id;
 
     /**
      * The internal message ID provided within the message JSON.
      * This is different from the database primary key.
      */
     @Column(name = "inner_message_id", nullable = false)
-    private String innerMessageId;  // The ID that comes inside the message JSON
+    private String innerMessageId;
 
     /**
      * The Solace destination (Topic or Queue) where the message should be published.
@@ -109,22 +108,18 @@ public class Message extends Auditable {
     private String retryBlockedReason;
 
     /**
-     * The collection of metadata properties associated with this message.
+     * The collection of application-level metadata properties associated with this message.
      * <p>
-     * The Message entity has a list of Property objects, and each Property holds a reference back to the Message.
-     * When Jackson (the JSON serializer used by Spring Boot) tries to serialize the User, it recursively serializes
-     * the Property objects, which in turn try to serialize the Message again, and so on. To resolve this, we can
-     * break the recursion using this approach: annotate with @JsonManagedReference and @JsonBackReference
+     * Jackson managed/back references prevent recursive serialization between
+     * {@link Message} and {@link Property}.
      */
     @JsonManagedReference
-    // One-to-Many relationship with Property
     @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Property> properties;
 
     /**
      * The content body of the message.
      */
-    // One-to-One relationship with Payload
     @JsonManagedReference
     @OneToOne(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true, optional = false)
     private Payload payload;

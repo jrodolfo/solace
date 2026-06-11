@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
  * other JPA entities.
  */
 @MappedSuperclass
-@Data // Generates getters, setters, toString, equals, and hashCode
+@Data
 @EntityListeners(AuditingEntityListener.class)
 public abstract class Auditable {
 

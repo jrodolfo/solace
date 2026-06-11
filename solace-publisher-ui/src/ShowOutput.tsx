@@ -5,7 +5,7 @@ import {AxiosResponse} from "axios";
  */
 interface ShowOutputProps {
     /** The axios response to display. */
-    res: AxiosResponse<any, any> | null;
+    res: AxiosResponse<unknown, unknown> | null;
 }
 
 /**

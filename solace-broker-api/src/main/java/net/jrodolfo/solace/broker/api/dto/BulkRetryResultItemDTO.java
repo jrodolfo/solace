@@ -17,7 +17,8 @@ public class BulkRetryResultItemDTO {
     private final Long messageId;
 
     /**
-     * Short textual representation of the retry outcome (e.g., "SUCCESS", "FAILURE", "SKIPPED").
+     * Short textual representation of the retry outcome: {@code RETRIED},
+     * {@code FAILED}, or {@code SKIPPED}.
      */
     private final String outcome;
 

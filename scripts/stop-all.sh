@@ -5,6 +5,8 @@
 # Purpose:
 #   Finds and stops all running workspace components (API, UI, and Subscriber).
 #   It uses port identification and process pattern matching to find targets.
+#   This is a local developer convenience script, not a production process
+#   supervisor; matching is intentionally best effort.
 #
 # Usage:
 #   ./stop-all.sh
@@ -116,6 +118,9 @@ stop_api() {
 
 # Function: stop_ui
 # Purpose: Stops the UI component by matching UI_PROCESS_PATTERNS.
+# Notes:
+#   The UI can run on a dynamic Vite port, so process-pattern matching is more
+#   reliable here than assuming a single fixed port.
 stop_ui() {
   print_separator "ui"
 

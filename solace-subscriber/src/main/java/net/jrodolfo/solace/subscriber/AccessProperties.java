@@ -48,13 +48,11 @@ public class AccessProperties {
      */
     private Properties getProperties() {
 
-        // Retrieve environment variables
         String host = environmentProvider.apply("SOLACE_CLOUD_HOST");
         String vpnName = environmentProvider.apply("SOLACE_CLOUD_VPN");
         String userName = environmentProvider.apply("SOLACE_CLOUD_USERNAME");
         String password = environmentProvider.apply("SOLACE_CLOUD_PASSWORD");
 
-        // Check if they are good
         if (host == null || host.trim().isEmpty() ||
                 vpnName == null || vpnName.trim().isEmpty() ||
                 userName == null || userName.trim().isEmpty() ||
@@ -66,13 +64,12 @@ public class AccessProperties {
             throw new SubscriberConfigurationException(errorMessage);
         }
 
-        // Set the properties using the values from the environment variables
         final Properties properties = new Properties();
-        properties.setProperty(TransportLayerProperties.HOST, host); // host:port
-        properties.setProperty(SolaceProperties.ServiceProperties.VPN_NAME, vpnName); // message-vpn
-        properties.setProperty(AuthenticationProperties.SCHEME_BASIC_USER_NAME, userName); // client-username
-        properties.setProperty(AuthenticationProperties.SCHEME_BASIC_PASSWORD, password); // client-password
-        properties.setProperty(TransportLayerProperties.RECONNECTION_ATTEMPTS, "20");  // recommended settings
+        properties.setProperty(TransportLayerProperties.HOST, host);
+        properties.setProperty(SolaceProperties.ServiceProperties.VPN_NAME, vpnName);
+        properties.setProperty(AuthenticationProperties.SCHEME_BASIC_USER_NAME, userName);
+        properties.setProperty(AuthenticationProperties.SCHEME_BASIC_PASSWORD, password);
+        properties.setProperty(TransportLayerProperties.RECONNECTION_ATTEMPTS, "20");
         properties.setProperty(TransportLayerProperties.CONNECTION_RETRIES_PER_HOST, "5");
 
         return properties;
@@ -104,7 +101,7 @@ public class AccessProperties {
      */
     public Properties getPropertiesReceiver() {
         final Properties properties = getProperties();
-        properties.setProperty(SolaceProperties.ServiceProperties.RECEIVER_DIRECT_SUBSCRIPTION_REAPPLY, "true");  // subscribe Direct subs after reconnect
+        properties.setProperty(SolaceProperties.ServiceProperties.RECEIVER_DIRECT_SUBSCRIPTION_REAPPLY, "true");
         return properties;
     }
 }

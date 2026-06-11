@@ -5,6 +5,8 @@
 # Purpose:
 #   Checks and reports the status of all workspace components (API, UI, and Subscriber).
 #   It uses port checking, process matching, and health endpoints to determine status.
+#   When available, it also reads the latest start-all.sh log pointer to report
+#   the exact Vite URL selected during the last workspace startup.
 #
 # Usage:
 #   ./status-all.sh
@@ -112,7 +114,7 @@ find_matching_pid() {
 }
 
 # Function: latest_start_all_log_dir
-# Purpose: Retrieves the log directory from the last 'start-all.sh' execution.
+# Purpose: Retrieves the combined log directory from the last start-all.sh run.
 # Outputs:
 #   The directory path to stdout, if it exists.
 latest_start_all_log_dir() {
@@ -189,6 +191,9 @@ api_status() {
 
 # Function: ui_status
 # Purpose: Checks and prints the status of the UI component.
+# Notes:
+#   Vite may choose a different port when 5173 is busy, so this function prefers
+#   the latest start-all.sh UI log before falling back to live port detection.
 ui_status() {
   print_separator "ui"
 

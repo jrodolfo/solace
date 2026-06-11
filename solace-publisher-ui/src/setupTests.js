@@ -1,2 +1,4 @@
-// https://github.com/vitest-dev/vitest/blob/main/examples/react-testing-lib/src/test/setup.ts
+/**
+ * Vitest setup file that adds jest-dom matchers for React Testing Library.
+ */
 import "@testing-library/jest-dom";

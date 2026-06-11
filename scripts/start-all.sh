@@ -6,6 +6,8 @@
 #   Starts all three components (API, UI, and Subscriber) in the background and
 #   monitors their logs. It provides a unified view of the workspace logs and
 #   announces readiness when components are healthy.
+#   It also writes the latest combined-log directory to a temp pointer file so
+#   status-all.sh can report the Vite URL selected during startup.
 #
 # Usage:
 #   ./start-all.sh
@@ -17,6 +19,9 @@
 #
 # Expected output:
 #   Prefixed logs from all three components and readiness messages with URLs.
+#   Combined logs are written under "${TMPDIR:-/tmp}/solace-start-all.XXXXXX".
+#   The latest generated log directory path is also written to
+#   "${TMPDIR:-/tmp}/solace-start-all.latest" for status-all.sh.
 #
 # Exit behavior:
 #   Runs indefinitely until interrupted (Ctrl+C) or one of the core processes exits.
@@ -113,7 +118,7 @@ find_log_file() {
 }
 
 # Function: current_ui_local_url
-# Purpose: Attempts to extract the UI URL from the UI component logs.
+# Purpose: Extracts the current Vite local URL from the UI component log.
 # Outputs:
 #   The detected URL to stdout, if found.
 current_ui_local_url() {
@@ -139,7 +144,7 @@ api_is_ready() {
 }
 
 # Function: announce_workspace_urls_if_ready
-# Purpose: Monitors component readiness and prints URLs once available.
+# Purpose: Prints API/UI URLs once readiness can be inferred from health/logs.
 announce_workspace_urls_if_ready() {
   local ui_url=""
   ui_url="$(current_ui_local_url)"
@@ -226,7 +231,9 @@ print_status_summary() {
 }
 
 # Function: cleanup
-# Purpose: Stops all components and log monitors on script exit.
+# Purpose: Stops child components and log monitors on script exit.
+# Side effects:
+#   Leaves the combined log directory in place for later status inspection.
 cleanup() {
   if [[ "${SHUTTING_DOWN}" -eq 1 ]]; then
     return

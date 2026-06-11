@@ -1,15 +1,18 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
+/**
+ * Vite configuration for the publisher UI.
+ *
+ * The test block enables React Testing Library under jsdom, while the build
+ * block keeps third-party dependencies in a stable vendor chunk.
+ */
 export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
     environment: "jsdom",
     setupFiles: "./src/setupTests.js",
-    // you might want to disable the `css: true` line, since we don't have
-    // tests that rely on CSS -- and parsing CSS is slow.
-    // I'm leaving it in here becasue often people want to parse CSS in tests.
     css: true,
   },
   build: {
@@ -18,7 +21,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            return 'vendor'; // Moves all third-party dependencies into a single "vendor" chunk
+            return 'vendor';
           }
         }
       }

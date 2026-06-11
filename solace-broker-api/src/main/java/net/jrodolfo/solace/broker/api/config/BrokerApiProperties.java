@@ -12,6 +12,9 @@ import java.time.Duration;
 
 /**
  * Runtime tuning settings for broker API operational behavior.
+ *
+ * <p>Values are bound from {@code app.*} properties and validated during
+ * application startup so invalid operational settings fail fast.
  */
 @Validated
 @ConfigurationProperties(prefix = "app")
@@ -31,8 +34,14 @@ public class BrokerApiProperties {
         return retry;
     }
 
+    /**
+     * Settings related to stored-message lifecycle interpretation.
+     */
     public static class Lifecycle {
 
+        /**
+         * Duration after which a {@code PENDING} message is reported as stale.
+         */
         @NotNull
         @DurationMin(nanos = 1)
         private Duration stalePendingThreshold = MessageLifecycleSupport.DEFAULT_STALE_PENDING_THRESHOLD;
@@ -46,8 +55,14 @@ public class BrokerApiProperties {
         }
     }
 
+    /**
+     * Settings related to retry endpoints.
+     */
     public static class Retry {
 
+        /**
+         * Maximum number of message ids accepted by the bulk retry endpoint.
+         */
         @Min(1)
         private int maxBatchSize = 100;
 

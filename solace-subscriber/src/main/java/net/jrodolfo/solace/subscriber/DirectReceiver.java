@@ -26,9 +26,9 @@ public class DirectReceiver {
     private static final Logger logger = Logger.getLogger(DirectReceiver.class.getName());
     private final AccessProperties accessProperties;
     private final AtomicBoolean shutdownTriggered = new AtomicBoolean(false);
-    private volatile int msgRecvCounter = 0;              // num messages received
-    private volatile boolean hasDetectedDiscard = false;  // detected any discards yet?
-    private volatile boolean isShutdown = false;          // are we done yet?
+    private volatile int msgRecvCounter = 0;
+    private volatile boolean hasDetectedDiscard = false;
+    private volatile boolean isShutdown = false;
 
     /**
      * Default constructor for {@link DirectReceiver} using default {@link AccessProperties}.
@@ -83,7 +83,7 @@ public class DirectReceiver {
         logger.log(Level.INFO, "Initializing subscriber.");
 
         final MessagingService messagingService = buildMessagingService(accessProperties.getPropertiesReceiver());
-        messagingService.connect();  // blocking connection to the Solace Broker
+        messagingService.connect();
         logger.log(Level.INFO, "Connected to Solace broker.");
         configureMessagingServiceListeners(messagingService);
 
@@ -253,14 +253,23 @@ public class DirectReceiver {
         }
     }
 
+    /**
+     * Package-private test accessor for one-second receive counter assertions.
+     */
     int getMsgRecvCounter() {
         return msgRecvCounter;
     }
 
+    /**
+     * Package-private test accessor for discard-state assertions.
+     */
     boolean hasDetectedDiscard() {
         return hasDetectedDiscard;
     }
 
+    /**
+     * Package-private test accessor for shutdown-state assertions.
+     */
     boolean isShutdown() {
         return isShutdown;
     }

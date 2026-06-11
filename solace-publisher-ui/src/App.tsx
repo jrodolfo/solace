@@ -63,7 +63,8 @@ const isAllowedPayloadType = (value: unknown): value is PayloadType =>
     typeof value === "string" && PAYLOAD_TYPE_OPTIONS.includes(value as PayloadType);
 
 /**
- * The state of the browser query filters.
+ * Query contract shared by the stored-message browser, saved views, export
+ * actions, and generated query URLs.
  */
 type BrowserQueryState = {
     /** Page number to fetch. */
@@ -97,7 +98,7 @@ type BrowserQueryState = {
 };
 
 /**
- * A user-saved browser view.
+ * A user-saved stored-message browser view persisted in localStorage.
  */
 type SavedBrowserView = {
     /** The name given to the saved view. */
@@ -124,7 +125,8 @@ type BuiltInBrowserView = {
 type WorkspaceSection = "PUBLISH" | "BROWSER";
 
 /**
- * Details of the feedback after a browser-related action.
+ * Details used to explain partial outcomes, such as saved-view import rows that
+ * were added, updated, or skipped.
  */
 type BrowserFeedbackDetails = {
     /** List of added items. */
@@ -136,7 +138,7 @@ type BrowserFeedbackDetails = {
 };
 
 /**
- * Entry in the history of actions performed on saved views.
+ * Entry in the local-only audit trail of saved-view actions.
  */
 type SavedViewActionHistoryEntry = {
     /** Unique identifier for the history entry. */
@@ -159,7 +161,10 @@ const sortSavedViews = (savedViews: SavedBrowserView[]) =>
     [...savedViews].sort((left, right) => left.name.localeCompare(right.name));
 
 /**
- * Normalizes a browser query state for persistence by removing empty optional fields.
+ * Normalizes a browser query state before writing it to localStorage.
+ *
+ * Empty optional fields are removed so exported saved-view JSON stays compact
+ * and does not imply that an empty value has semantic meaning.
  * 
  * @param query - The query state to normalize.
  * @returns The normalized query state.
@@ -257,7 +262,7 @@ function App() {
     const messagesApiUrl = "http://localhost:8081/api/v1/messages/all";
     const messagesExportApiUrl = "http://localhost:8081/api/v1/messages/export";
 
-    // State hooks for input fields
+    // Broker credentials are kept only in React state for the current publish request.
     const [userName, setUserName] = useState("");
     const [password, setPassword] = useState("");
     const [vpnName, setVpnName] = useState("");
@@ -357,6 +362,10 @@ function App() {
         return () => window.clearInterval(intervalId);
     }, [savedViewActionHistory[0]?.id]);
 
+    /**
+     * Builds a complete browser query from current control state plus optional
+     * overrides used by pagination, presets, saved views, and quick filters.
+     */
     const currentBrowserQuery = (overrides?: Partial<BrowserQueryState>): BrowserQueryState => ({
         page: overrides?.page ?? Number(browserPage),
         size: overrides?.size ?? Number(browserSize),
@@ -377,7 +386,10 @@ function App() {
     const builtInBrowserViews = getBuiltInBrowserViews();
 
     /**
-     * Persists the list of saved browser views to local storage.
+     * Persists saved browser views as the browser-owned source of truth.
+     *
+     * The backend intentionally does not store saved views; only message
+     * lifecycle data belongs server-side.
      * 
      * @param nextSavedViews - The array of saved views to persist.
      */
@@ -409,6 +421,9 @@ function App() {
         window.localStorage.setItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
     };
 
+    /**
+     * Clears the local saved-view action feed without changing saved views.
+     */
     const clearSavedViewActionHistory = () => {
         setSavedViewActionHistory([]);
         window.localStorage.removeItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY);
@@ -418,6 +433,9 @@ function App() {
         setBrowserFeedbackDetails(null);
     };
 
+    /**
+     * Applies a query object back into the browser controls before fetching.
+     */
     const applyBrowserQueryState = (query: BrowserQueryState) => {
         setFilterDestination(query.destination);
         setFilterDeliveryMode(query.deliveryMode);
@@ -756,6 +774,9 @@ function App() {
         await fetchMessages(selectedBuiltInView.query);
     };
 
+    /**
+     * Exports only browser-owned saved views, not stored broker messages.
+     */
     const exportSavedViews = () => {
         if (savedViews.length === 0) {
             setBrowserMessage("No saved browser views are available to export.");
@@ -790,6 +811,12 @@ function App() {
         savedViewsImportInputRef.current?.click();
     };
 
+    /**
+     * Imports saved browser views from the JSON shape produced by exportSavedViews.
+     *
+     * Invalid entries are skipped so one bad view does not discard the rest of
+     * the import file.
+     */
     const importSavedViews = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) {
@@ -970,7 +997,10 @@ function App() {
     };
 
     /**
-     * Retries all visible failed messages on the current page.
+     * Retries retryable failed messages that are visible on the current page.
+     *
+     * This delegates to the backend bulk retry endpoint so mixed outcomes are
+     * returned as structured per-message results.
      * 
      * @returns A promise that resolves when the bulk retry operation is complete.
      */
@@ -1035,7 +1065,10 @@ function App() {
     };
 
     /**
-     * Reconciles a message that is stuck in "PENDING" status.
+     * Reconciles a message that the backend has already marked as stale pending.
+     *
+     * The UI does not decide staleness; it only calls the reconciliation
+     * endpoint for rows whose DTO exposes stalePending=true.
      * 
      * @param message - The message object to reconcile.
      * @returns A promise that resolves when the reconciliation is complete.
@@ -1086,6 +1119,9 @@ function App() {
         }
     };
 
+    /**
+     * Builds a shareable stored-message query URL from the current filters.
+     */
     const buildMessagesQueryUrl = (overrides?: Partial<BrowserQueryState>) => {
         const query = currentBrowserQuery(overrides);
         const url = new URL(messagesApiUrl);
@@ -1134,6 +1170,9 @@ function App() {
         await copyToClipboard("Current filter query", buildMessagesQueryUrl());
     };
 
+    /**
+     * Exports only the currently loaded browser page as JSON.
+     */
     const exportCurrentPage = () => {
         if (!messagesResponse) {
             return;
@@ -1176,6 +1215,9 @@ function App() {
         setBrowserStatusCode(null);
     };
 
+    /**
+     * Exports every stored message matching the active filters as JSON.
+     */
     const exportFilteredResults = async () => {
         try {
             const response = await axios.get<FilteredMessagesExportResponse>(messagesExportApiUrl, {
@@ -1301,7 +1343,6 @@ function App() {
         await fetchMessages({page: Number(DEFAULT_BROWSER_PAGE), publishStatus: "PENDING", stalePendingOnly: true});
     };
 
-    // Submit handler
     /**
      * Handles the form submission for publishing a new message.
      * 
