@@ -164,6 +164,7 @@ The workflow currently covers:
 - [Architecture walkthrough](docs/architecture-walkthrough.md): concise technical narrative for understanding the design quickly
 - [Architecture Decision Records](docs/adr/README.md): why the major design decisions were made
 - [Solace Cloud setup guide](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md): account, demo broker, credentials, and OS environment variables
+- [Fresh clone release validation checklist](docs/validation/fresh-clone-release-checklist.md): repeatable pre-release validation from setup through publish, retry, reconciliation, and shutdown
 - [Broker API README](solace-broker-api/README.md): backend API contract, MySQL runtime, request/response examples, and tuning settings
 - [Publisher UI README](solace-publisher-ui/README.md): frontend behavior and development commands
 - [Subscriber README](solace-subscriber/README.md): subscriber configuration and runtime behavior
