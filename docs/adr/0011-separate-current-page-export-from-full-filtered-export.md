@@ -50,7 +50,7 @@ Benefits:
 - current-page export is immediate and aligned with what the operator is looking at
 - full filtered export reflects the backend’s full filtered dataset, not just one loaded page
 - the UI/backend boundary stays clear
-- export semantics are easier to explain during maintenance and interviews
+- export semantics are easier to explain during maintenance and technical review
 
 Tradeoffs:
 

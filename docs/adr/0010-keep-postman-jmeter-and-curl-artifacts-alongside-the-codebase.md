@@ -33,10 +33,10 @@ Keeping these assets in the repo makes the backend easier to validate from
 multiple entry points and keeps the examples version-adjacent to the code they
 describe.
 
-This is also useful for interview and onboarding scenarios. A reviewer can see
-that the backend was designed to be testable and explorable beyond a single UI,
-which reinforces the architecture claim that `solace-broker-api` is not
-frontend-exclusive.
+This is also useful for technical review and onboarding scenarios. A reviewer
+can see that the backend was designed to be testable and explorable beyond a
+single UI, which reinforces the architecture claim that `solace-broker-api` is
+not frontend-exclusive.
 
 ## Primary Implementation
 

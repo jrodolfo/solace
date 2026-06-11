@@ -14,7 +14,7 @@ and manual API clients are used for:
 
 - direct interactive publishing
 - quick troubleshooting
-- demonstration and interview walkthroughs
+- demonstration and technical walkthroughs
 - immediate inspection of success or failure outcomes
 
 At the same time, the system still needs a durable record of intent before the

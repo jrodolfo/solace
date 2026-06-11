@@ -10,7 +10,7 @@ This project is not only a thin publish proxy. It also needs to support:
 - later inspection of what was sent
 - retry of failed stored messages
 - UI browsing with lifecycle filters
-- interview and debugging scenarios where we need evidence of outcomes
+- debugging and review scenarios where we need evidence of outcomes
 
 If the backend only forwarded publish requests to Solace and returned the
 immediate broker result, we would lose operational history and make retry and

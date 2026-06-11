@@ -14,7 +14,7 @@ This repository also benefits from a browser-based surface for:
 
 - quicker manual publishing
 - browsing stored messages without crafting requests by hand
-- showing the project in a portfolio or interview setting
+- showing the project in a portfolio or technical walkthrough setting
 
 ## Decision
 

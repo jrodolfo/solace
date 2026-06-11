@@ -22,7 +22,7 @@ Use zero-padded numeric prefixes and kebab-case titles:
 ```
 
 Each ADR should focus on one decision and stay short enough to scan quickly in
-an interview, maintenance, or onboarding context.
+a maintenance, review, or onboarding context.
 
 When an ADR is replaced, keep the old file, change its status to `superseded`,
 and add a short note near the top linking to the newer ADR that replaces it.

@@ -33,9 +33,9 @@ traffic rather than as another backend subsystem. That separation makes it
 clearer whether an issue is in the publish path, the persistence model, or the
 broker subscription path.
 
-This also preserves a clean interview and maintenance story: the subscriber is
-for direct topic visibility, while the backend is the system of record for HTTP
-publish and retry workflows.
+This also preserves a clean maintenance story: the subscriber is for direct
+topic visibility, while the backend is the system of record for HTTP publish
+and retry workflows.
 
 ## Primary Implementation
 
