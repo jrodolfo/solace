@@ -2,9 +2,11 @@ package net.jrodolfo.solace.subscriber;
 
 import com.solace.messaging.MessagingService;
 import com.solace.messaging.receiver.DirectMessageReceiver;
+import com.solace.messaging.receiver.InboundMessage;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Handler;
@@ -74,6 +76,94 @@ class DirectReceiverTest {
     }
 
     @Test
+    void formatReceivedMessageIncludesReadableBrokerFieldsAndPayload() {
+        DirectReceiver directReceiver = new DirectReceiver(
+                new AccessProperties(buildEnvironmentProvider(Map.of()))
+        );
+        Map<String, String> properties = new LinkedHashMap<>();
+        properties.put("source", "smoke-test");
+        properties.put("region", "ca-east");
+        InboundMessage inboundMessage = inboundMessage(
+                "solace/java/direct/system-01",
+                "9065ea31-ee72-49c2-86ae-d47bf0f31bbb",
+                "PERSISTENT",
+                4,
+                properties,
+                "hello from the smoke test"
+        );
+
+        String logLine = directReceiver.formatReceivedMessage(inboundMessage);
+
+        assertEquals(
+                "received solace message: destination=solace/java/direct/system-01"
+                        + ", applicationMessageId=9065ea31-ee72-49c2-86ae-d47bf0f31bbb"
+                        + ", applicationMessageType=PERSISTENT"
+                        + ", priority=4"
+                        + ", properties={source=smoke-test, region=ca-east}"
+                        + ", payload=\"hello from the smoke test\"",
+                logLine
+        );
+    }
+
+    @Test
+    void formatReceivedMessageEscapesLineBreaksAndQuotesInPayload() {
+        DirectReceiver directReceiver = new DirectReceiver(
+                new AccessProperties(buildEnvironmentProvider(Map.of()))
+        );
+        InboundMessage inboundMessage = inboundMessage(
+                "solace/java/direct/system-01",
+                "message-01",
+                "DIRECT",
+                1,
+                Map.of(),
+                "line 1\nline \"2\"\r\nline 3"
+        );
+
+        String logLine = directReceiver.formatReceivedMessage(inboundMessage);
+
+        assertTrue(logLine.contains("payload=\"line 1\\nline \\\"2\\\"\\r\\nline 3\""));
+    }
+
+    @Test
+    void formatReceivedMessageTruncatesLongPayloads() {
+        DirectReceiver directReceiver = new DirectReceiver(
+                new AccessProperties(buildEnvironmentProvider(Map.of()))
+        );
+        InboundMessage inboundMessage = inboundMessage(
+                "solace/java/direct/system-01",
+                "message-01",
+                "DIRECT",
+                1,
+                Map.of(),
+                "x".repeat(501)
+        );
+
+        String logLine = directReceiver.formatReceivedMessage(inboundMessage);
+
+        assertTrue(logLine.contains("payload=\"" + "x".repeat(500) + "...(truncated, 501 chars)\""));
+    }
+
+    @Test
+    void formatReceivedMessageHandlesMissingMetadata() {
+        DirectReceiver directReceiver = new DirectReceiver(
+                new AccessProperties(buildEnvironmentProvider(Map.of()))
+        );
+        InboundMessage inboundMessage = inboundMessage(null, "", null, 0, null, null);
+
+        String logLine = directReceiver.formatReceivedMessage(inboundMessage);
+
+        assertEquals(
+                "received solace message: destination=<unavailable>"
+                        + ", applicationMessageId=<unavailable>"
+                        + ", applicationMessageType=<unavailable>"
+                        + ", priority=0"
+                        + ", properties={}"
+                        + ", payload=\"\"",
+                logLine
+        );
+    }
+
+    @Test
     void shutdownIsIdempotentAcrossRepeatedCalls() {
         DirectReceiver directReceiver = new DirectReceiver(
                 new AccessProperties(buildEnvironmentProvider(Map.of()))
@@ -111,6 +201,29 @@ class DirectReceiverTest {
 
     private static java.util.function.Function<String, String> buildEnvironmentProvider(Map<String, String> environment) {
         return environment::get;
+    }
+
+    private static InboundMessage inboundMessage(
+            String destinationName,
+            String applicationMessageId,
+            String applicationMessageType,
+            int priority,
+            Map<String, String> properties,
+            String payload
+    ) {
+        return proxy(
+                InboundMessage.class,
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getDestinationName" -> destinationName;
+                    case "getApplicationMessageId" -> applicationMessageId;
+                    case "getApplicationMessageType" -> applicationMessageType;
+                    case "getPriority" -> priority;
+                    case "getProperties" -> properties;
+                    case "getPayloadAsString" -> payload;
+                    case "getPayloadAsBytes" -> payload == null ? null : payload.getBytes();
+                    default -> defaultValue(method.getReturnType());
+                }
+        );
     }
 
     @SuppressWarnings("unchecked")

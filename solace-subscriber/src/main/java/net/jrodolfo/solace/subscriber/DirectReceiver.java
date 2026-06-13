@@ -3,10 +3,12 @@ package net.jrodolfo.solace.subscriber;
 import com.solace.messaging.MessagingService;
 import com.solace.messaging.config.profile.ConfigurationProfile;
 import com.solace.messaging.receiver.DirectMessageReceiver;
+import com.solace.messaging.receiver.InboundMessage;
 import com.solace.messaging.receiver.MessageReceiver.MessageHandler;
 import com.solace.messaging.resources.TopicSubscription;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -24,6 +26,7 @@ import static net.jrodolfo.solace.subscriber.Constants.TOPIC_NAME;
 public class DirectReceiver {
 
     private static final Logger logger = Logger.getLogger(DirectReceiver.class.getName());
+    private static final int MAX_LOGGED_PAYLOAD_LENGTH = 500;
     private final AccessProperties accessProperties;
     private final AtomicBoolean shutdownTriggered = new AtomicBoolean(false);
     private volatile int msgRecvCounter = 0;
@@ -148,12 +151,76 @@ public class DirectReceiver {
      */
     MessageHandler createMessageHandler() {
         return inboundMessage -> {
-            logger.log(Level.INFO, "InboundMessage: " + inboundMessage);
+            logger.log(Level.INFO, formatReceivedMessage(inboundMessage));
             handleInboundMessageState(
                     inboundMessage.getMessageDiscardNotification().hasBrokerDiscardIndication(),
                     inboundMessage.getMessageDiscardNotification().hasInternalDiscardIndication()
             );
         };
+    }
+
+    /**
+     * Formats an inbound message into a compact single-line log entry.
+     *
+     * @param inboundMessage the message received from Solace
+     * @return a smoke-test-friendly log line
+     */
+    String formatReceivedMessage(InboundMessage inboundMessage) {
+        return "received solace message: "
+                + "destination=" + valueOrUnavailable(inboundMessage.getDestinationName())
+                + ", applicationMessageId=" + valueOrUnavailable(inboundMessage.getApplicationMessageId())
+                + ", applicationMessageType=" + valueOrUnavailable(inboundMessage.getApplicationMessageType())
+                + ", priority=" + inboundMessage.getPriority()
+                + ", properties=" + formatProperties(inboundMessage.getProperties())
+                + ", payload=\"" + sanitizePayload(readPayload(inboundMessage)) + "\"";
+    }
+
+    private String readPayload(InboundMessage inboundMessage) {
+        try {
+            String payload = inboundMessage.getPayloadAsString();
+            if (payload != null) {
+                return payload;
+            }
+            byte[] payloadBytes = inboundMessage.getPayloadAsBytes();
+            if (payloadBytes == null) {
+                return "";
+            }
+            return "<binary payload, " + payloadBytes.length + " bytes>";
+        } catch (RuntimeException e) {
+            return "<payload unavailable: " + e.getClass().getSimpleName() + ">";
+        }
+    }
+
+    private String sanitizePayload(String payload) {
+        String escapedPayload = payload
+                .replace("\\", "\\\\")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t")
+                .replace("\"", "\\\"");
+
+        if (escapedPayload.length() <= MAX_LOGGED_PAYLOAD_LENGTH) {
+            return escapedPayload;
+        }
+
+        return escapedPayload.substring(0, MAX_LOGGED_PAYLOAD_LENGTH)
+                + "...(truncated, " + escapedPayload.length() + " chars)";
+    }
+
+    private String formatProperties(Map<String, String> properties) {
+        if (properties == null || properties.isEmpty()) {
+            return "{}";
+        }
+
+        return properties.toString();
+    }
+
+    private String valueOrUnavailable(String value) {
+        if (value == null || value.isBlank()) {
+            return "<unavailable>";
+        }
+
+        return value;
     }
 
     /**
