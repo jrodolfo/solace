@@ -1458,15 +1458,14 @@ function App() {
             <div className="container-fluid px-4 px-lg-5 py-4 py-lg-5">
                 <header className="publisher-hero mb-4">
                     <div>
-                        <p className="publisher-eyebrow mb-2">solace tools</p>
-                        <h1 className="publisher-title mb-2">Publisher Workspace</h1>
+                        <h1 className="publisher-title mb-1">Publisher Workspace</h1>
                         <p className="publisher-subtitle mb-0">
-                            Publish a message with typed fields, then inspect stored results with the paginated browser below.
+                            Publish messages and inspect stored results.
                         </p>
                     </div>
                 </header>
 
-                <div className="workspace-tabs d-xl-none mb-4" role="tablist" aria-label="Workspace sections">
+                <div className="workspace-tabs mb-4" role="tablist" aria-label="Workspace sections">
                     <button
                         type="button"
                         role="tab"
@@ -1476,7 +1475,7 @@ function App() {
                         className={`workspace-tab${activeWorkspaceSection === "PUBLISH" ? " is-active" : ""}`}
                         onClick={() => setActiveWorkspaceSection("PUBLISH")}
                     >
-                        Publish Message
+                        Write
                     </button>
                     <button
                         type="button"
@@ -1487,16 +1486,17 @@ function App() {
                         className={`workspace-tab${activeWorkspaceSection === "BROWSER" ? " is-active" : ""}`}
                         onClick={() => setActiveWorkspaceSection("BROWSER")}
                     >
-                        Stored Messages
+                        Read
                     </button>
                 </div>
 
                 <div className="row g-4 align-items-start">
                     <div
-                        className={`col-12 col-xl-5 workspace-pane${activeWorkspaceSection === "PUBLISH" ? " is-active" : ""}`}
+                        className={`col-12 workspace-pane${activeWorkspaceSection === "PUBLISH" ? " is-active" : ""}`}
                         id="workspace-panel-publish"
                         role="tabpanel"
                         aria-labelledby="workspace-tab-publish"
+                        hidden={activeWorkspaceSection !== "PUBLISH"}
                     >
                         <section className="workspace-card h-100">
                             <div className="workspace-card-header">
@@ -1751,10 +1751,11 @@ function App() {
                     </div>
 
                     <div
-                        className={`col-12 col-xl-7 workspace-pane${activeWorkspaceSection === "BROWSER" ? " is-active" : ""}`}
+                        className={`col-12 workspace-pane${activeWorkspaceSection === "BROWSER" ? " is-active" : ""}`}
                         id="workspace-panel-browser"
                         role="tabpanel"
                         aria-labelledby="workspace-tab-browser"
+                        hidden={activeWorkspaceSection !== "BROWSER"}
                     >
                         <section className="workspace-card h-100">
                             <div className="workspace-card-header">

@@ -27,18 +27,34 @@ class MockBlob {
     }
 }
 
-test('it shows 5 inputs and 1 button', () => {
+async function openReadWorkspace() {
+    fireEvent.click(screen.getByRole("tab", {name: /read/i}));
+}
+
+async function renderReadWorkspace() {
+    render(<App/>);
+    await openReadWorkspace();
+}
+
+test('it shows the write workspace by default', async () => {
     render(<App/>);
     const textboxes = screen.getAllByRole('textbox');
     const spinbuttons = screen.getAllByRole('spinbutton');
-    expect(textboxes).toHaveLength(11);
-    expect(spinbuttons).toHaveLength(3);
+    expect(textboxes).toHaveLength(8);
+    expect(spinbuttons).toHaveLength(1);
     expect(screen.getByRole('button', {name: /publish message/i})).toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: /load messages/i})).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: /refresh results/i})).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: /reset filters/i})).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', {name: /write/i})).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole('tab', {name: /read/i})).toHaveAttribute("aria-selected", "false");
+
+    await openReadWorkspace();
+
+    expect(screen.queryByRole('button', {name: /publish message/i})).not.toBeInTheDocument();
     expect(screen.getByRole('button', {name: /load messages/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /refresh results/i})).toBeInTheDocument();
     expect(screen.getByRole('button', {name: /reset filters/i})).toBeInTheDocument();
-    expect(screen.getByRole('tab', {name: /publish message/i})).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole('tab', {name: /stored messages/i})).toHaveAttribute("aria-selected", "false");
     expect(screen.getByLabelText(/Created At From/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Created At To/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Published At From/i)).toBeInTheDocument();
@@ -50,21 +66,27 @@ test('it shows 5 inputs and 1 button', () => {
 test("it switches the active workspace tab", async () => {
     render(<App/>);
 
-    const publishTab = screen.getByRole("tab", {name: /publish message/i});
-    const storedMessagesTab = screen.getByRole("tab", {name: /stored messages/i});
+    const publishTab = screen.getByRole("tab", {name: /write/i});
+    const storedMessagesTab = screen.getByRole("tab", {name: /read/i});
 
     expect(publishTab).toHaveAttribute("aria-selected", "true");
     expect(storedMessagesTab).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("button", {name: /publish message/i})).toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: /load messages/i})).not.toBeInTheDocument();
 
     await userEvent.click(storedMessagesTab);
 
     expect(publishTab).toHaveAttribute("aria-selected", "false");
     expect(storedMessagesTab).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("button", {name: /publish message/i})).not.toBeInTheDocument();
+    expect(screen.getByRole("button", {name: /load messages/i})).toBeInTheDocument();
 
     await userEvent.click(publishTab);
 
     expect(publishTab).toHaveAttribute("aria-selected", "true");
     expect(storedMessagesTab).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("button", {name: /publish message/i})).toBeInTheDocument();
+    expect(screen.queryByRole("button", {name: /load messages/i})).not.toBeInTheDocument();
 });
 
 function buildBulkRetryResponse(overrides?: Partial<{
@@ -509,7 +531,7 @@ describe("Broker API Contract Tests", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -530,7 +552,7 @@ describe("Stored Messages Browser", () => {
                 })
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
 
@@ -572,7 +594,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
 
@@ -600,7 +622,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
@@ -646,7 +668,7 @@ describe("Stored Messages Browser", () => {
     });
 
     test("Copies the current filter query url with active parameters only", async () => {
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
@@ -674,7 +696,7 @@ describe("Stored Messages Browser", () => {
     });
 
     test("Saves the current browser view in local storage", async () => {
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
@@ -735,7 +757,7 @@ describe("Stored Messages Browser", () => {
             ])
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-09");
         await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
@@ -779,7 +801,7 @@ describe("Stored Messages Browser", () => {
             ])
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-09");
         await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
@@ -810,7 +832,7 @@ describe("Stored Messages Browser", () => {
     });
 
     test("Shows recent saved view action history for save rename and delete", async () => {
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
         await userEvent.click(screen.getByRole("button", {name: /save current view/i}));
@@ -828,8 +850,8 @@ describe("Stored Messages Browser", () => {
         expect(await screen.findByText('Deleted "Renamed Failed View"')).toBeInTheDocument();
     });
 
-    test("Shows built-in browser views separately from local saved views", () => {
-        render(<App/>);
+    test("Shows built-in browser views separately from local saved views", async () => {
+        await renderReadWorkspace();
 
         const builtInViews = screen.getByLabelText(/^Built-In Views$/i);
         expect(within(builtInViews).getByRole("option", {name: "failed today"})).toBeInTheDocument();
@@ -852,7 +874,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.selectOptions(screen.getByLabelText(/^Built-In Views$/i), "STALE_PENDING_ONLY");
         await userEvent.click(screen.getByRole("button", {name: /apply built-in view/i}));
@@ -917,7 +939,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Stale Pending Review");
         await userEvent.click(screen.getByRole("button", {name: /load saved view/i}));
@@ -982,7 +1004,7 @@ describe("Stored Messages Browser", () => {
             ])
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
         await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Renamed Failed View");
@@ -1055,7 +1077,7 @@ describe("Stored Messages Browser", () => {
             ])
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
         await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Published Review");
@@ -1129,7 +1151,7 @@ describe("Stored Messages Browser", () => {
             ])
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
         await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Published Review");
@@ -1202,7 +1224,7 @@ describe("Stored Messages Browser", () => {
             ])
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
         await userEvent.click(screen.getByRole("button", {name: /rename saved view/i}));
@@ -1235,7 +1257,7 @@ describe("Stored Messages Browser", () => {
             ])
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
         await userEvent.click(screen.getByRole("button", {name: /delete saved view/i}));
@@ -1271,7 +1293,7 @@ describe("Stored Messages Browser", () => {
             ])
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /export saved views/i}));
 
@@ -1318,7 +1340,7 @@ describe("Stored Messages Browser", () => {
             ])
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         const importFile = new File(
             [JSON.stringify({
@@ -1432,7 +1454,7 @@ describe("Stored Messages Browser", () => {
     });
 
     test("Rejects saved view import files that contain no valid entries", async () => {
-        render(<App/>);
+        await renderReadWorkspace();
 
         const importFile = new File(
             [JSON.stringify({
@@ -1474,7 +1496,7 @@ describe("Stored Messages Browser", () => {
     });
 
     test("Shows recent saved view action history for imports", async () => {
-        render(<App/>);
+        await renderReadWorkspace();
 
         const importFile = new File(
             [JSON.stringify({
@@ -1527,7 +1549,7 @@ describe("Stored Messages Browser", () => {
         expect(screen.getByText("Imported 2 views")).toBeInTheDocument();
     });
 
-    test("Shows relative timestamps in recent saved view action history", () => {
+    test("Shows relative timestamps in recent saved view action history", async () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date("2026-04-22T10:32:00.000Z"));
         window.localStorage.setItem(
@@ -1542,7 +1564,7 @@ describe("Stored Messages Browser", () => {
             ])
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         expect(screen.getByText(/Recent Saved View Actions/i)).toBeInTheDocument();
         expect(screen.getByText("2 minutes ago")).toBeInTheDocument();
@@ -1569,7 +1591,7 @@ describe("Stored Messages Browser", () => {
             ])
         );
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         expect(screen.getByText(/Recent Saved View Actions/i)).toBeInTheDocument();
         expect(screen.getByText('Saved "Failed Priority View"')).toBeInTheDocument();
@@ -1622,7 +1644,7 @@ describe("Stored Messages Browser", () => {
                 config: {headers: new AxiosHeaders()},
             });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -1658,7 +1680,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -1701,7 +1723,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -1731,7 +1753,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -1764,7 +1786,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -1796,7 +1818,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -1852,7 +1874,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -1919,7 +1941,7 @@ describe("Stored Messages Browser", () => {
                 config: {headers: new AxiosHeaders()},
             });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -1978,7 +2000,7 @@ describe("Stored Messages Browser", () => {
                 config: {headers: new AxiosHeaders()},
             });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -2031,7 +2053,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -2085,7 +2107,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -2149,7 +2171,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-02");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "DIRECT");
@@ -2242,7 +2264,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
         await userEvent.click(screen.getByRole("button", {name: /export filtered results csv/i}));
@@ -2326,7 +2348,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -2381,7 +2403,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -2442,7 +2464,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -2540,7 +2562,7 @@ describe("Stored Messages Browser", () => {
                 config: {headers: new AxiosHeaders()},
             });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -2607,7 +2629,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -2660,7 +2682,7 @@ describe("Stored Messages Browser", () => {
             isAxiosError: true,
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -2685,7 +2707,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
 
@@ -2712,7 +2734,7 @@ describe("Stored Messages Browser", () => {
             isAxiosError: true,
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
 
@@ -2745,7 +2767,7 @@ describe("Stored Messages Browser", () => {
                 config: {headers: new AxiosHeaders()},
             });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-03");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
@@ -2803,7 +2825,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /failed today/i}));
 
@@ -2836,7 +2858,7 @@ describe("Stored Messages Browser", () => {
     });
 
     test("Applies the published today preset to published-at filters", async () => {
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /published today/i}));
 
@@ -2851,7 +2873,7 @@ describe("Stored Messages Browser", () => {
     });
 
     test("Applies the pending now preset and clears date ranges", async () => {
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Created At From/i), "2026-04-20T09:30");
         await userEvent.type(screen.getByLabelText(/Published At From/i), "2026-04-21T07:00");
@@ -2893,7 +2915,7 @@ describe("Stored Messages Browser", () => {
                 config: {headers: new AxiosHeaders()},
             });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /failed last 24h/i}));
         const createdAtFrom = screen.getByLabelText(/Created At From/i) as HTMLInputElement;
@@ -2936,7 +2958,7 @@ describe("Stored Messages Browser", () => {
             config: {headers: new AxiosHeaders()},
         });
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-03");
         await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
@@ -2991,7 +3013,7 @@ describe("Stored Messages Browser", () => {
         });
         writeTextMock.mockResolvedValue(undefined);
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
@@ -3019,7 +3041,7 @@ describe("Stored Messages Browser", () => {
         });
         writeTextMock.mockResolvedValue(undefined);
 
-        render(<App/>);
+        await renderReadWorkspace();
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
