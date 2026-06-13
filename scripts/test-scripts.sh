@@ -77,6 +77,26 @@ assert_contains() {
   fi
 }
 
+# Function: assert_equals
+# Purpose: Verifies that two strings are identical.
+# Inputs:
+#   $1 - Expected string.
+#   $2 - Actual string.
+# Exit behavior:
+#   Exits with code 1 if the strings differ.
+assert_equals() {
+  local expected="$1"
+  local actual="$2"
+
+  if [[ "${actual}" != "${expected}" ]]; then
+    echo "expected output:" >&2
+    echo "${expected}" >&2
+    echo "actual output:" >&2
+    echo "${actual}" >&2
+    exit 1
+  fi
+}
+
 # Function: assert_command_fails_with
 # Purpose: Verifies that a command fails and its output contains expected text.
 # Inputs:
@@ -128,6 +148,33 @@ bash -n \
   "${REPO_ROOT}/scripts/build-publisher-ui.sh" \
   "${REPO_ROOT}/scripts/build-subscriber.sh" \
   "${REPO_ROOT}/scripts/build-all.sh"
+
+echo "checking combined log component separation"
+# shellcheck source=common.sh
+source "${REPO_ROOT}/scripts/common.sh"
+combined_log_sample="$(
+  printf '%s\n' \
+    "[api] api line 1" \
+    "[api] api line 2" \
+    "[subscriber] subscriber line 1" \
+    "[subscriber] subscriber line 2" \
+    "[ui] ui line 1" \
+    "[api] api line 3" \
+    | separate_component_log_transitions
+)"
+expected_combined_log_sample="$(cat <<'EOF'
+[api] api line 1
+[api] api line 2
+
+[subscriber] subscriber line 1
+[subscriber] subscriber line 2
+
+[ui] ui line 1
+
+[api] api line 3
+EOF
+)"
+assert_equals "${expected_combined_log_sample}" "${combined_log_sample}"
 
 echo "checking legacy package namespace is absent"
 legacy_dot_pattern="org[.]orgname"

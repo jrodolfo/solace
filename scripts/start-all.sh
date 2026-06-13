@@ -43,6 +43,8 @@ PROCESS_STATUSES=()
 SHUTTING_DOWN=0
 # Create a temporary directory for component logs.
 LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/solace-start-all.XXXXXX")"
+LOG_STREAM_FIFO="${LOG_DIR}/combined-log-stream.fifo"
+LOG_FORMATTER_PID=""
 LATEST_LOG_DIR_FILE="${LATEST_START_ALL_FILE:-${TMPDIR:-/tmp}/solace-start-all.latest}"
 # Configuration for health checks.
 API_BASE_URL="${API_BASE_URL:-http://localhost:8081}"
@@ -74,6 +76,15 @@ print_separator() {
 prefix_log_stream() {
   local component_name="$1"
   awk -v prefix="[${component_name}] " '{ print prefix $0; fflush() }'
+}
+
+# Function: start_log_formatter
+# Purpose: Starts the shared terminal formatter for all component log streams.
+start_log_formatter() {
+  mkfifo "${LOG_STREAM_FIFO}"
+  exec 3<>"${LOG_STREAM_FIFO}"
+  separate_component_log_transitions <"${LOG_STREAM_FIFO}" &
+  LOG_FORMATTER_PID=$!
 }
 
 # Function: update_running_process_statuses
@@ -197,7 +208,7 @@ start_process() {
 
   # Start a monitor process to tail the logs with a prefix.
   (
-    tail -n +1 -f "${log_file}" | prefix_log_stream "${name}"
+    tail -n +1 -f "${log_file}" | prefix_log_stream "${name}" >"${LOG_STREAM_FIFO}"
   ) &
   local monitor_pid=$!
 
@@ -218,6 +229,18 @@ stop_log_monitors() {
 
   kill "${MONITOR_PIDS[@]}" 2>/dev/null || true
   wait "${MONITOR_PIDS[@]}" 2>/dev/null || true
+}
+
+# Function: stop_log_formatter
+# Purpose: Stops the shared terminal log formatter.
+stop_log_formatter() {
+  if [[ -n "${LOG_FORMATTER_PID}" ]]; then
+    kill "${LOG_FORMATTER_PID}" 2>/dev/null || true
+    wait "${LOG_FORMATTER_PID}" 2>/dev/null || true
+    LOG_FORMATTER_PID=""
+  fi
+
+  exec 3>&- 2>/dev/null || true
 }
 
 # Function: print_status_summary
@@ -249,6 +272,7 @@ cleanup() {
   fi
 
   stop_log_monitors
+  stop_log_formatter
   print_status_summary
 }
 
@@ -265,6 +289,8 @@ trap handle_signal INT TERM
 
 # Store the latest log directory for other scripts to reference.
 printf '%s\n' "${LOG_DIR}" >"${LATEST_LOG_DIR_FILE}"
+
+start_log_formatter
 
 # Start all three components.
 start_process "api" "${SCRIPT_DIR}/start-broker-api.sh"

@@ -38,6 +38,35 @@ require_command() {
   fi
 }
 
+# Function: separate_component_log_transitions
+# Purpose: Inserts a blank line when a prefixed log stream changes component.
+# Inputs:
+#   Reads lines from stdin. Component lines must begin with "[component]".
+# Outputs:
+#   The original stream with one blank line before each component transition.
+separate_component_log_transitions() {
+  awk '
+    {
+      current_component = ""
+      if ($0 ~ /^\[[^]]+\]/) {
+        closing_bracket = index($0, "]")
+        current_component = substr($0, 2, closing_bracket - 2)
+      }
+
+      if (previous_component != "" && current_component != "" && current_component != previous_component) {
+        print ""
+      }
+
+      print $0
+      fflush()
+
+      if (current_component != "") {
+        previous_component = current_component
+      }
+    }
+  '
+}
+
 # Function: is_windows_shell
 # Purpose: Detects Windows-hosted Bash environments such as Git Bash, MSYS, or Cygwin.
 # Outputs:
