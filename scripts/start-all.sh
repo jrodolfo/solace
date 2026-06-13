@@ -304,6 +304,14 @@ echo "press ctrl-c to stop all three processes"
 
 # Monitoring loop: check for process exits and readiness.
 while true; do
+  if workspace_stop_requested "${LOG_DIR}"; then
+    update_running_process_statuses "stopped by stop-all.sh"
+
+    echo
+    echo "external stop request detected from stop-all.sh; stopping started processes"
+    exit 0
+  fi
+
   for i in "${!PIDS[@]}"; do
     pid="${PIDS[$i]}"
     if [[ -z "${pid}" ]]; then
@@ -319,6 +327,15 @@ while true; do
 
       PROCESS_STATUSES[$i]="exited with code ${exit_code}"
       PIDS[$i]=""
+
+      if workspace_stop_requested "${LOG_DIR}"; then
+        PROCESS_STATUSES[$i]="stopped by stop-all.sh"
+        update_running_process_statuses "stopped by stop-all.sh"
+
+        echo
+        echo "external stop request detected from stop-all.sh; stopping remaining processes"
+        exit 0
+      fi
 
       # The subscriber exiting is a warning but doesn't stop the whole stack.
       if [[ "${PROCESS_NAMES[$i]}" == "subscriber" ]]; then

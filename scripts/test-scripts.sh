@@ -30,6 +30,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Temporary directories and files for testing.
 temp_status_dir=""
+temp_stop_dir=""
 temp_ui_dir=""
 temp_process_bin_dir=""
 temp_fake_bin_dir=""
@@ -40,6 +41,10 @@ temp_npm_log_file=""
 cleanup() {
   if [[ -n "${temp_status_dir}" ]]; then
     rm -rf "${temp_status_dir}"
+  fi
+
+  if [[ -n "${temp_stop_dir}" ]]; then
+    rm -rf "${temp_stop_dir}"
   fi
 
   if [[ -n "${temp_ui_dir}" ]]; then
@@ -176,6 +181,26 @@ EOF
 )"
 assert_equals "${expected_combined_log_sample}" "${combined_log_sample}"
 
+echo "checking external workspace stop marker handling"
+temp_stop_dir="$(mktemp -d)"
+temp_stop_pointer_file="${temp_stop_dir}/latest-start-all.txt"
+mkdir -p "${temp_stop_dir}/logs"
+printf '%s\n' "${temp_stop_dir}/logs" >"${temp_stop_pointer_file}"
+LATEST_START_ALL_FILE="${temp_stop_pointer_file}" request_workspace_stop
+if [[ ! -f "${temp_stop_dir}/logs/stop-requested" ]]; then
+  echo "expected stop marker to be created" >&2
+  exit 1
+fi
+if ! workspace_stop_requested "${temp_stop_dir}/logs"; then
+  echo "expected stop marker to be detected" >&2
+  exit 1
+fi
+rm -f "${temp_stop_dir}/logs/stop-requested"
+if workspace_stop_requested "${temp_stop_dir}/logs"; then
+  echo "did not expect stop marker after removal" >&2
+  exit 1
+fi
+
 echo "checking legacy package namespace is absent"
 legacy_dot_pattern="org[.]orgname"
 legacy_path_pattern="org""/""orgname"
@@ -227,7 +252,7 @@ assert_contains "${status_all_with_hint_output}" "last known url: http://localho
 assert_contains "${status_all_with_hint_output}" "last known source: start-all ui log"
 
 echo "checking stop-all output structure"
-stop_all_output="$("${REPO_ROOT}/scripts/stop-all.sh")"
+stop_all_output="$(env STOP_ALL_MARKER_GRACE_SECONDS=0 "${REPO_ROOT}/scripts/stop-all.sh")"
 assert_contains "${stop_all_output}" "==================== workspace shutdown ===================="
 assert_contains "${stop_all_output}" "==================== api ===================="
 assert_contains "${stop_all_output}" "==================== ui ===================="
@@ -247,7 +272,7 @@ windows_status_output="$(
 assert_contains "${windows_status_output}" "==================== workspace status ===================="
 assert_contains "${windows_status_output}" "status: NOT RUNNING"
 windows_stop_output="$(
-  env PATH="${temp_process_bin_dir}:$PATH" WORKSPACE_SCRIPT_PLATFORM=windows \
+  env PATH="${temp_process_bin_dir}:$PATH" WORKSPACE_SCRIPT_PLATFORM=windows STOP_ALL_MARKER_GRACE_SECONDS=0 \
     "${REPO_ROOT}/scripts/stop-all.sh"
 )"
 assert_contains "${windows_stop_output}" "==================== workspace shutdown ===================="

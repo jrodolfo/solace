@@ -32,6 +32,7 @@ require_process_stop_tools
 
 # Configuration for component discovery.
 API_PORT="${API_PORT:-8081}"
+STOP_ALL_MARKER_GRACE_SECONDS="${STOP_ALL_MARKER_GRACE_SECONDS:-2}"
 SUBSCRIBER_JAR_PATTERN="${SUBSCRIBER_JAR_PATTERN:-solace-subscriber-1.0-SNAPSHOT-all.jar}"
 UI_PROCESS_PATTERNS=(
   "solace-publisher-ui"
@@ -175,6 +176,10 @@ stop_subscriber() {
 # Execution starts here.
 print_separator "workspace shutdown"
 echo "stopping api, ui, and subscriber when they are running"
+
+if request_workspace_stop; then
+  sleep "${STOP_ALL_MARKER_GRACE_SECONDS}"
+fi
 
 stop_api
 stop_ui

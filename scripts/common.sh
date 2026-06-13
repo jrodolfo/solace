@@ -67,6 +67,54 @@ separate_component_log_transitions() {
   '
 }
 
+# Function: latest_start_all_log_dir
+# Purpose: Reads the latest start-all log directory from the shared pointer file.
+# Outputs:
+#   The latest start-all log directory path, if it exists.
+latest_start_all_log_dir() {
+  local latest_log_dir_file="${LATEST_START_ALL_FILE:-${TMPDIR:-/tmp}/solace-start-all.latest}"
+
+  if [[ ! -f "${latest_log_dir_file}" ]]; then
+    return 0
+  fi
+
+  head -n 1 "${latest_log_dir_file}" 2>/dev/null | tr -d '\r' || true
+}
+
+# Function: workspace_stop_marker_path
+# Purpose: Returns the external stop marker path for a start-all log directory.
+# Inputs:
+#   $1 - The start-all log directory.
+# Outputs:
+#   The stop marker file path.
+workspace_stop_marker_path() {
+  local log_dir="$1"
+  printf '%s\n' "${log_dir}/stop-requested"
+}
+
+# Function: request_workspace_stop
+# Purpose: Marks the latest start-all run as being intentionally stopped.
+request_workspace_stop() {
+  local log_dir
+  log_dir="$(latest_start_all_log_dir)"
+
+  if [[ -z "${log_dir}" || ! -d "${log_dir}" ]]; then
+    return 1
+  fi
+
+  printf 'stop requested at %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >"$(workspace_stop_marker_path "${log_dir}")"
+  return 0
+}
+
+# Function: workspace_stop_requested
+# Purpose: Checks whether a start-all log directory has an external stop marker.
+# Inputs:
+#   $1 - The start-all log directory.
+workspace_stop_requested() {
+  local log_dir="$1"
+  [[ -f "$(workspace_stop_marker_path "${log_dir}")" ]]
+}
+
 # Function: is_windows_shell
 # Purpose: Detects Windows-hosted Bash environments such as Git Bash, MSYS, or Cygwin.
 # Outputs:
