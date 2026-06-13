@@ -1,5 +1,7 @@
 package net.jrodolfo.solace.broker.api.service;
 
+import net.jrodolfo.solace.broker.api.testsupport.TestDestinations;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import net.jrodolfo.solace.broker.api.config.BrokerApiProperties;
@@ -81,7 +83,7 @@ class DatabaseImplTest {
         savedMessageReference = savedMessage;
 
         assertEquals("001", savedMessage.getInnerMessageId());
-        assertEquals("solace/java/direct/system-01", savedMessage.getDestination());
+        assertEquals(TestDestinations.SYSTEM_01, savedMessage.getDestination());
         assertEquals(DeliveryMode.PERSISTENT, savedMessage.getDeliveryMode());
         assertEquals(3, savedMessage.getPriority());
         assertEquals(PublishStatus.PENDING, savedMessage.getPublishStatus());
@@ -153,7 +155,7 @@ class DatabaseImplTest {
         Message failedMessage = new Message();
         failedMessage.setId(2L);
         failedMessage.setInnerMessageId("002");
-        failedMessage.setDestination("solace/java/direct/system-02");
+        failedMessage.setDestination(TestDestinations.SYSTEM_02);
         failedMessage.setDeliveryMode(DeliveryMode.DIRECT);
         failedMessage.setPriority(1);
         failedMessage.setPublishStatus(PublishStatus.FAILED);
@@ -202,7 +204,7 @@ class DatabaseImplTest {
 
         InnerMessageDTO message = new InnerMessageDTO();
         message.setInnerMessageId("001");
-        message.setDestination("solace/java/direct/system-01");
+        message.setDestination(TestDestinations.SYSTEM_01);
         message.setDeliveryMode(DeliveryMode.PERSISTENT);
         message.setPriority(3);
         message.setProperties(Map.of("property01", "value01"));

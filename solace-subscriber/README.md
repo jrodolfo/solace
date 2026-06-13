@@ -6,7 +6,7 @@
 [![Maven](https://img.shields.io/badge/Maven-3.9-C71A36?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
 [![Solace](https://img.shields.io/badge/Solace-PubSub%2B-00C895)](https://solace.com/)
 
-`solace-subscriber` is a small Java 21 command-line receiver for a Solace PubSub+ broker. It connects with environment-based credentials, subscribes to the direct topic pattern `solace/java/direct/system-0*`, logs inbound traffic, and reports reconnect or discard conditions while it runs.
+`solace-subscriber` is a small Java 21 command-line receiver for a Solace PubSub+ broker. It connects with environment-based credentials, subscribes to the direct topic pattern documented in [../docs/reference/sample-destinations.md](../docs/reference/sample-destinations.md), logs inbound traffic, and reports reconnect or discard conditions while it runs.
 
 For the repo-level relationships between the subscriber, UI, and broker API, see [../docs/architecture.md](../docs/architecture.md).
 
@@ -60,7 +60,7 @@ At startup the receiver:
 1. loads and validates connection properties from the environment
 2. creates and connects a Solace `MessagingService`
 3. applies direct receiver reconnect settings
-4. subscribes to `solace/java/direct/system-0*`
+4. subscribes to the sample destination wildcard documented in [../docs/reference/sample-destinations.md](../docs/reference/sample-destinations.md)
 5. logs inbound-message throughput once per second
 
 While running, it logs:

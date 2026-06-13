@@ -1,5 +1,7 @@
 package net.jrodolfo.solace.broker.api.controller;
 
+import net.jrodolfo.solace.broker.api.testsupport.TestDestinations;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,17 +80,17 @@ class MessageApiContractIntegrationTest {
     void shouldPublishPersistAndReadBackNormalizedStoredMessage() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
         when(directPublisherService.sendMessage(
-                eq("solace/java/direct/system-01"),
+                eq(TestDestinations.SYSTEM_01),
                 eq("01001000 01100101 01101100"),
                 eq(DeliveryMode.PERSISTENT),
                 any(Optional.class)))
-                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"));
+                .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(wrapper)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.destination").value(TestDestinations.SYSTEM_01))
                 .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
 
         mockMvc.perform(get("/api/v1/messages/all"))
@@ -97,7 +99,7 @@ class MessageApiContractIntegrationTest {
                 .andExpect(jsonPath("$.size").value(20))
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("001"))
-                .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.items[0].destination").value(TestDestinations.SYSTEM_01))
                 .andExpect(jsonPath("$.items[0].deliveryMode").value("PERSISTENT"))
                 .andExpect(jsonPath("$.items[0].priority").value(3))
                 .andExpect(jsonPath("$.items[0].publishStatus").value("PUBLISHED"))
@@ -109,7 +111,7 @@ class MessageApiContractIntegrationTest {
                 .andExpect(jsonPath("$.items[0].properties.source").value("integration-test"));
 
         verify(directPublisherService).sendMessage(
-                eq("solace/java/direct/system-01"),
+                eq(TestDestinations.SYSTEM_01),
                 eq("01001000 01100101 01101100"),
                 eq(DeliveryMode.PERSISTENT),
                 any(Optional.class));
@@ -120,7 +122,7 @@ class MessageApiContractIntegrationTest {
         MessageWrapperDTO wrapper = validWrapper();
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
                 .when(directPublisherService)
-                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -138,9 +140,9 @@ class MessageApiContractIntegrationTest {
     void shouldRetryFailedMessageAndUpdateLifecycle() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
-                .doReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"))
+                .doReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"))
                 .when(directPublisherService)
-                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -150,7 +152,7 @@ class MessageApiContractIntegrationTest {
         net.jrodolfo.solace.broker.api.jpa.Message failedMessage = messageRepository.findAll().getFirst();
         mockMvc.perform(post("/api/v1/messages/{messageId}/retry", failedMessage.getId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.destination").value(TestDestinations.SYSTEM_01))
                 .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
 
         net.jrodolfo.solace.broker.api.jpa.Message retriedMessage = messageRepository.findById(failedMessage.getId()).orElseThrow();
@@ -163,9 +165,9 @@ class MessageApiContractIntegrationTest {
     void shouldBulkRetryMessagesAndReturnMixedResults() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
-                .doReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"))
+                .doReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"))
                 .when(directPublisherService)
-                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -199,11 +201,11 @@ class MessageApiContractIntegrationTest {
     void shouldReconcileStalePendingMessageAndPersistFailureReason() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
         when(directPublisherService.sendMessage(
-                eq("solace/java/direct/system-01"),
+                eq(TestDestinations.SYSTEM_01),
                 eq("01001000 01100101 01101100"),
                 eq(DeliveryMode.PERSISTENT),
                 any(Optional.class)))
-                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"));
+                .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -238,7 +240,7 @@ class MessageApiContractIntegrationTest {
 
         InnerMessageDTO message = new InnerMessageDTO();
         message.setInnerMessageId("001");
-        message.setDestination("solace/java/direct/system-01");
+        message.setDestination(TestDestinations.SYSTEM_01);
         message.setDeliveryMode(DeliveryMode.PERSISTENT);
         message.setPriority(3);
         message.setProperties(Map.of(

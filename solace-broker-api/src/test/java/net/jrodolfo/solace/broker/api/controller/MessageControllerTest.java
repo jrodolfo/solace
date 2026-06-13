@@ -1,5 +1,7 @@
 package net.jrodolfo.solace.broker.api.controller;
 
+import net.jrodolfo.solace.broker.api.testsupport.TestDestinations;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,8 +77,8 @@ class MessageControllerTest {
 
     @Test
     void shouldReturnAllMessagesFromRepository() throws Exception {
-        Message first = storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00");
-        Message second = storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
+        Message first = storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00");
+        Message second = storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
         database.storedMessages.add(first);
         database.storedMessages.add(second);
 
@@ -100,19 +102,19 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.first").value(true))
                 .andExpect(jsonPath("$.last").value(true))
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("001"))
-                .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.items[0].destination").value(TestDestinations.SYSTEM_01))
                 .andExpect(jsonPath("$.items[0].stalePending").value(false))
                 .andExpect(jsonPath("$.items[0].retrySupported").value(true))
                 .andExpect(jsonPath("$.items[0].payload.type").value("BINARY"))
                 .andExpect(jsonPath("$.items[0].properties.property01").value("value01"))
                 .andExpect(jsonPath("$.items[1].innerMessageId").value("002"))
-                .andExpect(jsonPath("$.items[1].destination").value("solace/java/direct/system-02"));
+                .andExpect(jsonPath("$.items[1].destination").value(TestDestinations.SYSTEM_02));
     }
 
     @Test
     void shouldRespectExplicitPaginationParameters() throws Exception {
-        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
-        database.storedMessages.add(storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00"));
+        database.storedMessages.add(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
+        database.storedMessages.add(storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00"));
 
         mockMvc.perform(get("/api/v1/messages/all?page=1&size=1"))
                 .andExpect(status().isOk())
@@ -127,21 +129,21 @@ class MessageControllerTest {
 
     @Test
     void shouldFilterMessagesByDestination() throws Exception {
-        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
-        database.storedMessages.add(storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00"));
+        database.storedMessages.add(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
+        database.storedMessages.add(storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00"));
 
         mockMvc.perform(get("/api/v1/messages/all?destination=system-02"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("002"))
-                .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-02"));
+                .andExpect(jsonPath("$.items[0].destination").value(TestDestinations.SYSTEM_02));
     }
 
     @Test
     void shouldFilterMessagesByPayloadType() throws Exception {
-        Message textMessage = storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00");
+        Message textMessage = storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00");
         textMessage.getPayload().setType(PayloadType.TEXT);
-        Message jsonMessage = storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
+        Message jsonMessage = storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
         jsonMessage.getPayload().setType(PayloadType.JSON);
         database.storedMessages.add(textMessage);
         database.storedMessages.add(jsonMessage);
@@ -155,8 +157,8 @@ class MessageControllerTest {
 
     @Test
     void shouldFilterMessagesByPublishStatus() throws Exception {
-        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
-        Message failedMessage = storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
+        database.storedMessages.add(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
+        Message failedMessage = storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
         failedMessage.setPublishStatus(PublishStatus.FAILED);
         failedMessage.setFailureReason("Failed to publish message to Solace broker");
         failedMessage.setPublishedAt(null);
@@ -171,7 +173,7 @@ class MessageControllerTest {
 
     @Test
     void shouldExposeStalePendingMessagesInReadResponse() throws Exception {
-        Message stalePendingMessage = storedMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
+        Message stalePendingMessage = storedMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
         stalePendingMessage.setPublishStatus(PublishStatus.PENDING);
         stalePendingMessage.setFailureReason(null);
         stalePendingMessage.setPublishedAt(null);
@@ -185,14 +187,14 @@ class MessageControllerTest {
 
     @Test
     void shouldFilterMessagesByStalePendingOnly() throws Exception {
-        Message stalePendingMessage = storedMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
+        Message stalePendingMessage = storedMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
         stalePendingMessage.setPublishStatus(PublishStatus.PENDING);
         stalePendingMessage.setPublishedAt(null);
         database.storedMessages.add(stalePendingMessage);
 
         Message freshPendingMessage = storedMessage(
                 "004",
-                "solace/java/direct/system-04",
+                TestDestinations.SYSTEM_04,
                 DeliveryMode.DIRECT,
                 2,
                 LocalDateTime.now().minusMinutes(1).toString()
@@ -210,7 +212,7 @@ class MessageControllerTest {
 
     @Test
     void shouldExportAllFilteredMessages() throws Exception {
-        Message failedMessage = storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
+        Message failedMessage = storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
         failedMessage.setPublishStatus(PublishStatus.FAILED);
         failedMessage.setFailureReason("Failed to publish message to Solace broker");
         failedMessage.setPublishedAt(null);
@@ -227,8 +229,8 @@ class MessageControllerTest {
 
     @Test
     void shouldFilterMessagesByCreatedAtRange() throws Exception {
-        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
-        database.storedMessages.add(storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00"));
+        database.storedMessages.add(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
+        database.storedMessages.add(storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00"));
 
         mockMvc.perform(get("/api/v1/messages/all?createdAtFrom=2026-04-20T00:00:00&createdAtTo=2026-04-20T23:59:59"))
                 .andExpect(status().isOk())
@@ -247,8 +249,8 @@ class MessageControllerTest {
 
     @Test
     void shouldRespectExplicitSortingParameters() throws Exception {
-        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
-        database.storedMessages.add(storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00"));
+        database.storedMessages.add(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
+        database.storedMessages.add(storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00"));
 
         mockMvc.perform(get("/api/v1/messages/all?sortBy=priority&sortDirection=asc"))
                 .andExpect(status().isOk())
@@ -306,13 +308,13 @@ class MessageControllerTest {
     @Test
     void shouldSendMessageSuccessfully() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        directPublisherService.response = new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100");
+        directPublisherService.response = new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100");
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(wrapper)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.destination").value(TestDestinations.SYSTEM_01))
                 .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
 
         assertEquals(PublishStatus.PUBLISHED, database.lastSavedMessage.getPublishStatus());
@@ -357,7 +359,7 @@ class MessageControllerTest {
     @Test
     void shouldReturnInternalServerErrorWhenPublishSucceedsButDatabaseStateUpdateFails() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
-        directPublisherService.response = new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100");
+        directPublisherService.response = new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100");
         database.failMarkPublished = true;
 
         mockMvc.perform(post("/api/v1/messages/message")
@@ -394,16 +396,16 @@ class MessageControllerTest {
 
     @Test
     void shouldRetryFailedMessageSuccessfully() throws Exception {
-        Message failedMessage = storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
+        Message failedMessage = storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
         failedMessage.setPublishStatus(PublishStatus.FAILED);
         failedMessage.setFailureReason("Failed to publish message to Solace broker");
         failedMessage.setPublishedAt(null);
         database.storedMessages.add(failedMessage);
-        directPublisherService.response = new PublishMessageResponseDTO("solace/java/direct/system-02", "01001000 01100101 01101100");
+        directPublisherService.response = new PublishMessageResponseDTO(TestDestinations.SYSTEM_02, "01001000 01100101 01101100");
 
         mockMvc.perform(post("/api/v1/messages/2/retry"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-02"))
+                .andExpect(jsonPath("$.destination").value(TestDestinations.SYSTEM_02))
                 .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
 
         assertEquals(PublishStatus.PUBLISHED, failedMessage.getPublishStatus());
@@ -413,7 +415,7 @@ class MessageControllerTest {
 
     @Test
     void shouldRejectRetryForNonFailedMessage() throws Exception {
-        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
+        database.storedMessages.add(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
 
         mockMvc.perform(post("/api/v1/messages/1/retry"))
                 .andExpect(status().isBadRequest())
@@ -422,7 +424,7 @@ class MessageControllerTest {
 
     @Test
     void shouldRejectRetryForNonRetryableFailedMessage() throws Exception {
-        Message failedMessage = storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
+        Message failedMessage = storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
         failedMessage.setPublishStatus(PublishStatus.FAILED);
         failedMessage.setFailureReason("Failed to publish message to Solace broker");
         failedMessage.setPublishedAt(null);
@@ -437,16 +439,16 @@ class MessageControllerTest {
 
     @Test
     void shouldBulkRetryMessagesWithMixedResults() throws Exception {
-        Message retryableFailedMessage = storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
+        Message retryableFailedMessage = storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, "2026-04-19T10:00:00");
         retryableFailedMessage.setId(2L);
         retryableFailedMessage.setPublishStatus(PublishStatus.FAILED);
         retryableFailedMessage.setFailureReason("Failed to publish message to Solace broker");
         retryableFailedMessage.setPublishedAt(null);
 
-        Message nonFailedMessage = storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00");
+        Message nonFailedMessage = storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00");
         nonFailedMessage.setId(1L);
 
-        Message nonRetryableFailedMessage = storedMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
+        Message nonRetryableFailedMessage = storedMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
         nonRetryableFailedMessage.setId(3L);
         nonRetryableFailedMessage.setPublishStatus(PublishStatus.FAILED);
         nonRetryableFailedMessage.setFailureReason("Failed to publish message to Solace broker");
@@ -457,7 +459,7 @@ class MessageControllerTest {
         database.storedMessages.add(retryableFailedMessage);
         database.storedMessages.add(nonFailedMessage);
         database.storedMessages.add(nonRetryableFailedMessage);
-        directPublisherService.response = new PublishMessageResponseDTO("solace/java/direct/system-02", "01001000 01100101 01101100");
+        directPublisherService.response = new PublishMessageResponseDTO(TestDestinations.SYSTEM_02, "01001000 01100101 01101100");
 
         mockMvc.perform(post("/api/v1/messages/retry")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -507,7 +509,7 @@ class MessageControllerTest {
 
     @Test
     void shouldReconcileStalePendingMessage() throws Exception {
-        Message stalePendingMessage = storedMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
+        Message stalePendingMessage = storedMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
         stalePendingMessage.setId(3L);
         stalePendingMessage.setPublishStatus(PublishStatus.PENDING);
         stalePendingMessage.setFailureReason(null);
@@ -525,7 +527,7 @@ class MessageControllerTest {
 
     @Test
     void shouldRejectReconciliationForFreshPendingMessage() throws Exception {
-        Message freshPendingMessage = storedMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2, "2026-04-21T15:00:00");
+        Message freshPendingMessage = storedMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2, "2026-04-21T15:00:00");
         freshPendingMessage.setId(3L);
         freshPendingMessage.setPublishStatus(PublishStatus.PENDING);
         freshPendingMessage.setFailureReason(null);
@@ -542,7 +544,7 @@ class MessageControllerTest {
     @Test
     void shouldUseConfiguredThresholdWhenReconcilingPendingMessage() throws Exception {
         brokerApiProperties.getLifecycle().setStalePendingThreshold(Duration.ofDays(3650));
-        Message pendingMessage = storedMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
+        Message pendingMessage = storedMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2, "2026-04-19T10:00:00");
         pendingMessage.setId(3L);
         pendingMessage.setPublishStatus(PublishStatus.PENDING);
         pendingMessage.setFailureReason(null);
@@ -556,7 +558,7 @@ class MessageControllerTest {
 
     @Test
     void shouldRejectReconciliationForNonPendingMessage() throws Exception {
-        database.storedMessages.add(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
+        database.storedMessages.add(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, "2026-04-20T10:00:00"));
 
         mockMvc.perform(post("/api/v1/messages/1/reconcile-stale-pending"))
                 .andExpect(status().isBadRequest())
@@ -604,7 +606,7 @@ class MessageControllerTest {
 
         InnerMessageDTO message = new InnerMessageDTO();
         message.setInnerMessageId("001");
-        message.setDestination("solace/java/direct/system-01");
+        message.setDestination(TestDestinations.SYSTEM_01);
         message.setDeliveryMode(DeliveryMode.PERSISTENT);
         message.setPriority(3);
         message.setPayload(payload);

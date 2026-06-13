@@ -132,7 +132,7 @@ CSV is intentionally flatter than JSON:
 
 ## Notes
 
-- Sample destinations used throughout the repo still follow the pattern `solace/java/direct/system-01`.
+- Sample destinations used throughout the repo are listed in [../docs/reference/sample-destinations.md](../docs/reference/sample-destinations.md).
 - If the backend is unavailable, the UI will surface the backend/network failure in the response area rather than silently swallowing it.
 - For backend env-var setup, see [../solace-broker-api/README.md](../solace-broker-api/README.md).
 

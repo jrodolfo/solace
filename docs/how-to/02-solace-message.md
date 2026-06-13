@@ -30,6 +30,9 @@ Example JSON request:
 }
 ```
 
+The destination in this example comes from the canonical sample destination set:
+[../reference/sample-destinations.md](../reference/sample-destinations.md).
+
 ## Fields
 
 - `message`: Required outer wrapper expected by the broker API.

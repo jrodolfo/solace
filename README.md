@@ -39,17 +39,7 @@ The UI does not read those variables directly. It talks to `solace-broker-api`, 
 
 For a screenshot-based walkthrough that shows how to create a Solace Cloud account, create a demo broker service, find these four values, and register them on Windows, Linux, or macOS, see [docs/how-to/01-solace-cloud-account-demo-and-env-vars.md](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md).
 
-Sample destinations across the workspace use values like:
-
-```text
-solace/java/direct/system-01
-```
-
-The subscriber listens to the broader direct topic pattern:
-
-```text
-solace/java/direct/system-0*
-```
+Sample destinations across the workspace are listed in [docs/reference/sample-destinations.md](docs/reference/sample-destinations.md).
 
 ## Quick Start
 
@@ -165,6 +155,7 @@ The workflow currently covers:
 - [Architecture Decision Records](docs/adr/README.md): why the major design decisions were made
 - [Solace Cloud setup guide](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md): account, demo broker, credentials, and OS environment variables
 - [Fresh clone release validation checklist](docs/validation/fresh-clone-release-checklist.md): repeatable pre-release validation from setup through publish, retry, reconciliation, and shutdown
+- [Sample destinations](docs/reference/sample-destinations.md): canonical demo topic names used by docs, tests, and tooling artifacts
 - [Broker API README](solace-broker-api/README.md): backend API contract, MySQL runtime, request/response examples, and tuning settings
 - [Publisher UI README](solace-publisher-ui/README.md): frontend behavior and development commands
 - [Subscriber README](solace-subscriber/README.md): subscriber configuration and runtime behavior

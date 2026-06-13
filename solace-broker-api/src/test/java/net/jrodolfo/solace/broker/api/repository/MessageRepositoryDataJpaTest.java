@@ -1,5 +1,7 @@
 package net.jrodolfo.solace.broker.api.repository;
 
+import net.jrodolfo.solace.broker.api.testsupport.TestDestinations;
+
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import net.jrodolfo.solace.broker.api.config.BrokerApiProperties;
@@ -41,9 +43,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldFilterMessagesCaseInsensitivelyByStoredFields() {
         DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
-        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 20, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("abc-003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("abc-003", TestDestinations.SYSTEM_03, DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 18, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, "SYSTEM-03", DeliveryMode.PERSISTENT, null, "ABC", PublishStatus.PUBLISHED,
@@ -51,15 +53,15 @@ class MessageRepositoryDataJpaTest {
 
         assertEquals(1L, response.getTotalElements());
         assertEquals("abc-003", response.getItems().getFirst().getInnerMessageId());
-        assertEquals("solace/java/direct/system-03", response.getItems().getFirst().getDestination());
+        assertEquals(TestDestinations.SYSTEM_03, response.getItems().getFirst().getDestination());
     }
 
     @Test
     void shouldSortMessagesByPriorityAscending() {
         DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
-        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 20, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 18, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, null, null,
@@ -72,9 +74,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldSortMessagesByCreatedAtDescendingAndPaginateResults() {
         DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
-        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 18, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 1, 1, null, null, null, null, null,
@@ -90,9 +92,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldFilterMessagesByPublishStatus() {
         DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
-        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.PERSISTENT, 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, null, PublishStatus.FAILED,
@@ -106,9 +108,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldFilterMessagesByPayloadType() {
         DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
-        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, PayloadType.TEXT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, PayloadType.JSON, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, PayloadType.XML, 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, PayloadType.TEXT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, PayloadType.JSON, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.PERSISTENT, PayloadType.XML, 2, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, PayloadType.JSON, null, null, false,
@@ -122,9 +124,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldFilterMessagesByCreatedAtRange() {
         DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
-        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 18, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.PERSISTENT, 2, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, null, null,
@@ -142,9 +144,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldFilterMessagesByPublishedAtRangeAndPublishStatus() {
         DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
-        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 18, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
-        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, PublishStatus.FAILED, LocalDateTime.of(2026, 4, 19, 10, 0));
+        persistMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.PERSISTENT, 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, null, PublishStatus.PUBLISHED,
@@ -162,9 +164,9 @@ class MessageRepositoryDataJpaTest {
     @Test
     void shouldFilterMessagesByStalePendingOnly() {
         DatabaseImpl database = new DatabaseImpl(messageRepository, new BrokerApiProperties());
-        persistMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
-        persistMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1, PublishStatus.PENDING, LocalDateTime.now().minusMinutes(1));
-        persistMessage("003", "solace/java/direct/system-03", DeliveryMode.PERSISTENT, 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
+        persistMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3, PublishStatus.PENDING, LocalDateTime.of(2026, 4, 18, 10, 0));
+        persistMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1, PublishStatus.PENDING, LocalDateTime.now().minusMinutes(1));
+        persistMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.PERSISTENT, 2, PublishStatus.PUBLISHED, LocalDateTime.of(2026, 4, 20, 10, 0));
 
         PagedMessagesResponseDTO response = database.getAllMessages(
                 0, 20, null, null, null, null, null,

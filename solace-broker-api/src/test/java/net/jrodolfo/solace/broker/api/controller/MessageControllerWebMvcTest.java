@@ -1,5 +1,7 @@
 package net.jrodolfo.solace.broker.api.controller;
 
+import net.jrodolfo.solace.broker.api.testsupport.TestDestinations;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -81,7 +83,7 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldReturnStoredMessagesJsonContract() throws Exception {
         when(database.getAllMessages(0, 20, null, null, null, null, null, false, null, null, null, null, "createdAt", "desc"))
-                .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3)), 0, 20, 1));
+                .thenReturn(messagePageResponse(List.of(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all"))
                 .andExpect(status().isOk())
@@ -89,7 +91,7 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.size").value(20))
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.items[0].innerMessageId").value("001"))
-                .andExpect(jsonPath("$.items[0].destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.items[0].destination").value(TestDestinations.SYSTEM_01))
                 .andExpect(jsonPath("$.items[0].deliveryMode").value("PERSISTENT"))
                 .andExpect(jsonPath("$.items[0].priority").value(3))
                 .andExpect(jsonPath("$.items[0].publishStatus").value("PUBLISHED"))
@@ -109,7 +111,7 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldExposeStalePendingMessagesInReadResponse() throws Exception {
         when(database.getAllMessages(0, 20, null, null, null, null, PublishStatus.PENDING, false, null, null, null, null, "createdAt", "desc"))
-                .thenReturn(messagePageResponse(List.of(stalePendingStoredMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2)), 0, 20, 1));
+                .thenReturn(messagePageResponse(List.of(stalePendingStoredMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?publishStatus=PENDING"))
                 .andExpect(status().isOk())
@@ -120,7 +122,7 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldReturnExplicitPageOfStoredMessages() throws Exception {
         when(database.getAllMessages(1, 1, null, null, null, null, null, false, null, null, null, null, "createdAt", "desc"))
-                .thenReturn(messagePageResponse(List.of(storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1)), 1, 1, 2));
+                .thenReturn(messagePageResponse(List.of(storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1)), 1, 1, 2));
 
         mockMvc.perform(get("/api/v1/messages/all?page=1&size=1"))
                 .andExpect(status().isOk())
@@ -136,7 +138,7 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldFilterStoredMessagesByDeliveryMode() throws Exception {
         when(database.getAllMessages(0, 20, null, DeliveryMode.PERSISTENT, null, null, null, false, null, null, null, null, "createdAt", "desc"))
-                .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3)), 0, 20, 1));
+                .thenReturn(messagePageResponse(List.of(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?deliveryMode=PERSISTENT"))
                 .andExpect(status().isOk())
@@ -147,7 +149,7 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldFilterStoredMessagesByPayloadType() throws Exception {
         when(database.getAllMessages(0, 20, null, null, PayloadType.JSON, null, null, false, null, null, null, null, "createdAt", "desc"))
-                .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3)), 0, 20, 1));
+                .thenReturn(messagePageResponse(List.of(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?payloadType=JSON"))
                 .andExpect(status().isOk())
@@ -157,7 +159,7 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldFilterStoredMessagesByPublishStatus() throws Exception {
         when(database.getAllMessages(0, 20, null, null, null, null, PublishStatus.FAILED, false, null, null, null, null, "createdAt", "desc"))
-                .thenReturn(messagePageResponse(List.of(failedStoredMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1)), 0, 20, 1));
+                .thenReturn(messagePageResponse(List.of(failedStoredMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?publishStatus=FAILED"))
                 .andExpect(status().isOk())
@@ -170,8 +172,8 @@ class MessageControllerWebMvcTest {
     void shouldRespectExplicitSortFieldAndDirection() throws Exception {
         when(database.getAllMessages(0, 20, null, null, null, null, null, false, null, null, null, null, "priority", "asc"))
                 .thenReturn(messagePageResponse(List.of(
-                        storedMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1),
-                        storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3)), 0, 20, 2));
+                        storedMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1),
+                        storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3)), 0, 20, 2));
 
         mockMvc.perform(get("/api/v1/messages/all?sortBy=priority&sortDirection=asc"))
                 .andExpect(status().isOk())
@@ -185,7 +187,7 @@ class MessageControllerWebMvcTest {
         LocalDateTime createdAtTo = LocalDateTime.parse("2026-04-20T23:59:59");
 
         when(database.getAllMessages(0, 20, null, null, null, null, null, false, createdAtFrom, createdAtTo, null, null, "createdAt", "desc"))
-                .thenReturn(messagePageResponse(List.of(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3)), 0, 20, 1));
+                .thenReturn(messagePageResponse(List.of(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?createdAtFrom=2026-04-20T00:00:00&createdAtTo=2026-04-20T23:59:59"))
                 .andExpect(status().isOk())
@@ -196,7 +198,7 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldFilterStoredMessagesByStalePendingOnly() throws Exception {
         when(database.getAllMessages(0, 20, null, null, null, null, null, true, null, null, null, null, "createdAt", "desc"))
-                .thenReturn(messagePageResponse(List.of(stalePendingStoredMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2)), 0, 20, 1));
+                .thenReturn(messagePageResponse(List.of(stalePendingStoredMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2)), 0, 20, 1));
 
         mockMvc.perform(get("/api/v1/messages/all?stalePendingOnly=true"))
                 .andExpect(status().isOk())
@@ -208,7 +210,7 @@ class MessageControllerWebMvcTest {
     @Test
     void shouldExportFilteredStoredMessagesJsonContract() throws Exception {
         when(database.exportMessages("system-02", null, null, null, PublishStatus.FAILED, false, null, null, null, null, "createdAt", "desc"))
-                .thenReturn(filteredMessagesExportResponse(List.of(failedStoredMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1))));
+                .thenReturn(filteredMessagesExportResponse(List.of(failedStoredMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1))));
 
         mockMvc.perform(get("/api/v1/messages/export?destination=system-02&publishStatus=FAILED"))
                 .andExpect(status().isOk())
@@ -281,14 +283,14 @@ class MessageControllerWebMvcTest {
             setId(1L);
         }});
         when(database.markMessagePublished(1L)).thenReturn(new Message());
-        when(directPublisherService.sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any()))
-                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"));
+        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any()))
+                .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(wrapper)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-01"))
+                .andExpect(jsonPath("$.destination").value(TestDestinations.SYSTEM_01))
                 .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
     }
 
@@ -316,7 +318,7 @@ class MessageControllerWebMvcTest {
         when(database.markMessageFailed(1L, "Failed to publish message to Solace broker")).thenReturn(new Message());
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
                 .when(directPublisherService)
-                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any());
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any());
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -334,8 +336,8 @@ class MessageControllerWebMvcTest {
         when(database.savePendingMessage(any(MessageWrapperDTO.class))).thenReturn(new Message() {{
             setId(1L);
         }});
-        when(directPublisherService.sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any()))
-                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-01", "01001000 01100101 01101100"));
+        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any()))
+                .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"));
         doThrow(new IllegalStateException("database unavailable"))
                 .when(database)
                 .markMessagePublished(1L);
@@ -360,7 +362,7 @@ class MessageControllerWebMvcTest {
         when(database.markMessageFailed(1L, "System environment variables SOLACE_CLOUD_HOST, SOLACE_CLOUD_VPN, SOLACE_CLOUD_USERNAME, SOLACE_CLOUD_PASSWORD are not set.")).thenReturn(new Message());
         doThrow(new BrokerConfigurationException("System environment variables SOLACE_CLOUD_HOST, SOLACE_CLOUD_VPN, SOLACE_CLOUD_USERNAME, SOLACE_CLOUD_PASSWORD are not set."))
                 .when(directPublisherService)
-                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any());
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any());
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -379,7 +381,7 @@ class MessageControllerWebMvcTest {
         when(database.markMessageFailed(1L, "Failed to connect to Solace broker")).thenReturn(new Message());
         doThrow(new BrokerConnectionException("Failed to connect to Solace broker", new RuntimeException("connect failed")))
                 .when(directPublisherService)
-                .sendMessage(eq("solace/java/direct/system-01"), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any());
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any());
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -392,22 +394,22 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldRetryFailedMessageSuccessfully() throws Exception {
-        Message failedMessage = failedStoredMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1);
+        Message failedMessage = failedStoredMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1);
         when(database.findMessageById(2L)).thenReturn(failedMessage);
         when(database.markMessagePending(2L)).thenReturn(failedMessage);
         when(database.markMessagePublished(2L)).thenReturn(failedMessage);
-        when(directPublisherService.sendMessage(eq("solace/java/direct/system-02"), eq("01001000 01100101 01101100"), eq(DeliveryMode.DIRECT), any()))
-                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-02", "01001000 01100101 01101100"));
+        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_02), eq("01001000 01100101 01101100"), eq(DeliveryMode.DIRECT), any()))
+                .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_02, "01001000 01100101 01101100"));
 
         mockMvc.perform(post("/api/v1/messages/2/retry"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.destination").value("solace/java/direct/system-02"))
+                .andExpect(jsonPath("$.destination").value(TestDestinations.SYSTEM_02))
                 .andExpect(jsonPath("$.content").value("01001000 01100101 01101100"));
     }
 
     @Test
     void shouldRejectRetryForNonFailedMessage() throws Exception {
-        when(database.findMessageById(1L)).thenReturn(storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3));
+        when(database.findMessageById(1L)).thenReturn(storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3));
 
         mockMvc.perform(post("/api/v1/messages/1/retry"))
                 .andExpect(status().isBadRequest())
@@ -416,7 +418,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldRejectRetryForNonRetryableFailedMessage() throws Exception {
-        Message failedMessage = failedStoredMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1);
+        Message failedMessage = failedStoredMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1);
         failedMessage.setRetrySupported(false);
         failedMessage.setRetryBlockedReason("Retries are supported only for messages published with server-side broker configuration.");
         when(database.findMessageById(2L)).thenReturn(failedMessage);
@@ -428,9 +430,9 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldBulkRetryMessagesWithMixedResults() throws Exception {
-        Message retryableFailedMessage = failedStoredMessage("002", "solace/java/direct/system-02", DeliveryMode.DIRECT, 1);
-        Message nonFailedMessage = storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3);
-        Message nonRetryableFailedMessage = failedStoredMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2);
+        Message retryableFailedMessage = failedStoredMessage("002", TestDestinations.SYSTEM_02, DeliveryMode.DIRECT, 1);
+        Message nonFailedMessage = storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3);
+        Message nonRetryableFailedMessage = failedStoredMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2);
         nonRetryableFailedMessage.setRetrySupported(false);
         nonRetryableFailedMessage.setRetryBlockedReason("Retries are supported only for messages published with server-side broker configuration.");
 
@@ -439,8 +441,8 @@ class MessageControllerWebMvcTest {
         when(database.findMessageById(3L)).thenReturn(nonRetryableFailedMessage);
         when(database.markMessagePending(2L)).thenReturn(retryableFailedMessage);
         when(database.markMessagePublished(2L)).thenReturn(retryableFailedMessage);
-        when(directPublisherService.sendMessage(eq("solace/java/direct/system-02"), eq("01001000 01100101 01101100"), eq(DeliveryMode.DIRECT), any()))
-                .thenReturn(new PublishMessageResponseDTO("solace/java/direct/system-02", "01001000 01100101 01101100"));
+        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_02), eq("01001000 01100101 01101100"), eq(DeliveryMode.DIRECT), any()))
+                .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_02, "01001000 01100101 01101100"));
 
         mockMvc.perform(post("/api/v1/messages/retry")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -483,9 +485,9 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldReconcileStalePendingMessage() throws Exception {
-        Message pendingMessage = stalePendingStoredMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2);
+        Message pendingMessage = stalePendingStoredMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2);
         pendingMessage.setId(3L);
-        Message reconciledMessage = stalePendingStoredMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2);
+        Message reconciledMessage = stalePendingStoredMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2);
         reconciledMessage.setId(3L);
         reconciledMessage.setPublishStatus(PublishStatus.FAILED);
         reconciledMessage.setFailureReason("Marked as FAILED after manual reconciliation of a stale PENDING message");
@@ -502,7 +504,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldRejectReconciliationForFreshPendingMessage() throws Exception {
-        Message freshPendingMessage = storedMessage("003", "solace/java/direct/system-03", DeliveryMode.DIRECT, 2);
+        Message freshPendingMessage = storedMessage("003", TestDestinations.SYSTEM_03, DeliveryMode.DIRECT, 2);
         freshPendingMessage.setId(3L);
         freshPendingMessage.setPublishStatus(PublishStatus.PENDING);
         freshPendingMessage.setPublishedAt(null);
@@ -517,7 +519,7 @@ class MessageControllerWebMvcTest {
 
     @Test
     void shouldRejectReconciliationForNonPendingMessage() throws Exception {
-        Message publishedMessage = storedMessage("001", "solace/java/direct/system-01", DeliveryMode.PERSISTENT, 3);
+        Message publishedMessage = storedMessage("001", TestDestinations.SYSTEM_01, DeliveryMode.PERSISTENT, 3);
         publishedMessage.setId(1L);
         when(database.findMessageById(1L)).thenReturn(publishedMessage);
 
@@ -533,7 +535,7 @@ class MessageControllerWebMvcTest {
 
         InnerMessageDTO message = new InnerMessageDTO();
         message.setInnerMessageId("001");
-        message.setDestination("solace/java/direct/system-01");
+        message.setDestination(TestDestinations.SYSTEM_01);
         message.setDeliveryMode(DeliveryMode.PERSISTENT);
         message.setPriority(3);
         message.setPayload(payload);

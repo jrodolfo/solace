@@ -9,6 +9,7 @@ import {AxiosHeaders} from "axios";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError";
 import type {PagedStoredMessagesResponse, StoredMessage} from "./StoredMessageTypes";
+import {TEST_DESTINATIONS} from "./test-support/testDestinations";
 
 const writeTextMock = vi.fn();
 const createObjectUrlMock = vi.fn();
@@ -158,7 +159,7 @@ Object.defineProperty(window, "confirm", {
 
 function buildPublishSuccessResponse(overrides?: Partial<SolaceBrokerAPIResponse>): SolaceBrokerAPIResponse {
     return {
-        destination: "solace/java/direct/system-01",
+        destination: TEST_DESTINATIONS.system01,
         content: "01001000 01100101 01101100",
         ...overrides,
     };
@@ -181,7 +182,7 @@ function buildStoredMessage(overrides?: Partial<StoredMessage>): StoredMessage {
     return {
         id: 1,
         innerMessageId: "001",
-        destination: "solace/java/direct/system-01",
+        destination: TEST_DESTINATIONS.system01,
         deliveryMode: "PERSISTENT",
         priority: 3,
         publishStatus: "PUBLISHED",
@@ -246,7 +247,7 @@ async function fillRequiredFormFields() {
     await userEvent.type(screen.getByLabelText(/^Host$/i), "localhost");
     await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
     await userEvent.type(screen.getByLabelText(/^Inner Message Id$/i), "001");
-    await userEvent.type(screen.getByLabelText(/^Destination$/i), "solace/java/direct/system-01");
+    await userEvent.type(screen.getByLabelText(/^Destination$/i), TEST_DESTINATIONS.system01);
     await userEvent.selectOptions(screen.getByLabelText(/^Delivery Mode$/i), "PERSISTENT");
     await userEvent.clear(screen.getByLabelText(/^Priority$/i));
     await userEvent.type(screen.getByLabelText(/^Priority$/i), "3");
@@ -282,7 +283,7 @@ describe("Form Submission Tests", () => {
                 vpnName: "testVPN",
                 message: {
                     innerMessageId: "001",
-                    destination: "solace/java/direct/system-01",
+                    destination: TEST_DESTINATIONS.system01,
                     deliveryMode: "PERSISTENT",
                     priority: 3,
                     payload: {
@@ -332,7 +333,7 @@ describe("Form Submission Tests", () => {
                 vpnName: "testVPN",
                 message: {
                     innerMessageId: "001",
-                    destination: "solace/java/direct/system-01",
+                    destination: TEST_DESTINATIONS.system01,
                     deliveryMode: "PERSISTENT",
                     priority: 3,
                     payload: {
@@ -383,7 +384,7 @@ describe("Form Submission Tests", () => {
         await userEvent.type(screen.getByLabelText(/^Host$/i), "localhost");
         await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
         await userEvent.type(screen.getByLabelText(/^Inner Message Id$/i), " ");
-        await userEvent.type(screen.getByLabelText(/^Destination$/i), "solace/java/direct/system-01");
+        await userEvent.type(screen.getByLabelText(/^Destination$/i), TEST_DESTINATIONS.system01);
         await userEvent.selectOptions(screen.getByLabelText(/^Payload Type$/i), "BINARY");
         await userEvent.clear(screen.getByLabelText(/^Priority$/i));
         await userEvent.type(screen.getByLabelText(/^Priority$/i), "0");
@@ -1599,7 +1600,7 @@ describe("Stored Messages Browser", () => {
                         buildStoredMessage({
                             id: 2,
                             innerMessageId: "002",
-                            destination: "solace/java/direct/system-02",
+                            destination: TEST_DESTINATIONS.system02,
                             deliveryMode: "DIRECT",
                             priority: 1,
                             publishStatus: "FAILED",
@@ -2059,7 +2060,7 @@ describe("Stored Messages Browser", () => {
                     buildStoredMessage({
                         id: 2,
                         innerMessageId: "002",
-                        destination: "solace/java/direct/system-02",
+                        destination: TEST_DESTINATIONS.system02,
                         deliveryMode: "DIRECT",
                         publishStatus: "FAILED",
                         stalePending: true,
@@ -2095,7 +2096,7 @@ describe("Stored Messages Browser", () => {
         expect(exportBlob.type).toBe("text/csv;charset=utf-8");
         const csvContent = String(exportBlob.parts[0]);
         expect(csvContent).toContain("\"id\",\"innerMessageId\",\"destination\"");
-        expect(csvContent).toContain("\"002\",\"solace/java/direct/system-02\",\"DIRECT\"");
+        expect(csvContent).toContain(`"002","${TEST_DESTINATIONS.system02}","DIRECT"`);
         expect(csvContent).toContain("\"Line 1, \"\"quoted\"\"\"");
         expect(csvContent).toContain("\"hello,\n\"\"world\"\"\"");
         expect(csvContent).toContain("\"{\"\"region\"\":\"\"ca-east\"\",\"\"note\"\":\"\"comma,value\"\"}\"");
@@ -2134,7 +2135,7 @@ describe("Stored Messages Browser", () => {
                     buildStoredMessage({
                         id: 2,
                         innerMessageId: "002",
-                        destination: "solace/java/direct/system-02",
+                        destination: TEST_DESTINATIONS.system02,
                         deliveryMode: "DIRECT",
                         publishStatus: "FAILED",
                         stalePending: false,
@@ -2222,7 +2223,7 @@ describe("Stored Messages Browser", () => {
                     buildStoredMessage({
                         id: 2,
                         innerMessageId: "002",
-                        destination: "solace/java/direct/system-02",
+                        destination: TEST_DESTINATIONS.system02,
                         deliveryMode: "DIRECT",
                         publishStatus: "FAILED",
                         payload: {
@@ -2259,7 +2260,7 @@ describe("Stored Messages Browser", () => {
         const exportBlob = createObjectUrlMock.mock.calls[0][0] as MockBlob;
         expect(exportBlob.type).toBe("text/csv;charset=utf-8");
         const csvContent = String(exportBlob.parts[0]);
-        expect(csvContent).toContain("\"002\",\"solace/java/direct/system-02\",\"DIRECT\"");
+        expect(csvContent).toContain(`"002","${TEST_DESTINATIONS.system02}","DIRECT"`);
         expect(csvContent).toContain("\"csv content\"");
         expect(csvContent).toContain("\"{\"\"source\"\":\"\"filtered-export\"\"}\"");
         expect(anchorClickMock).toHaveBeenCalledTimes(1);
@@ -2996,7 +2997,7 @@ describe("Stored Messages Browser", () => {
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
 
         await userEvent.click(screen.getByRole("button", {name: /copy destination/i}));
-        expect(writeTextMock).toHaveBeenCalledWith("solace/java/direct/system-01");
+        expect(writeTextMock).toHaveBeenCalledWith(TEST_DESTINATIONS.system01);
         expect(await screen.findByRole("status")).toHaveTextContent("Destination copied.");
 
         await userEvent.click(screen.getByRole("button", {name: /copy payload/i}));

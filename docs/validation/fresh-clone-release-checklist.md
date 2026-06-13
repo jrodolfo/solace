@@ -42,6 +42,10 @@ Reference setup guide:
 
 - `docs/how-to/01-solace-cloud-account-demo-and-env-vars.md`
 
+Reference sample destinations:
+
+- `docs/reference/sample-destinations.md`
+
 ## 1. Fresh Checkout Assumption
 
 Start from a clean checkout or simulate one by removing generated outputs before
