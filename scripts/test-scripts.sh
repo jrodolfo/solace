@@ -31,6 +31,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # Temporary directories and files for testing.
 temp_status_dir=""
 temp_ui_dir=""
+temp_process_bin_dir=""
 temp_fake_bin_dir=""
 temp_npm_log_file=""
 
@@ -43,6 +44,10 @@ cleanup() {
 
   if [[ -n "${temp_ui_dir}" ]]; then
     rm -rf "${temp_ui_dir}"
+  fi
+
+  if [[ -n "${temp_process_bin_dir}" ]]; then
+    rm -rf "${temp_process_bin_dir}"
   fi
 
   if [[ -n "${temp_fake_bin_dir}" ]]; then
@@ -135,6 +140,7 @@ legacy_namespace_matches="$(
     --exclude-dir=target \
     --exclude-dir=node_modules \
     --exclude-dir=dist \
+    --exclude-dir=mysql-data \
     --exclude='*.class' \
     --exclude='*.jar' \
     --exclude='*.war' 2>/dev/null
@@ -179,6 +185,26 @@ assert_contains "${stop_all_output}" "==================== workspace shutdown ==
 assert_contains "${stop_all_output}" "==================== api ===================="
 assert_contains "${stop_all_output}" "==================== ui ===================="
 assert_contains "${stop_all_output}" "==================== subscriber ===================="
+
+echo "checking Windows Git Bash process helper fallback"
+temp_process_bin_dir="$(mktemp -d)"
+cat >"${temp_process_bin_dir}/pwsh.exe" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "${temp_process_bin_dir}/pwsh.exe"
+windows_status_output="$(
+  env PATH="${temp_process_bin_dir}:$PATH" WORKSPACE_SCRIPT_PLATFORM=windows \
+    "${REPO_ROOT}/scripts/status-all.sh"
+)"
+assert_contains "${windows_status_output}" "==================== workspace status ===================="
+assert_contains "${windows_status_output}" "status: NOT RUNNING"
+windows_stop_output="$(
+  env PATH="${temp_process_bin_dir}:$PATH" WORKSPACE_SCRIPT_PLATFORM=windows \
+    "${REPO_ROOT}/scripts/stop-all.sh"
+)"
+assert_contains "${windows_stop_output}" "==================== workspace shutdown ===================="
+assert_contains "${windows_stop_output}" "action: nothing to stop"
 
 echo "checking broker api env var validation"
 assert_command_fails_with \

@@ -14,9 +14,8 @@
 # Required tools/dependencies:
 #   - bash
 #   - curl
-#   - lsof
-#   - pgrep
-#   - ps
+#   - macOS/Linux: lsof, pgrep, ps
+#   - Windows Git Bash: PowerShell
 #
 # Expected output:
 #   A formatted report showing status (RUNNING/NOT RUNNING), PIDs, health, and URLs.
@@ -31,8 +30,7 @@ source "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # Ensure required commands are available.
 require_command curl
-require_command lsof
-require_command pgrep
+require_process_read_tools
 
 # Configuration for status discovery.
 API_PORT="${API_PORT:-8081}"
@@ -65,52 +63,6 @@ first_line_or_dash() {
   else
     echo "-"
   fi
-}
-
-# Function: listening_pid_for_port
-# Purpose: Finds the PID of the process listening on a specific TCP port.
-# Inputs:
-#   $1 - The TCP port number.
-# Outputs:
-#   The PID to stdout, if found.
-listening_pid_for_port() {
-  local port="$1"
-  lsof -tiTCP:"${port}" -sTCP:LISTEN 2>/dev/null | head -n 1 || true
-}
-
-# Function: listening_ports_for_pid
-# Purpose: Finds all TCP ports a specific PID is listening on.
-# Inputs:
-#   $1 - The PID.
-# Outputs:
-#   List of port numbers to stdout.
-listening_ports_for_pid() {
-  local pid="$1"
-  lsof -Pan -p "${pid}" -iTCP -sTCP:LISTEN 2>/dev/null \
-    | awk 'NR > 1 { split($9, endpoint, ":"); print endpoint[length(endpoint)] }' \
-    | sort -u
-}
-
-# Function: command_for_pid
-# Purpose: Retrieves the full command line for a given PID.
-# Inputs:
-#   $1 - The PID.
-# Outputs:
-#   The command string to stdout.
-command_for_pid() {
-  local pid="$1"
-  ps -p "${pid}" -o command= 2>/dev/null | sed 's/^[[:space:]]*//' || true
-}
-
-# Function: find_matching_pid
-# Purpose: Finds a PID by matching a pattern against the full command line.
-# Inputs:
-#   $1 - The pattern to match.
-# Outputs:
-#   The matching PID to stdout, if found.
-find_matching_pid() {
-  local pattern="$1"
-  pgrep -f "${pattern}" 2>/dev/null | head -n 1 || true
 }
 
 # Function: latest_start_all_log_dir

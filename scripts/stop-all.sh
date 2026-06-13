@@ -13,9 +13,8 @@
 #
 # Required tools/dependencies:
 #   - bash
-#   - kill
-#   - lsof
-#   - pgrep
+#   - macOS/Linux: kill, lsof, pgrep
+#   - Windows Git Bash: PowerShell
 #
 # Expected output:
 #   A status report for each component indicating if it was stopped or not running.
@@ -29,9 +28,7 @@ set -euo pipefail
 source "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # Ensure required commands are available.
-require_command kill
-require_command lsof
-require_command pgrep
+require_process_stop_tools
 
 # Configuration for component discovery.
 API_PORT="${API_PORT:-8081}"
@@ -52,44 +49,6 @@ print_separator() {
   echo
 }
 
-# Function: listening_pid_for_port
-# Purpose: Finds the PID of the process listening on a specific TCP port.
-# Inputs:
-#   $1 - The TCP port number.
-# Outputs:
-#   The PID to stdout, if found.
-listening_pid_for_port() {
-  local port="$1"
-  lsof -tiTCP:"${port}" -sTCP:LISTEN 2>/dev/null | head -n 1 || true
-}
-
-# Function: find_matching_pids
-# Purpose: Finds all PIDs matching a pattern.
-# Inputs:
-#   $1 - The pattern to match.
-# Outputs:
-#   List of matching PIDs to stdout.
-find_matching_pids() {
-  local pattern="$1"
-  pgrep -f "${pattern}" 2>/dev/null || true
-}
-
-# Function: kill_pid_if_running
-# Purpose: Sends a SIGTERM to a PID if it exists.
-# Inputs:
-#   $1 - The PID to kill.
-# Exit behavior:
-#   Returns 0 if the process was killed, 1 otherwise.
-kill_pid_if_running() {
-  local pid="$1"
-  if [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null; then
-    kill "${pid}" 2>/dev/null || true
-    return 0
-  fi
-
-  return 1
-}
-
 # Function: stop_api
 # Purpose: Stops the API component by finding the process listening on API_PORT.
 stop_api() {
@@ -104,10 +63,10 @@ stop_api() {
     return
   fi
 
-  if kill_pid_if_running "${pid}"; then
+  if stop_pid_if_running "${pid}"; then
     echo "status: STOPPED"
     echo "pid: ${pid}"
-    echo "action: sent TERM to the process listening on port ${API_PORT}"
+    echo "action: requested stop for the process listening on port ${API_PORT}"
     return
   fi
 
@@ -154,7 +113,7 @@ stop_ui() {
 
   local stopped_pids=()
   for pid in "${unique_pids[@]}"; do
-    if kill_pid_if_running "${pid}"; then
+    if stop_pid_if_running "${pid}"; then
       stopped_pids+=("${pid}")
     fi
   done
@@ -170,7 +129,7 @@ stop_ui() {
   for pid in "${stopped_pids[@]}"; do
     echo "- ${pid}"
   done
-  echo "action: sent TERM to matching UI process(es)"
+  echo "action: requested stop for matching UI process(es)"
 }
 
 # Function: stop_subscriber
@@ -194,7 +153,7 @@ stop_subscriber() {
 
   local stopped_pids=()
   for pid in "${subscriber_pids[@]}"; do
-    if kill_pid_if_running "${pid}"; then
+    if stop_pid_if_running "${pid}"; then
       stopped_pids+=("${pid}")
     fi
   done
@@ -210,7 +169,7 @@ stop_subscriber() {
   for pid in "${stopped_pids[@]}"; do
     echo "- ${pid}"
   done
-  echo "action: sent TERM to matching subscriber process(es)"
+  echo "action: requested stop for matching subscriber process(es)"
 }
 
 # Execution starts here.

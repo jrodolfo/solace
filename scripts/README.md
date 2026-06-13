@@ -10,6 +10,16 @@ These scripts are wrappers around the three active modules:
 
 They are meant to give you a small, predictable operator workflow from the repo root.
 
+## Supported Shells
+
+The scripts support:
+
+- macOS/Linux Bash
+- Windows Git Bash, with PowerShell available on `PATH`
+
+On macOS/Linux, process discovery uses standard tools such as `lsof`, `pgrep`, and `ps`.
+On Windows Git Bash, `stop-all.sh` and `status-all.sh` use PowerShell process APIs instead of `lsof`, because `lsof` is not normally available in Git Bash.
+
 ## Build Scripts
 
 - `build-broker-api.sh`
@@ -49,12 +59,14 @@ They are meant to give you a small, predictable operator workflow from the repo 
 
 - `stop-all.sh`
   Stops the locally detected API, UI, and subscriber processes when they are running.
+  On Windows Git Bash, this uses PowerShell to find and stop the matching Windows processes.
 
 - `restart-all.sh`
   Runs `stop-all.sh`, `build-all.sh`, and `start-all.sh` in sequence.
 
 - `status-all.sh`
   Reports local workspace status for API, UI, and subscriber.
+  On Windows Git Bash, this uses PowerShell to inspect listening ports and matching Windows processes.
 
   Status model:
   - API:
