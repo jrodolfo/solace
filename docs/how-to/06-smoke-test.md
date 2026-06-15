@@ -223,91 +223,11 @@ Use these connection settings:
 | Password | `secret` |
 | Database | `solace` |
 
-Basic schema checks:
+The smoke-test database queries are available in
+[../mysql/smoke-test-queries.sql](../mysql/smoke-test-queries.sql).
 
-```sql
-SHOW DATABASES;
-USE solace;
-SHOW TABLES;
-
-DESCRIBE Message;
-DESCRIBE Payload;
-DESCRIBE Property;
-```
-
-Quick table checks:
-
-```sql
-SELECT * FROM Message;
-SELECT * FROM Payload;
-SELECT * FROM Property;
-```
-
-View the latest stored publish attempts:
-
-```sql
-SELECT
-    id,
-    inner_message_id,
-    destination,
-    delivery_mode,
-    priority,
-    publish_status,
-    failure_reason,
-    published_at,
-    retry_supported,
-    retry_blocked_reason,
-    created_at,
-    updated_at
-FROM Message
-ORDER BY id DESC;
-```
-
-View message payloads:
-
-```sql
-SELECT
-    id,
-    type,
-    content,
-    message_id,
-    created_at,
-    updated_at
-FROM Payload
-ORDER BY id DESC;
-```
-
-View message properties:
-
-```sql
-SELECT
-    id,
-    property_key,
-    property_value,
-    message_id,
-    created_at,
-    updated_at
-FROM Property
-ORDER BY id DESC;
-```
-
-View messages with their payloads:
-
-```sql
-SELECT
-    m.id,
-    m.inner_message_id,
-    m.destination,
-    m.delivery_mode,
-    m.publish_status,
-    p.type AS payload_type,
-    p.content AS payload_content,
-    m.created_at,
-    m.updated_at
-FROM Message m
-JOIN Payload p ON p.message_id = m.id
-ORDER BY m.id DESC;
-```
+In IntelliJ, open that SQL file, select the `solace` MySQL data source, and run
+the queries directly from the editor.
 
 For the schema reference, see
 [../mysql/mysql-schema.sql](../mysql/mysql-schema.sql).
