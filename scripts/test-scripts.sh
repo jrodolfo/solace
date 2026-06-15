@@ -31,6 +31,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # Temporary directories and files for testing.
 temp_status_dir=""
 temp_stop_dir=""
+temp_log_multiplexer_dir=""
 temp_ui_dir=""
 temp_process_bin_dir=""
 temp_fake_bin_dir=""
@@ -45,6 +46,10 @@ cleanup() {
 
   if [[ -n "${temp_stop_dir}" ]]; then
     rm -rf "${temp_stop_dir}"
+  fi
+
+  if [[ -n "${temp_log_multiplexer_dir}" ]]; then
+    rm -rf "${temp_log_multiplexer_dir}"
   fi
 
   if [[ -n "${temp_ui_dir}" ]]; then
@@ -180,6 +185,38 @@ expected_combined_log_sample="$(cat <<'EOF'
 EOF
 )"
 assert_equals "${expected_combined_log_sample}" "${combined_log_sample}"
+
+echo "checking start-all log multiplexer handles initially empty logs"
+temp_log_multiplexer_dir="$(mktemp -d)"
+multiplexer_output_file="${temp_log_multiplexer_dir}/output.log"
+
+(
+  export SOLACE_CLOUD_HOST="test-host"
+  export SOLACE_CLOUD_VPN="test-vpn"
+  export SOLACE_CLOUD_USERNAME="test-user"
+  export SOLACE_CLOUD_PASSWORD="test-password"
+  export START_ALL_LIB_ONLY=1
+  # shellcheck source=start-all.sh
+  source "${REPO_ROOT}/scripts/start-all.sh"
+
+  LOG_FILES=("${temp_log_multiplexer_dir}/api.log" "${temp_log_multiplexer_dir}/subscriber.log")
+  PROCESS_NAMES=("api" "subscriber")
+  LOG_MULTIPLEXER_PID=""
+  LOG_STREAMING_STOPPED=0
+  : >"${LOG_FILES[0]}"
+  : >"${LOG_FILES[1]}"
+
+  start_log_multiplexer
+  sleep 0.4
+  printf '%s\n' "api line after startup" >>"${LOG_FILES[0]}"
+  sleep 0.4
+  printf '%s\n' "subscriber line after startup" >>"${LOG_FILES[1]}"
+  sleep 0.6
+  stop_log_multiplexer
+) >"${multiplexer_output_file}"
+multiplexer_output="$(cat "${multiplexer_output_file}")"
+assert_contains "${multiplexer_output}" "[api] api line after startup"
+assert_contains "${multiplexer_output}" "[subscriber] subscriber line after startup"
 
 echo "checking external workspace stop marker handling"
 temp_stop_dir="$(mktemp -d)"

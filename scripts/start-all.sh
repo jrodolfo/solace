@@ -73,6 +73,8 @@ print_separator() {
 # Purpose: Streams all component log files to the terminal with prefixes.
 start_log_multiplexer() {
   (
+    set +e
+
     local next_lines=()
     local previous_component=""
     local i
@@ -99,7 +101,7 @@ start_log_multiplexer() {
           printf '[%s] %s\n' "${component_name}" "${line}"
           previous_component="${component_name}"
           next_line=$((next_line + 1))
-        done < <(tail -n +"${next_line}" "${log_file}" 2>/dev/null || true)
+        done < <(tail -n +"${next_line}" "${log_file}" 2>/dev/null || true) || true
 
         next_lines[$i]="${next_line}"
       done
@@ -365,6 +367,10 @@ cleanup() {
 handle_signal() {
   finish_user_stop
 }
+
+if [[ "${START_ALL_LIB_ONLY:-0}" == "1" ]]; then
+  return 0 2>/dev/null || exit 0
+fi
 
 # Set up exit and signal traps.
 trap cleanup EXIT
