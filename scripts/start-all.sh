@@ -41,6 +41,7 @@ LOG_FILES=()
 MONITOR_PIDS=()
 PROCESS_STATUSES=()
 SHUTTING_DOWN=0
+LOG_STREAMING_STOPPED=0
 # Create a temporary directory for component logs.
 LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/solace-start-all.XXXXXX")"
 LOG_STREAM_FIFO="${LOG_DIR}/combined-log-stream.fifo"
@@ -209,7 +210,7 @@ start_process() {
   # Start a monitor process to tail the logs with a prefix.
   (
     tail -n +1 -f "${log_file}" | prefix_log_stream "${name}" >"${LOG_STREAM_FIFO}"
-  ) &
+  ) 2>/dev/null &
   local monitor_pid=$!
 
   # Record process metadata.
@@ -227,20 +228,37 @@ stop_log_monitors() {
     return
   fi
 
-  kill "${MONITOR_PIDS[@]}" 2>/dev/null || true
+  local monitor_pid
+  for monitor_pid in "${MONITOR_PIDS[@]}"; do
+    stop_process_tree_if_running "${monitor_pid}" || true
+  done
+
   wait "${MONITOR_PIDS[@]}" 2>/dev/null || true
+  MONITOR_PIDS=()
 }
 
 # Function: stop_log_formatter
 # Purpose: Stops the shared terminal log formatter.
 stop_log_formatter() {
   if [[ -n "${LOG_FORMATTER_PID}" ]]; then
-    kill "${LOG_FORMATTER_PID}" 2>/dev/null || true
+    stop_process_tree_if_running "${LOG_FORMATTER_PID}" || true
     wait "${LOG_FORMATTER_PID}" 2>/dev/null || true
     LOG_FORMATTER_PID=""
   fi
 
   exec 3>&- 2>/dev/null || true
+}
+
+# Function: stop_terminal_log_streaming
+# Purpose: Stops terminal log streaming before intentional process shutdown.
+stop_terminal_log_streaming() {
+  if [[ "${LOG_STREAMING_STOPPED}" -eq 1 ]]; then
+    return
+  fi
+
+  LOG_STREAMING_STOPPED=1
+  stop_log_formatter
+  stop_log_monitors
 }
 
 # Function: print_status_summary
@@ -251,6 +269,47 @@ print_status_summary() {
     echo "- ${PROCESS_NAMES[$i]}: ${PROCESS_STATUSES[$i]}"
   done
   echo "- combined logs: ${LOG_DIR}"
+}
+
+# Function: terminate_started_processes
+# Purpose: Stops child component wrapper processes and waits for them.
+# Inputs:
+#   $1 - Optional message to print before stopping processes.
+terminate_started_processes() {
+  local message="${1:-}"
+
+  if [[ "${#PIDS[@]}" -eq 0 ]]; then
+    return
+  fi
+
+  if [[ -n "${message}" ]]; then
+    echo
+    echo "${message}"
+  fi
+
+  local pid
+  for pid in "${PIDS[@]}"; do
+    if [[ -n "${pid}" ]]; then
+      stop_process_tree_if_running "${pid}" || true
+    fi
+  done
+
+  wait "${PIDS[@]}" 2>/dev/null || true
+}
+
+# Function: finish_external_stop
+# Purpose: Handles stop-all.sh shutdown without streaming expected TERM noise.
+finish_external_stop() {
+  update_running_process_statuses "stopped by stop-all.sh"
+
+  echo
+  echo "external stop request detected from stop-all.sh; shutting down workspace"
+
+  SHUTTING_DOWN=1
+  stop_terminal_log_streaming
+  terminate_started_processes
+  print_status_summary
+  exit 0
 }
 
 # Function: cleanup
@@ -264,15 +323,8 @@ cleanup() {
 
   SHUTTING_DOWN=1
 
-  if [[ "${#PIDS[@]}" -gt 0 ]]; then
-    echo
-    echo "stopping started processes"
-    kill "${PIDS[@]}" 2>/dev/null || true
-    wait "${PIDS[@]}" 2>/dev/null || true
-  fi
-
-  stop_log_monitors
-  stop_log_formatter
+  terminate_started_processes "stopping started processes"
+  stop_terminal_log_streaming
   print_status_summary
 }
 
@@ -305,11 +357,7 @@ echo "press ctrl-c to stop all three processes"
 # Monitoring loop: check for process exits and readiness.
 while true; do
   if workspace_stop_requested "${LOG_DIR}"; then
-    update_running_process_statuses "stopped by stop-all.sh"
-
-    echo
-    echo "external stop request detected from stop-all.sh; stopping started processes"
-    exit 0
+    finish_external_stop
   fi
 
   for i in "${!PIDS[@]}"; do
@@ -330,11 +378,7 @@ while true; do
 
       if workspace_stop_requested "${LOG_DIR}"; then
         PROCESS_STATUSES[$i]="stopped by stop-all.sh"
-        update_running_process_statuses "stopped by stop-all.sh"
-
-        echo
-        echo "external stop request detected from stop-all.sh; stopping remaining processes"
-        exit 0
+        finish_external_stop
       fi
 
       # The subscriber exiting is a warning but doesn't stop the whole stack.

@@ -350,6 +350,57 @@ stop_pid_if_running() {
   return 1
 }
 
+# Function: stop_process_tree_if_running
+# Purpose: Sends a graceful termination request to a PID and its child processes.
+# Inputs:
+#   $1 - The root PID to stop.
+# Notes:
+#   This is best effort. It is mainly used to clean up helper shell pipelines
+#   and wrapper scripts where child processes may otherwise continue writing.
+stop_process_tree_if_running() {
+  local pid="$1"
+
+  if [[ -z "${pid}" ]]; then
+    return 1
+  fi
+
+  if is_windows_shell; then
+    WORKSPACE_PID="${pid}" run_powershell '
+      $rootProcessId = [int]$env:WORKSPACE_PID
+      $processesByParent = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+        Group-Object -Property ParentProcessId -AsHashTable -AsString
+
+      function Stop-ProcessTree([int]$processId) {
+        $key = [string]$processId
+        if ($processesByParent.ContainsKey($key)) {
+          foreach ($child in $processesByParent[$key]) {
+            Stop-ProcessTree -processId ([int]$child.ProcessId)
+          }
+        }
+
+        Stop-Process -Id $processId -ErrorAction SilentlyContinue
+      }
+
+      Stop-ProcessTree -processId $rootProcessId
+    ' >/dev/null 2>&1 || true
+
+    kill "${pid}" 2>/dev/null || true
+    return 0
+  fi
+
+  if command -v pgrep >/dev/null 2>&1; then
+    local child_pid
+    while IFS= read -r child_pid; do
+      if [[ -n "${child_pid}" ]]; then
+        stop_process_tree_if_running "${child_pid}" || true
+      fi
+    done < <(pgrep -P "${pid}" 2>/dev/null || true)
+  fi
+
+  kill "${pid}" 2>/dev/null || true
+  return 0
+}
+
 # Function: require_env_var
 # Purpose: Checks if an environment variable is set and non-empty.
 # Inputs:
