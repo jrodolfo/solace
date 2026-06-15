@@ -325,6 +325,21 @@ finish_external_stop() {
   exit 0
 }
 
+# Function: finish_user_stop
+# Purpose: Handles Ctrl+C shutdown without relying on the generic EXIT trap.
+finish_user_stop() {
+  mark_running_processes_stopped_by_user
+
+  echo
+  echo "user stop requested; shutting down workspace"
+
+  SHUTTING_DOWN=1
+  stop_terminal_log_streaming
+  terminate_started_processes
+  print_status_summary
+  exit 130
+}
+
 # Function: cleanup
 # Purpose: Stops child components and log monitors on script exit.
 # Side effects:
@@ -344,8 +359,7 @@ cleanup() {
 # Function: handle_signal
 # Purpose: Handles termination signals (SIGINT, SIGTERM).
 handle_signal() {
-  mark_running_processes_stopped_by_user
-  exit 130
+  finish_user_stop
 }
 
 # Set up exit and signal traps.
