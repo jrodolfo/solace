@@ -256,7 +256,9 @@ stop_log_monitors() {
 # Purpose: Stops the shared terminal log multiplexer.
 stop_log_multiplexer() {
   if [[ -n "${LOG_MULTIPLEXER_PID}" ]]; then
-    stop_process_tree_if_running "${LOG_MULTIPLEXER_PID}" || true
+    kill "${LOG_MULTIPLEXER_PID}" 2>/dev/null || true
+    sleep 0.1
+    kill -9 "${LOG_MULTIPLEXER_PID}" 2>/dev/null || true
     wait "${LOG_MULTIPLEXER_PID}" 2>/dev/null || true
     LOG_MULTIPLEXER_PID=""
   fi
@@ -328,6 +330,8 @@ finish_external_stop() {
 # Function: finish_user_stop
 # Purpose: Handles Ctrl+C shutdown without relying on the generic EXIT trap.
 finish_user_stop() {
+  trap - INT TERM EXIT
+  set +e
   mark_running_processes_stopped_by_user
 
   echo
