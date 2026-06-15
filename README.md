@@ -66,6 +66,8 @@ From the repo root:
 
 This starts the API, UI, and subscriber together. The script prints the API health URL and the actual Vite UI URL when ready.
 
+Build scripts only compile and package the modules. Runtime dependencies, including the local MySQL Docker container from `solace-broker-api/docker-compose.yaml`, are started when the API starts through `start-all.sh`.
+
 Common root commands:
 
 - `./scripts/status-all.sh`: show local API, UI, and subscriber status

@@ -35,6 +35,8 @@ On Windows Git Bash, `stop-all.sh` and `status-all.sh` use PowerShell process AP
 - `build-all.sh`
   Runs the three build scripts in sequence.
 
+Build scripts only compile and package the modules. They do not start runtime dependencies such as the local MySQL Docker container.
+
 ## Start Scripts
 
 - `start-broker-api.sh`
@@ -54,6 +56,8 @@ On Windows Git Bash, `stop-all.sh` and `status-all.sh` use PowerShell process AP
   It validates the shared Solace environment variables first, streams prefixed logs, and writes a temporary combined-log directory under `${TMPDIR:-/tmp}/solace-start-all.XXXXXX`.
   The latest generated log directory path is written to `${TMPDIR:-/tmp}/solace-start-all.latest` so `status-all.sh` can report the Vite URL selected during startup.
   Once the API and UI are ready, it also prints a clearer readiness block with their URLs.
+
+When the API starts, Spring Boot Docker Compose can recreate and start the local MySQL container from `solace-broker-api/docker-compose.yaml`.
 
 ## Stop / Restart / Status
 
@@ -112,7 +116,7 @@ The same workflows are also exposed through the root `Makefile`.
 - `build-all.sh` runs the three module builds sequentially from the repo root.
 - `start-broker-api.sh` and `start-subscriber.sh` require the shared Solace environment variables.
 - `start-publisher-ui.sh` starts the Vite dev server and runs `npm install` first when `solace-publisher-ui/node_modules` is missing.
-- `start-all.sh` validates the shared Solace environment variables before starting any child processes, streams prefixed `[api]`, `[ui]`, and `[subscriber]` logs from a temporary combined-log directory, writes the latest log directory pointer for `status-all.sh`, prints a clear readiness block with the API and UI URLs once they are up, and prints a status summary when it stops.
+- `start-all.sh` validates the shared Solace environment variables before starting any child processes, streams prefixed `[api]`, `[ui]`, and `[subscriber]` logs from a temporary combined-log directory, starts API runtime dependencies such as the local MySQL Docker container through Spring Boot Docker Compose, writes the latest log directory pointer for `status-all.sh`, prints a clear readiness block with the API and UI URLs once they are up, and prints a status summary when it stops.
 - `stop-all.sh` sends `TERM` to the locally detected API, UI, and subscriber processes when they are running and reports which components were stopped versus already down.
 - `restart-all.sh` runs `stop-all.sh`, `build-all.sh`, and `start-all.sh` in that order with clear step separators and fails fast if any step fails.
 - `status-all.sh` reports local status for the three components using a hybrid model:
