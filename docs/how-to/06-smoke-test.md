@@ -194,7 +194,16 @@ In Broker Manager, confirm that the subscribed topic receives the message.
 
 ![Solace Cloud Broker Manager showing the received message](../images/smoke-test/23.png)
 
-## 11. Verify the Database
+## 11. Verify the Message in the Publisher UI Read Tab
+
+The publisher UI can also confirm that the broker API persisted the publish
+attempt. Open the read/stored-messages tab, load the records, and verify that
+the latest message shows the expected destination, payload, lifecycle status,
+and timestamps.
+
+![Publisher UI Read tab showing the stored published message](../images/smoke-test/24.png)
+
+## 12. Verify the Database
 
 You can inspect the stored publish attempt in MySQL. One GUI option is
 Beekeeper Studio Community Edition:
