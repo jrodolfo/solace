@@ -264,10 +264,10 @@ function formatExpectedTimestamp(value: string): string {
 }
 
 async function fillRequiredFormFields() {
-    await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
-    await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
-    await userEvent.type(screen.getByLabelText(/^Host$/i), "localhost");
-    await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
+    await userEvent.type(screen.getByLabelText(/Cloud Username/i), "testUser");
+    await userEvent.type(screen.getByLabelText(/Cloud Password/i), "testPass");
+    await userEvent.type(screen.getByLabelText(/^Cloud Host$/i), "localhost");
+    await userEvent.type(screen.getByLabelText(/^Cloud VPN$/i), "testVPN");
     await userEvent.type(screen.getByLabelText(/^Inner Message Id$/i), "001");
     await userEvent.type(screen.getByLabelText(/^Destination$/i), TEST_DESTINATIONS.system01);
     await userEvent.selectOptions(screen.getByLabelText(/^Delivery Mode$/i), "PERSISTENT");
@@ -401,10 +401,10 @@ describe("Form Submission Tests", () => {
     test("Handles missing required message fields before calling the api", async () => {
         render(<App/>);
 
-        await userEvent.type(screen.getByLabelText(/User Name/i), "testUser");
-        await userEvent.type(screen.getByLabelText(/Password/i), "testPass");
-        await userEvent.type(screen.getByLabelText(/^Host$/i), "localhost");
-        await userEvent.type(screen.getByLabelText(/VPN Name/i), "testVPN");
+        await userEvent.type(screen.getByLabelText(/Cloud Username/i), "testUser");
+        await userEvent.type(screen.getByLabelText(/Cloud Password/i), "testPass");
+        await userEvent.type(screen.getByLabelText(/^Cloud Host$/i), "localhost");
+        await userEvent.type(screen.getByLabelText(/^Cloud VPN$/i), "testVPN");
         await userEvent.type(screen.getByLabelText(/^Inner Message Id$/i), " ");
         await userEvent.type(screen.getByLabelText(/^Destination$/i), TEST_DESTINATIONS.system01);
         await userEvent.selectOptions(screen.getByLabelText(/^Payload Type$/i), "BINARY");

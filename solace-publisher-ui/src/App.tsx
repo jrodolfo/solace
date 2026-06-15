@@ -1523,7 +1523,7 @@ function App() {
                                         <div className="row g-3">
                                             <div className="col-md-6">
                                                 <label htmlFor="userName" className="form-label">
-                                                    User Name
+                                                    Cloud Username
                                                 </label>
                                                 <input
                                                     id="userName"
@@ -1531,13 +1531,13 @@ function App() {
                                                     className="form-control"
                                                     value={userName}
                                                     onChange={(e) => setUserName(e.target.value)}
-                                                    placeholder="Enter the user name"
+                                                    placeholder="e.g. solace-cloud-client"
                                                     required
                                                 />
                                             </div>
                                             <div className="col-md-6">
                                                 <label htmlFor="password" className="form-label">
-                                                    Password
+                                                    Cloud Password
                                                 </label>
                                                 <input
                                                     id="password"
@@ -1545,13 +1545,13 @@ function App() {
                                                     className="form-control"
                                                     value={password}
                                                     onChange={(e) => setPassword(e.target.value)}
-                                                    placeholder="Enter the password"
+                                                    placeholder="e.g. ujce53s4s2adjqhgb5sdn3ixxx"
                                                     required
                                                 />
                                             </div>
                                             <div className="col-md-6">
                                                 <label htmlFor="host" className="form-label">
-                                                    Host
+                                                    Cloud Host
                                                 </label>
                                                 <input
                                                     id="host"
@@ -1559,13 +1559,13 @@ function App() {
                                                     className="form-control"
                                                     value={host}
                                                     onChange={(e) => setHost(e.target.value)}
-                                                    placeholder="Enter the host url and port"
+                                                    placeholder="e.g. wss://mr-connection-xqriomoixxx.messaging.solace.cloud:443"
                                                     required
                                                 />
                                             </div>
                                             <div className="col-md-6">
                                                 <label htmlFor="vpnName" className="form-label">
-                                                    Event VPN Name
+                                                    Cloud VPN
                                                 </label>
                                                 <input
                                                     id="vpnName"
@@ -1573,7 +1573,7 @@ function App() {
                                                     className="form-control"
                                                     value={vpnName}
                                                     onChange={(e) => setVpnName(e.target.value)}
-                                                    placeholder="Enter the VPN name"
+                                                    placeholder="e.g. my-solace-service"
                                                     required
                                                 />
                                             </div>
