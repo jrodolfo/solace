@@ -44,8 +44,7 @@ SHUTTING_DOWN=0
 LOG_STREAMING_STOPPED=0
 # Create a temporary directory for component logs.
 LOG_DIR="$(mktemp -d "${TMPDIR:-/tmp}/solace-start-all.XXXXXX")"
-LOG_STREAM_FIFO="${LOG_DIR}/combined-log-stream.fifo"
-LOG_FORMATTER_PID=""
+LOG_MULTIPLEXER_PID=""
 LATEST_LOG_DIR_FILE="${LATEST_START_ALL_FILE:-${TMPDIR:-/tmp}/solace-start-all.latest}"
 # Configuration for health checks.
 API_BASE_URL="${API_BASE_URL:-http://localhost:8081}"
@@ -70,22 +69,45 @@ print_separator() {
   echo
 }
 
-# Function: prefix_log_stream
-# Purpose: Adds a component prefix to each line of an input stream.
-# Inputs:
-#   $1 - The prefix to use (usually the component name).
-prefix_log_stream() {
-  local component_name="$1"
-  awk -v prefix="[${component_name}] " '{ print prefix $0; fflush() }'
-}
+# Function: start_log_multiplexer
+# Purpose: Streams all component log files to the terminal with prefixes.
+start_log_multiplexer() {
+  (
+    local next_lines=()
+    local previous_component=""
+    local i
+    for i in "${!LOG_FILES[@]}"; do
+      next_lines[$i]=1
+    done
 
-# Function: start_log_formatter
-# Purpose: Starts the shared terminal formatter for all component log streams.
-start_log_formatter() {
-  mkfifo "${LOG_STREAM_FIFO}"
-  exec 3<>"${LOG_STREAM_FIFO}"
-  separate_component_log_transitions <"${LOG_STREAM_FIFO}" &
-  LOG_FORMATTER_PID=$!
+    while true; do
+      for i in "${!LOG_FILES[@]}"; do
+        local log_file="${LOG_FILES[$i]}"
+        local component_name="${PROCESS_NAMES[$i]}"
+        local next_line="${next_lines[$i]}"
+        local line=""
+
+        if [[ ! -f "${log_file}" ]]; then
+          continue
+        fi
+
+        while IFS= read -r line; do
+          if [[ -n "${previous_component}" && "${previous_component}" != "${component_name}" ]]; then
+            echo
+          fi
+
+          printf '[%s] %s\n' "${component_name}" "${line}"
+          previous_component="${component_name}"
+          next_line=$((next_line + 1))
+        done < <(tail -n +"${next_line}" "${log_file}" 2>/dev/null || true)
+
+        next_lines[$i]="${next_line}"
+      done
+
+      sleep 0.2
+    done
+  ) &
+  LOG_MULTIPLEXER_PID=$!
 }
 
 # Function: update_running_process_statuses
@@ -207,22 +229,15 @@ start_process() {
   "${script_path}" >"${log_file}" 2>&1 &
   local process_pid=$!
 
-  # Start a monitor process to tail the logs with a prefix.
-  (
-    tail -n +1 -f "${log_file}" | prefix_log_stream "${name}" >"${LOG_STREAM_FIFO}"
-  ) 2>/dev/null &
-  local monitor_pid=$!
-
   # Record process metadata.
   PIDS+=("${process_pid}")
   PROCESS_NAMES+=("${name}")
   LOG_FILES+=("${log_file}")
-  MONITOR_PIDS+=("${monitor_pid}")
   PROCESS_STATUSES+=("running")
 }
 
 # Function: stop_log_monitors
-# Purpose: Kills the background log monitoring (tail) processes.
+# Purpose: Stops any legacy background log monitor processes.
 stop_log_monitors() {
   if [[ "${#MONITOR_PIDS[@]}" -eq 0 ]]; then
     return
@@ -237,16 +252,14 @@ stop_log_monitors() {
   MONITOR_PIDS=()
 }
 
-# Function: stop_log_formatter
-# Purpose: Stops the shared terminal log formatter.
-stop_log_formatter() {
-  if [[ -n "${LOG_FORMATTER_PID}" ]]; then
-    stop_process_tree_if_running "${LOG_FORMATTER_PID}" || true
-    wait "${LOG_FORMATTER_PID}" 2>/dev/null || true
-    LOG_FORMATTER_PID=""
+# Function: stop_log_multiplexer
+# Purpose: Stops the shared terminal log multiplexer.
+stop_log_multiplexer() {
+  if [[ -n "${LOG_MULTIPLEXER_PID}" ]]; then
+    stop_process_tree_if_running "${LOG_MULTIPLEXER_PID}" || true
+    wait "${LOG_MULTIPLEXER_PID}" 2>/dev/null || true
+    LOG_MULTIPLEXER_PID=""
   fi
-
-  exec 3>&- 2>/dev/null || true
 }
 
 # Function: stop_terminal_log_streaming
@@ -257,7 +270,7 @@ stop_terminal_log_streaming() {
   fi
 
   LOG_STREAMING_STOPPED=1
-  stop_log_formatter
+  stop_log_multiplexer
   stop_log_monitors
 }
 
@@ -323,8 +336,8 @@ cleanup() {
 
   SHUTTING_DOWN=1
 
-  terminate_started_processes "stopping started processes"
   stop_terminal_log_streaming
+  terminate_started_processes "stopping started processes"
   print_status_summary
 }
 
@@ -342,12 +355,12 @@ trap handle_signal INT TERM
 # Store the latest log directory for other scripts to reference.
 printf '%s\n' "${LOG_DIR}" >"${LATEST_LOG_DIR_FILE}"
 
-start_log_formatter
-
 # Start all three components.
 start_process "api" "${SCRIPT_DIR}/start-broker-api.sh"
 start_process "ui" "${SCRIPT_DIR}/start-publisher-ui.sh"
 start_process "subscriber" "${SCRIPT_DIR}/start-subscriber.sh"
+
+start_log_multiplexer
 
 print_separator "workspace startup"
 echo "started api, ui, and subscriber; watch the prefixed logs below"
