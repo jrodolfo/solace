@@ -38,6 +38,48 @@ require_command() {
   fi
 }
 
+# Function: java_major_version
+# Purpose: Reads the major version from the configured Java runtime.
+# Outputs:
+#   The Java major version, such as 21.
+java_major_version() {
+  java -version 2>&1 \
+    | awk -F '"' '/version/ {
+        split($2, version_parts, ".")
+        if (version_parts[1] == "1") {
+          print version_parts[2]
+        } else {
+          print version_parts[1]
+        }
+        exit
+      }'
+}
+
+# Function: require_java_major_version
+# Purpose: Requires a specific Java major version before running Java modules.
+# Inputs:
+#   $1 - The expected Java major version.
+# Exit behavior:
+#   Exits with code 1 if Java is missing or if the active Java version differs.
+require_java_major_version() {
+  local expected_version="$1"
+  require_command java
+
+  local actual_version
+  actual_version="$(java_major_version)"
+
+  if [[ -z "${actual_version}" ]]; then
+    echo "could not determine Java version; expected Java ${expected_version}" >&2
+    exit 1
+  fi
+
+  if [[ "${actual_version}" != "${expected_version}" ]]; then
+    echo "expected Java ${expected_version}, but found Java ${actual_version}" >&2
+    echo "set JAVA_HOME/PATH to a Java ${expected_version} runtime and try again" >&2
+    exit 1
+  fi
+}
+
 # Function: separate_component_log_transitions
 # Purpose: Inserts a blank line when a prefixed log stream changes component.
 # Inputs:

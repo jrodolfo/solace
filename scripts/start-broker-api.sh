@@ -26,9 +26,9 @@ set -euo pipefail
 source "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # Ensure required commands and environment variables are available.
-require_command java
 require_command mvn
 require_solace_env_vars "start-broker-api.sh"
+require_java_major_version 21
 
 # Navigate to the component directory.
 enter_module "solace-broker-api"

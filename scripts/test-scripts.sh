@@ -34,6 +34,7 @@ temp_stop_dir=""
 temp_log_multiplexer_dir=""
 temp_ui_dir=""
 temp_process_bin_dir=""
+temp_java_bin_dir=""
 temp_fake_bin_dir=""
 temp_npm_log_file=""
 
@@ -58,6 +59,10 @@ cleanup() {
 
   if [[ -n "${temp_process_bin_dir}" ]]; then
     rm -rf "${temp_process_bin_dir}"
+  fi
+
+  if [[ -n "${temp_java_bin_dir}" ]]; then
+    rm -rf "${temp_java_bin_dir}"
   fi
 
   if [[ -n "${temp_fake_bin_dir}" ]]; then
@@ -185,6 +190,23 @@ expected_combined_log_sample="$(cat <<'EOF'
 EOF
 )"
 assert_equals "${expected_combined_log_sample}" "${combined_log_sample}"
+
+echo "checking Java version parser"
+temp_java_bin_dir="$(mktemp -d)"
+cat >"${temp_java_bin_dir}/java" <<'EOF'
+#!/usr/bin/env bash
+echo 'openjdk version "21.0.7" 2026-04-15' >&2
+EOF
+chmod +x "${temp_java_bin_dir}/java"
+java_21_version="$(PATH="${temp_java_bin_dir}:$PATH" java_major_version)"
+assert_equals "21" "${java_21_version}"
+cat >"${temp_java_bin_dir}/java" <<'EOF'
+#!/usr/bin/env bash
+echo 'java version "1.8.0_452"' >&2
+EOF
+chmod +x "${temp_java_bin_dir}/java"
+java_8_version="$(PATH="${temp_java_bin_dir}:$PATH" java_major_version)"
+assert_equals "8" "${java_8_version}"
 
 echo "checking start-all log multiplexer handles initially empty logs"
 temp_log_multiplexer_dir="$(mktemp -d)"

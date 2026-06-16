@@ -46,6 +46,19 @@ public class MessageWrapperDTO {
      * @return {@code true} if all connection fields are non-empty; {@code false} otherwise.
      */
     public boolean parametersAreValid() {
-        return (StringUtils.isNotEmpty(userName) && StringUtils.isNotEmpty(password) && StringUtils.isNotEmpty(host) && StringUtils.isNotEmpty(vpnName));
+        return (StringUtils.isNotBlank(userName) && StringUtils.isNotBlank(password) && StringUtils.isNotBlank(host) && StringUtils.isNotBlank(vpnName));
+    }
+
+    /**
+     * Detects malformed custom broker credentials where only some connection fields were supplied.
+     *
+     * @return {@code true} if at least one connection field is present but the full set is not.
+     */
+    public boolean hasPartialConnectionParameters() {
+        boolean hasAnyParameter = StringUtils.isNotBlank(userName)
+                || StringUtils.isNotBlank(password)
+                || StringUtils.isNotBlank(host)
+                || StringUtils.isNotBlank(vpnName);
+        return hasAnyParameter && !parametersAreValid();
     }
 }

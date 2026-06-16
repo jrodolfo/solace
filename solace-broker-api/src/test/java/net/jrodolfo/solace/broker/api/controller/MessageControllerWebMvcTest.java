@@ -310,6 +310,23 @@ class MessageControllerWebMvcTest {
     }
 
     @Test
+    void shouldRejectPartialBrokerConnectionParametersBeforePersisting() throws Exception {
+        MessageWrapperDTO wrapper = validWrapper();
+        wrapper.setPassword(null);
+
+        mockMvc.perform(post("/api/v1/messages/message")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(wrapper)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Broker connection parameters must include userName, password, host, and vpnName together, or omit all four to use server-side configuration"));
+
+        verify(database, never()).savePendingMessage(any(MessageWrapperDTO.class));
+        verify(directPublisherService, never()).sendMessage(any(), any(), any(), any());
+    }
+
+    @Test
     void shouldReturnTypedDownstreamFailureResponse() throws Exception {
         MessageWrapperDTO wrapper = validWrapper();
         when(database.savePendingMessage(any(MessageWrapperDTO.class))).thenReturn(new Message() {{

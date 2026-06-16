@@ -26,7 +26,7 @@ set -euo pipefail
 source "$(cd "$(dirname "$0")" && pwd)/common.sh"
 
 # Ensure required commands are available.
-require_command java
+require_java_major_version 21
 require_command mvn
 
 # Navigate to the component directory.

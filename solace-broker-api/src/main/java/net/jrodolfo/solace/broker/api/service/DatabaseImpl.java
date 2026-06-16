@@ -220,7 +220,7 @@ public class DatabaseImpl implements Database {
     @Transactional
     @Override
     public Message markMessagePending(Long messageId) {
-        messageRepository.markPending(messageId, PublishStatus.PENDING);
+        assertLifecycleUpdate(messageId, messageRepository.markPending(messageId, PublishStatus.PENDING));
         clearPersistenceContext();
         return getRequiredMessage(messageId);
     }
@@ -231,7 +231,7 @@ public class DatabaseImpl implements Database {
     @Override
     @Transactional
     public Message markMessagePublished(Long messageId) {
-        messageRepository.markPublished(messageId, PublishStatus.PUBLISHED, LocalDateTime.now());
+        assertLifecycleUpdate(messageId, messageRepository.markPublished(messageId, PublishStatus.PUBLISHED, LocalDateTime.now()));
         clearPersistenceContext();
         return getRequiredMessage(messageId);
     }
@@ -242,9 +242,15 @@ public class DatabaseImpl implements Database {
     @Override
     @Transactional
     public Message markMessageFailed(Long messageId, String failureReason) {
-        messageRepository.markFailed(messageId, PublishStatus.FAILED, failureReason);
+        assertLifecycleUpdate(messageId, messageRepository.markFailed(messageId, PublishStatus.FAILED, failureReason));
         clearPersistenceContext();
         return getRequiredMessage(messageId);
+    }
+
+    private static void assertLifecycleUpdate(Long messageId, int updatedRows) {
+        if (updatedRows != 1) {
+            throw new IllegalStateException("Expected to update one message lifecycle row for id " + messageId + " but updated " + updatedRows);
+        }
     }
 
     /**

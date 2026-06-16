@@ -621,6 +621,10 @@ public class MessageController {
             logger.log(Level.WARNING, "Rejected publish request with missing message payload");
             throw new BadRequestException("Message is null");
         }
+        if (wrapper.hasPartialConnectionParameters()) {
+            logger.log(Level.WARNING, "Rejected publish request with partial broker connection parameters");
+            throw new BadRequestException("Broker connection parameters must include userName, password, host, and vpnName together, or omit all four to use server-side configuration");
+        }
 
         Message savedMessage = database.savePendingMessage(wrapper);
 

@@ -252,15 +252,17 @@ const formatSavedViewActionAbsoluteTimestamp = (value: string) =>
         minute: "2-digit"
     }).format(new Date(value));
 
+const brokerApiBaseUrl = (import.meta.env.VITE_BROKER_API_BASE_URL ?? "http://localhost:8081").replace(/\/+$/, "");
+
 /**
  * The main application component for the Solace Publisher UI.
  * Provides functionality for publishing messages and browsing stored messages.
  */
 function App() {
-    const apiUrl = "http://localhost:8081/api/v1/messages/message";
-    const messagesBaseUrl = "http://localhost:8081/api/v1/messages";
-    const messagesApiUrl = "http://localhost:8081/api/v1/messages/all";
-    const messagesExportApiUrl = "http://localhost:8081/api/v1/messages/export";
+    const apiUrl = `${brokerApiBaseUrl}/api/v1/messages/message`;
+    const messagesBaseUrl = `${brokerApiBaseUrl}/api/v1/messages`;
+    const messagesApiUrl = `${brokerApiBaseUrl}/api/v1/messages/all`;
+    const messagesExportApiUrl = `${brokerApiBaseUrl}/api/v1/messages/export`;
 
     // Broker credentials are kept only in React state for the current publish request.
     const [userName, setUserName] = useState("");

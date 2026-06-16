@@ -21,6 +21,7 @@ For the repo-level data flow and module boundaries, see [../docs/architecture.md
 - `solace-broker-api` running locally on `http://localhost:8081`
 
 The UI itself does not read Solace environment variables directly. Those are required by the backend and subscriber modules.
+By default, the UI calls the backend at `http://localhost:8081`. To point it somewhere else, set `VITE_BROKER_API_BASE_URL` before starting Vite.
 
 ## Run
 
