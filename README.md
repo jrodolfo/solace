@@ -43,6 +43,15 @@ Sample destinations across the workspace are listed in [docs/reference/sample-de
 
 ## Quick Start
 
+If your goal is to see the project running end to end for the first time, follow
+these two screenshot-based guides in order:
+
+1. [Solace Cloud setup guide](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md): create the Solace Cloud account, create a broker service, collect the four `SOLACE_CLOUD_*` values, and register them locally.
+2. [Smoke test guide](docs/how-to/06-smoke-test.md): build and start the API, UI, and subscriber, publish a message, and verify it in logs, Solace Cloud, the UI read tab, and MySQL.
+
+The commands below are the short version once Solace Cloud is already
+configured.
+
 ### 1. Configure Solace Cloud
 
 Set the shared Solace environment variables:
