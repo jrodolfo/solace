@@ -129,6 +129,12 @@
     border-radius: 1rem;
 }
 
+.response-json {
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: pre;
+}
+
 .browser-summary {
     display: flex;
     justify-content: space-between;

@@ -1,5 +1,34 @@
 import {AxiosResponse} from "axios";
 
+const SENSITIVE_KEY_PATTERN = /(password|authorization|token|secret|credential|api[-_]?key)/i;
+
+const maskSecret = (value: unknown): string => {
+    if (typeof value === "string") {
+        return "*".repeat(value.length);
+    }
+    if (value == null) {
+        return "";
+    }
+    return "*".repeat(String(value).length);
+};
+
+const sanitizeForDisplay = (value: unknown): unknown => {
+    if (Array.isArray(value)) {
+        return value.map((item) => sanitizeForDisplay(item));
+    }
+
+    if (value && typeof value === "object") {
+        return Object.fromEntries(
+            Object.entries(value).map(([key, entryValue]) => [
+                key,
+                SENSITIVE_KEY_PATTERN.test(key) ? maskSecret(entryValue) : sanitizeForDisplay(entryValue),
+            ])
+        );
+    }
+
+    return value;
+};
+
 /**
  * Properties for the ShowOutput component.
  */
@@ -19,6 +48,8 @@ const ShowOutput: React.FC<ShowOutputProps> = ({ res }) => {
         return <div>No response to show</div>;
     }
 
+    const sanitizedConfig = sanitizeForDisplay(res.config);
+
     return (
 
         <div>
@@ -34,7 +65,7 @@ const ShowOutput: React.FC<ShowOutputProps> = ({ res }) => {
                 Headers
             </div>
             <div className="card-body">
-                <pre>{JSON.stringify(res.headers, null, 2)}</pre>
+                <pre className="response-json">{JSON.stringify(res.headers, null, 2)}</pre>
             </div>
         </div>
 
@@ -43,16 +74,16 @@ const ShowOutput: React.FC<ShowOutputProps> = ({ res }) => {
                 Data
             </div>
             <div className="card-body">
-                <pre>{JSON.stringify(res.data, null, 2)}</pre>
+                <pre className="response-json">{JSON.stringify(res.data, null, 2)}</pre>
             </div>
         </div>
 
         <div className="card mt-3">
             <div className="card-header">
-                Config
+                Config (sanitized)
             </div>
             <div className="card-body">
-                <pre>{JSON.stringify(res.config, null, 2)}</pre>
+                <pre className="response-json">{JSON.stringify(sanitizedConfig, null, 2)}</pre>
             </div>
         </div>
     </div>
