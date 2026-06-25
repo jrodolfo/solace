@@ -223,31 +223,23 @@ printf '%s\n' "$SOLACE_CLOUD_PASSWORD"
 
 ## 8. Run This Project with the Solace Cloud Values
 
-After the four variables are registered, start the workspace from the repository
-root:
+After the four variables are registered, start the Docker runtime from the
+repository root:
 
 ```bash
-./scripts/start-all.sh
+./scripts/docker-start.sh
 ```
 
-Or start each module manually:
-
-```bash
-cd solace-broker-api
-mvn spring-boot:run
-```
+Useful runtime commands:
 
 ```bash
-cd solace-publisher-ui
-npm install
-npm run dev
+./scripts/docker-status.sh
+./scripts/docker-logs.sh subscriber
+./scripts/docker-stop.sh
 ```
 
-```bash
-cd solace-subscriber
-mvn package
-java -jar target/solace-subscriber-1.0-SNAPSHOT-all.jar
-```
+If you need module-level debugging, the local development commands are
+documented in the root `README.md` and `scripts/README.md`.
 
 Use the UI at `http://localhost:5173` to publish a message. The subscriber
 should log matching topic traffic, and the backend should persist the publish

@@ -10,7 +10,7 @@ This checklist covers:
 
 - setup instructions from the root README
 - root build/test scripts
-- start, status, and stop scripts
+- Docker start, status, logs, and stop scripts
 - API health and OpenAPI UI
 - publisher UI flow
 - subscriber observation
@@ -26,7 +26,7 @@ Confirm the machine has:
 - Maven
 - Node.js 20 or compatible current LTS
 - npm
-- Docker, if using the local MySQL runtime
+- Docker with the Compose plugin
 - access to a Solace Cloud service or compatible Solace PubSub+ broker
 
 Confirm these environment variables are configured:
@@ -115,36 +115,32 @@ Expected result:
 - all modules build successfully
 - `build-ui` installs dependencies automatically if `node_modules` is missing
 
-## 4. Workspace Startup
+## 4. Docker Runtime Startup
 
 Run:
 
 ```bash
-./scripts/start-all.sh
+./scripts/docker-start.sh
 ```
 
 Expected result:
 
+- MySQL starts successfully
 - API starts successfully
 - UI starts successfully
 - subscriber starts successfully
-- startup output includes API and UI readiness blocks
-- combined logs are written under `${TMPDIR:-/tmp}/solace-start-all.XXXXXX`
-- latest log directory pointer is written to `${TMPDIR:-/tmp}/solace-start-all.latest`
+- startup output includes API health, API docs, UI, MySQL, and log commands
 
-In a second terminal, run:
+Then run:
 
 ```bash
-./scripts/status-all.sh
+./scripts/docker-status.sh
 ```
 
 Expected result:
 
-- API status is `RUNNING`
+- Docker Compose shows MySQL, API, UI, and subscriber services running
 - API health is `UP`
-- UI status is `RUNNING`
-- UI URL is shown
-- subscriber status is `RUNNING`
 
 ## 5. API Health And Documentation
 
@@ -163,7 +159,11 @@ Expected result:
 
 ## 6. Publisher UI Publish Flow
 
-Open the UI URL printed by `start-all.sh`.
+Open the Docker publisher UI URL:
+
+```text
+http://localhost:5173
+```
 
 Publish one message with:
 
@@ -194,6 +194,18 @@ Expected result:
 - publishing to `solace/java/direct/system-01` is visible in subscriber logs
 - subscriber continues running after the message is observed
 - no unexpected discard or reconnection warnings appear during normal validation
+
+Recommended command:
+
+```bash
+./scripts/docker-logs.sh subscriber
+```
+
+Docker Desktop path:
+
+```text
+Containers > solace > solace-subscriber > Logs
+```
 
 ## 8. Stored-Message Browser
 
@@ -269,15 +281,31 @@ Expected result:
 Stop the workspace:
 
 ```bash
-./scripts/stop-all.sh
-./scripts/status-all.sh
+./scripts/docker-stop.sh
+./scripts/docker-status.sh
 ```
 
 Expected result:
 
-- API, UI, and subscriber are stopped
-- status output reports each component as not running
-- no unexpected local Java, Maven, Node, or Vite process remains for this workspace
+- Docker Compose services are stopped or absent
+- API health is no longer reachable
+- no unexpected project containers remain running
+
+## 13. Optional Local Process Workflow
+
+Use this only when validating the secondary local development workflow:
+
+```bash
+./scripts/start-all.sh
+./scripts/status-all.sh
+./scripts/stop-all.sh
+```
+
+Expected result:
+
+- API, UI, and subscriber run as local processes
+- `status-all.sh` reports local status accurately
+- `stop-all.sh` stops local API, UI, and subscriber processes
 
 ## Release Readiness Result
 

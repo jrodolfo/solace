@@ -11,17 +11,17 @@ cURL Commands & URLs to use inside the web browser
    SOLACE_CLOUD_USERNAME
    SOLACE_CLOUD_PASSWORD
 
-4. From the project root, start the workspace:
+4. From the project root, start the Docker runtime:
 
-   ./scripts/start-all.sh
+   ./scripts/docker-start.sh
 
-5. In another terminal, check the workspace status:
+5. In another terminal, check the Docker runtime status:
 
-   ./scripts/status-all.sh
+   ./scripts/docker-status.sh
 
-6. When you are done, stop the workspace:
+6. When you are done, stop the Docker runtime:
 
-   ./scripts/stop-all.sh
+   ./scripts/docker-stop.sh
 
 The curl commands below target the broker API at:
 

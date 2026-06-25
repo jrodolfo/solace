@@ -49,8 +49,8 @@ these two screenshot-based guides in order:
 1. [Solace Cloud setup guide](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md): create the Solace Cloud account, create a broker service, collect the four `SOLACE_CLOUD_*` values, and register them locally.
 2. [Smoke test guide](docs/how-to/06-smoke-test.md): build and start the API, UI, and subscriber, publish a message, and verify it in logs, Solace Cloud, the UI read tab, and MySQL.
 
-The commands below are the short version once Solace Cloud is already
-configured.
+The commands below are the Docker-first short version once Solace Cloud is
+already configured.
 
 ### 1. Configure Solace Cloud
 
@@ -65,23 +65,25 @@ export SOLACE_CLOUD_PASSWORD="..."
 
 Use the Solace Cloud setup guide if you need help finding those values: [docs/how-to/01-solace-cloud-account-demo-and-env-vars.md](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md).
 
-### 2. Start the workspace
+### 2. Start the Docker runtime
 
 From the repo root:
 
 ```bash
-./scripts/start-all.sh
+./scripts/docker-start.sh
 ```
 
-This starts the API, UI, and subscriber together. The script prints the API health URL and the actual Vite UI URL when ready.
-
-Build scripts only compile and package the modules. Runtime dependencies, including the local MySQL Docker container from `solace-broker-api/docker-compose.yaml`, are started when the API starts through `start-all.sh`.
+This builds and starts MySQL, the API, the UI, and the subscriber through the
+root `docker-compose.yml`. The script prints the API health URL, API docs URL,
+publisher UI URL, MySQL port, and log commands.
 
 Common root commands:
 
-- `./scripts/status-all.sh`: show local API, UI, and subscriber status
-- `./scripts/stop-all.sh`: stop running workspace processes
-- `./scripts/restart-all.sh`: stop, build, and start all modules
+- `./scripts/docker-status.sh`: show Docker Compose service status and API health
+- `./scripts/docker-logs.sh`: follow logs for all Docker services
+- `./scripts/docker-logs.sh subscriber`: follow only subscriber logs
+- `./scripts/docker-stop.sh`: stop the Docker runtime
+- `./scripts/docker-restart.sh`: rebuild and restart the Docker runtime
 - `make test`: run API, UI, subscriber, and script tests
 
 For the full script inventory, see [scripts/README.md](scripts/README.md).
@@ -90,11 +92,26 @@ For the full script inventory, see [scripts/README.md](scripts/README.md).
 
 - API health: `http://localhost:8081/rest/actuator/health`
 - API docs: `http://localhost:8081/docs`
-- Publisher UI: `http://localhost:5173` unless Vite selects another available port
+- Publisher UI: `http://localhost:5173`
 
-### Module-Level Commands
+### Local Development Workflow
 
-The root scripts are the preferred workflow. These commands are useful when running one module directly.
+Docker is the preferred runtime workflow. The local scripts are still useful
+when you want to run one module directly while developing or debugging.
+
+Start all three local processes:
+
+```bash
+./scripts/start-all.sh
+```
+
+Local process helpers:
+
+- `./scripts/status-all.sh`: show local API, UI, and subscriber process status
+- `./scripts/stop-all.sh`: stop local API, UI, and subscriber processes
+- `./scripts/restart-all.sh`: stop, build, and start the local process workflow
+
+Module-level commands:
 
 Backend:
 

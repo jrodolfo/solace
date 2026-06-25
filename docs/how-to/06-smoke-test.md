@@ -8,8 +8,8 @@ modules:
 - `solace-subscriber`
 
 The goal is to publish one message from the React UI, receive it through Solace
-Cloud, observe it in the local subscriber logs, and confirm that the broker API
-persisted the publish attempt in MySQL.
+Cloud, observe it in the subscriber container logs, and confirm that the broker
+API persisted the publish attempt in MySQL.
 
 Use your own Solace Cloud values. The screenshots are examples only.
 
@@ -18,9 +18,6 @@ Use your own Solace Cloud values. The screenshots are examples only.
 Before starting, make sure you have:
 
 - Docker Desktop running
-- Java 21
-- Maven
-- Node.js and npm
 - a Solace Cloud account and event broker service
 - the four `SOLACE_CLOUD_*` environment variables available in your terminal
 
@@ -34,47 +31,47 @@ The smoke test uses the sample destinations documented in
 
 ## 1. Start Docker Desktop
 
-Start Docker Desktop before running the project scripts. The broker API starts a
-local MySQL container through Docker Compose.
+Start Docker Desktop before running the project scripts. The project runtime
+uses Docker Compose for MySQL, the broker API, the publisher UI, and the
+subscriber.
 
 ![Docker Desktop application started](../images/smoke-test/01.png)
 
-## 2. Build the Three Modules
+## 2. Start the Docker Runtime
 
-From the repository root, run the build scripts:
-
-```bash
-cd scripts
-./stop-all.sh
-./build-all.sh
-```
-
-`stop-all.sh` clears any previous local run. `build-all.sh` builds the broker
-API, publisher UI, and subscriber.
-
-![Terminal running stop-all and build-all scripts](../images/smoke-test/02.png)
-
-![Terminal showing build-all progress](../images/smoke-test/03.png)
-
-## 3. Start the Three Modules
-
-From the `scripts` directory, start the complete local stack:
+From the repository root, start the full Docker runtime:
 
 ```bash
-./start-all.sh
+./scripts/docker-start.sh
 ```
 
-The first run can take longer because Docker may need to download the MySQL
-image.
+`docker-start.sh` builds and starts the broker API, publisher UI, subscriber,
+and MySQL services. The first run can take longer because Docker may need to
+download base images and build each module image.
 
-![Terminal running start-all script](../images/smoke-test/04.png)
+![Terminal showing project startup preparation](../images/smoke-test/02.png)
 
-![Terminal showing API, UI, and subscriber startup logs](../images/smoke-test/05.png)
+![Terminal showing project build progress](../images/smoke-test/03.png)
+
+## 3. Confirm Runtime Startup
+
+Check the runtime status:
+
+```bash
+./scripts/docker-status.sh
+```
+
+The API should report healthy, and the Docker Compose services should be
+running.
+
+![Terminal running the project startup script](../images/smoke-test/04.png)
+
+![Terminal showing API, UI, and subscriber startup output](../images/smoke-test/05.png)
 
 ## 4. Confirm MySQL in Docker Desktop
 
 Open Docker Desktop and confirm that the MySQL image and container are present.
-The broker API uses this local database to store publish attempts.
+The broker API uses this database container to store publish attempts.
 
 ![Docker Desktop showing local MySQL image and container](../images/smoke-test/06.png)
 
@@ -86,7 +83,7 @@ Open the React publisher UI in your browser:
 http://localhost:5173
 ```
 
-If `5173` was already busy, use the Vite URL printed by `start-all.sh`.
+The Docker workflow exposes the publisher UI on port `5173`.
 
 ![Publisher UI running in the browser](../images/smoke-test/07.png)
 
@@ -180,13 +177,23 @@ The UI should show a successful publish response.
 
 ## 10. Verify Logs and Solace Cloud
 
-Check the terminal running `start-all.sh`. You should see logs from both:
+Check the Docker logs. From the repository root, run:
 
-- `solace-broker-api`
-- `solace-subscriber`
+```bash
+./scripts/docker-logs.sh subscriber
+```
 
 The subscriber log should show that it received the message published to
 `solace/java/direct/system-01`.
+
+To follow all service logs, run:
+
+```bash
+./scripts/docker-logs.sh
+```
+
+In Docker Desktop, you can also open
+`Containers > solace > solace-subscriber > Logs`.
 
 ![Terminal logs showing broker API and subscriber activity](../images/smoke-test/22.png)
 
@@ -237,14 +244,13 @@ For the schema reference, see
 Make sure the MySQL container is running:
 
 ```bash
-docker ps --filter name=solace-mysql
+./scripts/docker-status.sh
 ```
 
-If it is not running, start it from the broker API module:
+If it is not running, restart the Docker runtime from the repository root:
 
 ```bash
-cd solace-broker-api
-docker compose up -d mysql
+./scripts/docker-restart.sh
 ```
 
 Then retry the Beekeeper Studio connection. If `localhost` does not work on

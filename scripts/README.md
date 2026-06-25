@@ -1,6 +1,6 @@
 # Root Scripts
 
-This folder contains the repo-level helper scripts for the local workspace.
+This folder contains the repo-level helper scripts for the workspace.
 
 These scripts are wrappers around the three active modules:
 
@@ -9,6 +9,8 @@ These scripts are wrappers around the three active modules:
 - `solace-subscriber`
 
 They are meant to give you a small, predictable operator workflow from the repo root.
+The primary runtime workflow is Docker. The local process scripts remain useful
+for module-level development and debugging.
 
 ## Supported Shells
 
@@ -20,7 +22,27 @@ The scripts support:
 On macOS/Linux, process discovery uses standard tools such as `lsof`, `pgrep`, and `ps`.
 On Windows Git Bash, `stop-all.sh` and `status-all.sh` use PowerShell process APIs instead of `lsof`, because `lsof` is not normally available in Git Bash.
 
-## Build Scripts
+## Docker Runtime Scripts
+
+- `docker-start.sh`
+  Builds and starts the full Docker runtime: MySQL, broker API, publisher UI,
+  and subscriber. It validates the shared Solace environment variables before
+  starting the stack.
+
+- `docker-stop.sh`
+  Stops the full Docker runtime with `docker compose down`.
+
+- `docker-status.sh`
+  Shows Docker Compose service status and checks the broker API health endpoint.
+
+- `docker-restart.sh`
+  Runs `docker-stop.sh` and `docker-start.sh` in sequence.
+
+- `docker-logs.sh`
+  Follows logs for the full Docker runtime or one component:
+  `api`, `ui`, `subscriber`, or `mysql`.
+
+## Local Build Scripts
 
 - `build-broker-api.sh`
   Builds `solace-broker-api` with Maven.
@@ -35,9 +57,10 @@ On Windows Git Bash, `stop-all.sh` and `status-all.sh` use PowerShell process AP
 - `build-all.sh`
   Runs the three build scripts in sequence.
 
-Build scripts only compile and package the modules. They do not start runtime dependencies such as the local MySQL Docker container.
+Build scripts only compile and package the modules. They do not start the full
+Docker runtime.
 
-## Start Scripts
+## Local Start Scripts
 
 - `start-broker-api.sh`
   Starts `solace-broker-api` with `mvn spring-boot:run`.
@@ -57,9 +80,11 @@ Build scripts only compile and package the modules. They do not start runtime de
   The latest generated log directory path is written to `${TMPDIR:-/tmp}/solace-start-all.latest` so `status-all.sh` can report the Vite URL selected during startup.
   Once the API and UI are ready, it also prints a clearer readiness block with their URLs.
 
-When the API starts, Spring Boot Docker Compose can recreate and start the local MySQL container from `solace-broker-api/docker-compose.yaml`.
+When the API starts through the local process workflow, Spring Boot Docker
+Compose can recreate and start the local MySQL container from
+`solace-broker-api/docker-compose.yaml`.
 
-## Stop / Restart / Status
+## Local Stop / Restart / Status
 
 - `stop-all.sh`
   Stops the locally detected API, UI, and subscriber processes when they are running.
@@ -95,21 +120,32 @@ When the API starts, Spring Boot Docker Compose can recreate and start the local
 
 If you want the smallest useful set to remember:
 
-- build everything:
-  `./scripts/build-all.sh`
-- start everything:
-  `./scripts/start-all.sh`
-- stop everything:
-  `./scripts/stop-all.sh`
-- restart everything:
-  `./scripts/restart-all.sh`
-- check status:
-  `./scripts/status-all.sh`
+- start Docker runtime:
+  `./scripts/docker-start.sh`
+- follow Docker runtime logs:
+  `./scripts/docker-logs.sh`
+- follow subscriber logs:
+  `./scripts/docker-logs.sh subscriber`
+- check Docker runtime status:
+  `./scripts/docker-status.sh`
+- stop Docker runtime:
+  `./scripts/docker-stop.sh`
+- restart Docker runtime:
+  `./scripts/docker-restart.sh`
 
 The same workflows are also exposed through the root `Makefile`.
 
 ## Detailed Notes
 
+- `docker-start.sh` builds and starts the root Docker Compose stack, including
+  MySQL, `solace-broker-api`, `solace-publisher-ui`, and `solace-subscriber`.
+- `docker-start.sh` rebuilds the API and subscriber images and uses a no-cache
+  build for the UI image so browser assets reflect the current source.
+- `docker-logs.sh` is the recommended way to verify subscriber activity after a
+  publish; Docker Desktop can also show logs under
+  `Containers > solace > solace-subscriber > Logs`.
+- `docker-status.sh` shows Compose service status and checks
+  `http://localhost:8081/rest/actuator/health`.
 - `build-broker-api.sh` runs `mvn clean package` inside `solace-broker-api`.
 - `build-subscriber.sh` runs `mvn clean package` inside `solace-subscriber`.
 - `build-publisher-ui.sh` runs `npm run build` inside `solace-publisher-ui` and runs `npm install` first when `node_modules` is missing.

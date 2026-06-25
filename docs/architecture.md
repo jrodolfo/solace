@@ -285,16 +285,26 @@ Shared environment variables used by the backend and subscriber:
 
 The UI does not read these directly.
 
-## Local Startup Workflow
+## Runtime Workflow
 
-Recommended entrypoints from the repo root:
+Recommended Docker entrypoints from the repo root:
+
+- `make docker-start`
+- `make docker-status`
+- `make docker-logs`
+- `make docker-stop`
+
+The Docker workflow runs MySQL, the broker API, the publisher UI, and the
+subscriber through the root `docker-compose.yml`.
+
+The local process workflow is still available for module-level development:
 
 - `make start-api`
 - `make start-ui`
 - `make start-subscriber`
 - `make start-all`
 
-Supporting scripts live in `scripts/`.
+Supporting scripts for both workflows live in `scripts/`.
 
 ## CI And Verification
 
