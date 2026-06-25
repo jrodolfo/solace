@@ -147,6 +147,7 @@ assert_contains "${make_help_output}" "make start-api"
 assert_contains "${make_help_output}" "make stop-all"
 assert_contains "${make_help_output}" "make restart-all"
 assert_contains "${make_help_output}" "make status-all"
+assert_contains "${make_help_output}" "make docker-build-all"
 assert_contains "${make_help_output}" "make docker-start"
 assert_contains "${make_help_output}" "make docker-stop"
 assert_contains "${make_help_output}" "make docker-status"
@@ -165,6 +166,7 @@ bash -n \
   "${REPO_ROOT}/scripts/stop-all.sh" \
   "${REPO_ROOT}/scripts/restart-all.sh" \
   "${REPO_ROOT}/scripts/status-all.sh" \
+  "${REPO_ROOT}/scripts/docker-build-all.sh" \
   "${REPO_ROOT}/scripts/docker-start.sh" \
   "${REPO_ROOT}/scripts/docker-stop.sh" \
   "${REPO_ROOT}/scripts/docker-status.sh" \
@@ -382,6 +384,32 @@ assert_command_fails_with \
   "unknown component: wrong-component" \
   env PATH="${temp_fake_bin_dir}:$PATH" \
   "${REPO_ROOT}/scripts/docker-logs.sh" wrong-component
+
+echo "checking docker build all behavior"
+temp_fake_bin_dir="$(mktemp -d)"
+docker_build_log_file="${temp_fake_bin_dir}/docker.log"
+cat >"${temp_fake_bin_dir}/docker" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >>"${docker_build_log_file}"
+if [[ "\$1" == "compose" && "\$2" == "version" ]]; then
+  exit 0
+fi
+if [[ "\$1" == "compose" && "\$2" == "pull" && "\$3" == "mysql" ]]; then
+  exit 0
+fi
+if [[ "\$1" == "compose" && "\$2" == "build" ]]; then
+  exit 0
+fi
+echo "unexpected docker invocation: \$*" >&2
+exit 1
+EOF
+chmod +x "${temp_fake_bin_dir}/docker"
+docker_build_output="$(PATH="${temp_fake_bin_dir}:$PATH" "${REPO_ROOT}/scripts/docker-build-all.sh")"
+assert_contains "${docker_build_output}" "Docker runtime images are ready"
+docker_build_log="$(cat "${docker_build_log_file}")"
+assert_contains "${docker_build_log}" "compose pull mysql"
+assert_contains "${docker_build_log}" "compose build solace-broker-api solace-subscriber"
+assert_contains "${docker_build_log}" "compose build --no-cache solace-publisher-ui"
 
 echo "checking docker image scan behavior"
 temp_fake_bin_dir="$(mktemp -d)"

@@ -24,10 +24,15 @@ On Windows Git Bash, `stop-all.sh` and `status-all.sh` use PowerShell process AP
 
 ## Docker Runtime Scripts
 
+- `docker-build-all.sh`
+  Pulls or builds all images used by the Docker runtime without starting
+  containers. It pulls MySQL, builds the API and subscriber images, and rebuilds
+  the UI image with no cache so browser assets reflect current source.
+
 - `docker-start.sh`
-  Builds and starts the full Docker runtime: MySQL, broker API, publisher UI,
-  and subscriber. It validates the shared Solace environment variables before
-  starting the stack.
+  Prepares images with `docker-build-all.sh`, then starts the full Docker
+  runtime: MySQL, broker API, publisher UI, and subscriber. It validates the
+  shared Solace environment variables before starting the stack.
 
 - `docker-stop.sh`
   Stops the full Docker runtime with `docker compose down`.
@@ -127,6 +132,8 @@ If you want the smallest useful set to remember:
 
 - start Docker runtime:
   `./scripts/docker-start.sh`
+- build Docker runtime images:
+  `./scripts/docker-build-all.sh`
 - follow Docker runtime logs:
   `./scripts/docker-logs.sh`
 - follow subscriber logs:
@@ -144,9 +151,12 @@ The same workflows are also exposed through the root `Makefile`.
 
 ## Detailed Notes
 
-- `docker-start.sh` builds and starts the root Docker Compose stack, including
-  MySQL, `solace-broker-api`, `solace-publisher-ui`, and `solace-subscriber`.
-- `docker-start.sh` rebuilds the API and subscriber images and uses a no-cache
+- `docker-build-all.sh` pulls MySQL and builds the application images from the
+  root Docker Compose stack without starting containers.
+- `docker-start.sh` prepares images with `docker-build-all.sh`, then starts the
+  root Docker Compose stack, including MySQL, `solace-broker-api`,
+  `solace-publisher-ui`, and `solace-subscriber`.
+- `docker-build-all.sh` rebuilds the API and subscriber images and uses a no-cache
   build for the UI image so browser assets reflect the current source.
 - `docker-logs.sh` is the recommended way to verify subscriber activity after a
   publish; Docker Desktop can also show logs under
@@ -155,8 +165,8 @@ The same workflows are also exposed through the root `Makefile`.
   `http://localhost:8081/rest/actuator/health`.
 - `docker-scan.sh` scans `mysql`, `solace-broker-api`, `solace-publisher-ui`,
   and `solace-subscriber` using the local image IDs reported by Docker Compose.
-  Run `./scripts/docker-start.sh` or `docker compose build` first so the images
-  exist locally.
+  Run `./scripts/docker-build-all.sh` or `./scripts/docker-start.sh` first so
+  the images exist locally.
 - `docker-scan.sh --full` is useful for investigation because it includes
   `LOW` and `MEDIUM` findings and does not fail the script.
 - `build-broker-api.sh` runs `mvn clean package` inside `solace-broker-api`.

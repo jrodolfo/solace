@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help build-api build-ui build-subscriber build-all start-api start-ui start-subscriber start-all stop-all restart-all status-all docker-start docker-stop docker-status docker-restart docker-logs docker-scan test-api test-ui test-subscriber test-scripts test
+.PHONY: help build-api build-ui build-subscriber build-all start-api start-ui start-subscriber start-all stop-all restart-all status-all docker-build-all docker-start docker-stop docker-status docker-restart docker-logs docker-scan test-api test-ui test-subscriber test-scripts test
 
 help:
 	@echo "available targets:"
@@ -15,7 +15,8 @@ help:
 	@echo "  make stop-all          - stop api, ui, and subscriber when running"
 	@echo "  make restart-all       - stop, build, and start the whole workspace"
 	@echo "  make status-all        - show local status for api, ui, and subscriber"
-	@echo "  make docker-start      - build and start the full Docker runtime"
+	@echo "  make docker-build-all  - build Docker runtime images"
+	@echo "  make docker-start      - prepare and start the full Docker runtime"
 	@echo "  make docker-stop       - stop the full Docker runtime"
 	@echo "  make docker-status     - show full Docker runtime status"
 	@echo "  make docker-restart    - restart the full Docker runtime"
@@ -59,6 +60,9 @@ restart-all:
 
 status-all:
 	@./scripts/status-all.sh
+
+docker-build-all:
+	@./scripts/docker-build-all.sh
 
 docker-start:
 	@./scripts/docker-start.sh

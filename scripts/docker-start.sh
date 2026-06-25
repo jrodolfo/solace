@@ -3,8 +3,8 @@
 # docker-start.sh
 #
 # Purpose:
-#   Builds and starts the full Docker runtime: MySQL, broker API, publisher UI,
-#   and subscriber.
+#   Starts the full Docker runtime: MySQL, broker API, publisher UI, and
+#   subscriber. Images are prepared by docker-build-all.sh first.
 #
 # Usage:
 #   ./scripts/docker-start.sh
@@ -24,9 +24,11 @@ require_solace_env_vars "docker-start.sh"
 
 cd "${REPO_ROOT}"
 
-echo "building and starting Docker runtime"
-docker compose build solace-broker-api solace-subscriber
-docker compose build --no-cache solace-publisher-ui
+echo "preparing Docker runtime images"
+"${SCRIPT_DIR}/docker-build-all.sh"
+
+echo
+echo "starting Docker runtime"
 docker compose up -d --force-recreate
 
 echo

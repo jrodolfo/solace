@@ -79,6 +79,7 @@ publisher UI URL, MySQL port, and log commands.
 
 Common root commands:
 
+- `./scripts/docker-build-all.sh`: build Docker runtime images without starting containers
 - `./scripts/docker-status.sh`: show Docker Compose service status and API health
 - `./scripts/docker-logs.sh`: follow logs for all Docker services
 - `./scripts/docker-logs.sh subscriber`: follow only subscriber logs

@@ -115,7 +115,23 @@ Expected result:
 - all modules build successfully
 - `build-ui` installs dependencies automatically if `node_modules` is missing
 
-## 4. Docker Runtime Startup
+## 4. Docker Image Build
+
+Build the Docker runtime images:
+
+```bash
+./scripts/docker-build-all.sh
+```
+
+Expected result:
+
+- MySQL image is pulled
+- broker API image builds successfully
+- publisher UI image builds successfully
+- subscriber image builds successfully
+- no containers are started by this step
+
+## 5. Docker Runtime Startup
 
 Run:
 
@@ -142,7 +158,7 @@ Expected result:
 - Docker Compose shows MySQL, API, UI, and subscriber services running
 - API health is `UP`
 
-## 5. API Health And Documentation
+## 6. API Health And Documentation
 
 Open or request:
 
@@ -157,7 +173,7 @@ Expected result:
 - OpenAPI/Swagger UI loads
 - documented API paths match the current broker API
 
-## 6. Docker Image Security Scan
+## 7. Docker Image Security Scan
 
 Run the release-gate scan:
 
@@ -181,7 +197,7 @@ Expected result:
 - `LOW`, `MEDIUM`, `HIGH`, and `CRITICAL` findings are visible for review
 - accepted findings are documented in the release notes or follow-up issues
 
-## 7. Publisher UI Publish Flow
+## 8. Publisher UI Publish Flow
 
 Open the Docker publisher UI URL:
 
@@ -205,7 +221,7 @@ Expected result:
 - stored-message browser can load the new row
 - stored row has current lifecycle fields such as `publishStatus`, `stalePending`, `retrySupported`, and timestamps
 
-## 8. Subscriber Observation
+## 9. Subscriber Observation
 
 While the subscriber is running, confirm its logs show traffic for:
 
@@ -231,7 +247,7 @@ Docker Desktop path:
 Containers > solace > solace-subscriber > Logs
 ```
 
-## 9. Stored-Message Browser
+## 10. Stored-Message Browser
 
 In the UI, validate:
 
@@ -252,7 +268,7 @@ Expected result:
 - exports contain the expected stored-message shape
 - saved views remain browser-local and do not require backend persistence
 
-## 10. Retry Workflow
+## 11. Retry Workflow
 
 Create or identify a retryable `FAILED` stored message.
 
@@ -269,7 +285,7 @@ Expected result:
 - non-retryable or non-failed rows are skipped with clear result details
 - oversized bulk retry requests are rejected by the backend limit
 
-## 11. Stale Pending Reconciliation
+## 12. Stale Pending Reconciliation
 
 Create or identify a stale `PENDING` stored message.
 
@@ -286,7 +302,7 @@ Expected result:
 - failure reason clearly says the row was manually reconciled
 - rows that are not eligible are rejected with a clear error
 
-## 12. Tooling Artifacts
+## 13. Tooling Artifacts
 
 Validate at least one non-UI API exercise path:
 
@@ -300,7 +316,7 @@ Expected result:
 - payload enum examples use uppercase values such as `BINARY`
 - response examples align with current stored-message DTO fields
 
-## 13. Shutdown
+## 14. Shutdown
 
 Stop the workspace:
 
@@ -315,7 +331,7 @@ Expected result:
 - API health is no longer reachable
 - no unexpected project containers remain running
 
-## 14. Optional Local Process Workflow
+## 15. Optional Local Process Workflow
 
 Use this only when validating the secondary local development workflow:
 
