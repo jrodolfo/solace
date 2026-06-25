@@ -152,6 +152,7 @@ assert_contains "${make_help_output}" "make docker-stop"
 assert_contains "${make_help_output}" "make docker-status"
 assert_contains "${make_help_output}" "make docker-restart"
 assert_contains "${make_help_output}" "make docker-logs"
+assert_contains "${make_help_output}" "make docker-scan"
 assert_contains "${make_help_output}" "make test-scripts"
 
 echo "checking shell script syntax"
@@ -169,6 +170,7 @@ bash -n \
   "${REPO_ROOT}/scripts/docker-status.sh" \
   "${REPO_ROOT}/scripts/docker-restart.sh" \
   "${REPO_ROOT}/scripts/docker-logs.sh" \
+  "${REPO_ROOT}/scripts/docker-scan.sh" \
   "${REPO_ROOT}/scripts/build-broker-api.sh" \
   "${REPO_ROOT}/scripts/build-publisher-ui.sh" \
   "${REPO_ROOT}/scripts/build-subscriber.sh" \
@@ -380,6 +382,45 @@ assert_command_fails_with \
   "unknown component: wrong-component" \
   env PATH="${temp_fake_bin_dir}:$PATH" \
   "${REPO_ROOT}/scripts/docker-logs.sh" wrong-component
+
+echo "checking docker image scan behavior"
+temp_fake_bin_dir="$(mktemp -d)"
+trivy_log_file="${temp_fake_bin_dir}/trivy.log"
+cat >"${temp_fake_bin_dir}/docker" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "compose" && "$2" == "version" ]]; then
+  exit 0
+fi
+if [[ "$1" == "compose" && "$2" == "images" && "$3" == "-q" ]]; then
+  printf 'image-id-%s\n' "$4"
+  exit 0
+fi
+echo "unexpected docker invocation: $*" >&2
+exit 1
+EOF
+cat >"${temp_fake_bin_dir}/trivy" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >>"${trivy_log_file}"
+exit 0
+EOF
+chmod +x "${temp_fake_bin_dir}/docker" "${temp_fake_bin_dir}/trivy"
+docker_scan_output="$(PATH="${temp_fake_bin_dir}:$PATH" "${REPO_ROOT}/scripts/docker-scan.sh")"
+assert_contains "${docker_scan_output}" "mode: release"
+assert_contains "${docker_scan_output}" "docker image security scan passed"
+docker_scan_trivy_log="$(cat "${trivy_log_file}")"
+assert_contains "${docker_scan_trivy_log}" "--severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed image-id-mysql"
+assert_contains "${docker_scan_trivy_log}" "image-id-solace-broker-api"
+assert_contains "${docker_scan_trivy_log}" "image-id-solace-publisher-ui"
+assert_contains "${docker_scan_trivy_log}" "image-id-solace-subscriber"
+: >"${trivy_log_file}"
+docker_scan_full_output="$(PATH="${temp_fake_bin_dir}:$PATH" "${REPO_ROOT}/scripts/docker-scan.sh" --full)"
+assert_contains "${docker_scan_full_output}" "mode: full"
+docker_scan_full_trivy_log="$(cat "${trivy_log_file}")"
+assert_contains "${docker_scan_full_trivy_log}" "--severity LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 image-id-mysql"
+assert_command_fails_with \
+  "unknown option: --bad-option" \
+  env PATH="${temp_fake_bin_dir}:$PATH" \
+  "${REPO_ROOT}/scripts/docker-scan.sh" --bad-option
 
 echo "checking publisher ui auto-install behavior"
 temp_ui_dir="$(mktemp -d)"

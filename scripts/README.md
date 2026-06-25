@@ -42,6 +42,11 @@ On Windows Git Bash, `stop-all.sh` and `status-all.sh` use PowerShell process AP
   Follows logs for the full Docker runtime or one component:
   `api`, `ui`, `subscriber`, or `mysql`.
 
+- `docker-scan.sh`
+  Scans the Docker runtime images with Trivy. Default mode fails on fixed
+  `HIGH` or `CRITICAL` vulnerabilities. `--full` reports all severities without
+  failing.
+
 ## Local Build Scripts
 
 - `build-broker-api.sh`
@@ -126,6 +131,8 @@ If you want the smallest useful set to remember:
   `./scripts/docker-logs.sh`
 - follow subscriber logs:
   `./scripts/docker-logs.sh subscriber`
+- scan Docker images:
+  `./scripts/docker-scan.sh`
 - check Docker runtime status:
   `./scripts/docker-status.sh`
 - stop Docker runtime:
@@ -146,6 +153,12 @@ The same workflows are also exposed through the root `Makefile`.
   `Containers > solace > solace-subscriber > Logs`.
 - `docker-status.sh` shows Compose service status and checks
   `http://localhost:8081/rest/actuator/health`.
+- `docker-scan.sh` scans `mysql`, `solace-broker-api`, `solace-publisher-ui`,
+  and `solace-subscriber` using the local image IDs reported by Docker Compose.
+  Run `./scripts/docker-start.sh` or `docker compose build` first so the images
+  exist locally.
+- `docker-scan.sh --full` is useful for investigation because it includes
+  `LOW` and `MEDIUM` findings and does not fail the script.
 - `build-broker-api.sh` runs `mvn clean package` inside `solace-broker-api`.
 - `build-subscriber.sh` runs `mvn clean package` inside `solace-subscriber`.
 - `build-publisher-ui.sh` runs `npm run build` inside `solace-publisher-ui` and runs `npm install` first when `node_modules` is missing.

@@ -157,7 +157,31 @@ Expected result:
 - OpenAPI/Swagger UI loads
 - documented API paths match the current broker API
 
-## 6. Publisher UI Publish Flow
+## 6. Docker Image Security Scan
+
+Run the release-gate scan:
+
+```bash
+./scripts/docker-scan.sh
+```
+
+Expected result:
+
+- MySQL, API, UI, and subscriber images are scanned with Trivy
+- the scan passes with no fixed `HIGH` or `CRITICAL` vulnerabilities
+
+For investigation, run the non-failing full scan:
+
+```bash
+./scripts/docker-scan.sh --full
+```
+
+Expected result:
+
+- `LOW`, `MEDIUM`, `HIGH`, and `CRITICAL` findings are visible for review
+- accepted findings are documented in the release notes or follow-up issues
+
+## 7. Publisher UI Publish Flow
 
 Open the Docker publisher UI URL:
 
@@ -181,7 +205,7 @@ Expected result:
 - stored-message browser can load the new row
 - stored row has current lifecycle fields such as `publishStatus`, `stalePending`, `retrySupported`, and timestamps
 
-## 7. Subscriber Observation
+## 8. Subscriber Observation
 
 While the subscriber is running, confirm its logs show traffic for:
 
@@ -207,7 +231,7 @@ Docker Desktop path:
 Containers > solace > solace-subscriber > Logs
 ```
 
-## 8. Stored-Message Browser
+## 9. Stored-Message Browser
 
 In the UI, validate:
 
@@ -228,7 +252,7 @@ Expected result:
 - exports contain the expected stored-message shape
 - saved views remain browser-local and do not require backend persistence
 
-## 9. Retry Workflow
+## 10. Retry Workflow
 
 Create or identify a retryable `FAILED` stored message.
 
@@ -245,7 +269,7 @@ Expected result:
 - non-retryable or non-failed rows are skipped with clear result details
 - oversized bulk retry requests are rejected by the backend limit
 
-## 10. Stale Pending Reconciliation
+## 11. Stale Pending Reconciliation
 
 Create or identify a stale `PENDING` stored message.
 
@@ -262,7 +286,7 @@ Expected result:
 - failure reason clearly says the row was manually reconciled
 - rows that are not eligible are rejected with a clear error
 
-## 11. Tooling Artifacts
+## 12. Tooling Artifacts
 
 Validate at least one non-UI API exercise path:
 
@@ -276,7 +300,7 @@ Expected result:
 - payload enum examples use uppercase values such as `BINARY`
 - response examples align with current stored-message DTO fields
 
-## 12. Shutdown
+## 13. Shutdown
 
 Stop the workspace:
 
@@ -291,7 +315,7 @@ Expected result:
 - API health is no longer reachable
 - no unexpected project containers remain running
 
-## 13. Optional Local Process Workflow
+## 14. Optional Local Process Workflow
 
 Use this only when validating the secondary local development workflow:
 
