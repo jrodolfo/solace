@@ -38,6 +38,16 @@ require_command() {
   fi
 }
 
+# Function: require_docker_compose
+# Purpose: Requires Docker with the Compose plugin available.
+require_docker_compose() {
+  require_command docker
+  if ! docker compose version >/dev/null 2>&1; then
+    echo "missing required Docker Compose plugin: docker compose" >&2
+    exit 1
+  fi
+}
+
 # Function: java_major_version
 # Purpose: Reads the major version from the configured Java runtime.
 # Outputs:

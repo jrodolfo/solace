@@ -1,0 +1,61 @@
+services:
+  mysql:
+    container_name: solace-mysql
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: solace
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: verysecret
+      MYSQL_USER: myuser
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    ports:
+      - "3307:3306"
+    volumes:
+      - solace-mysql-data:/var/lib/mysql
+
+  solace-broker-api:
+    container_name: solace-broker-api
+    build:
+      context: ./solace-broker-api
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SOLACE_CLOUD_HOST: ${SOLACE_CLOUD_HOST:-}
+      SOLACE_CLOUD_VPN: ${SOLACE_CLOUD_VPN:-}
+      SOLACE_CLOUD_USERNAME: ${SOLACE_CLOUD_USERNAME:-}
+      SOLACE_CLOUD_PASSWORD: ${SOLACE_CLOUD_PASSWORD:-}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/solace?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: myuser
+      SPRING_DATASOURCE_PASSWORD: secret
+    ports:
+      - "8081:8081"
+
+  solace-publisher-ui:
+    container_name: solace-publisher-ui
+    build:
+      context: ./solace-publisher-ui
+      args:
+        VITE_BROKER_API_BASE_URL: http://localhost:8081
+    depends_on:
+      - solace-broker-api
+    ports:
+      - "5173:80"
+
+  solace-subscriber:
+    container_name: solace-subscriber
+    build:
+      context: ./solace-subscriber
+    environment:
+      SOLACE_CLOUD_HOST: ${SOLACE_CLOUD_HOST:-}
+      SOLACE_CLOUD_VPN: ${SOLACE_CLOUD_VPN:-}
+      SOLACE_CLOUD_USERNAME: ${SOLACE_CLOUD_USERNAME:-}
+      SOLACE_CLOUD_PASSWORD: ${SOLACE_CLOUD_PASSWORD:-}
+
+volumes:
+  solace-mysql-data:

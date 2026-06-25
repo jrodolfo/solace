@@ -147,6 +147,10 @@ assert_contains "${make_help_output}" "make start-api"
 assert_contains "${make_help_output}" "make stop-all"
 assert_contains "${make_help_output}" "make restart-all"
 assert_contains "${make_help_output}" "make status-all"
+assert_contains "${make_help_output}" "make docker-start"
+assert_contains "${make_help_output}" "make docker-stop"
+assert_contains "${make_help_output}" "make docker-status"
+assert_contains "${make_help_output}" "make docker-restart"
 assert_contains "${make_help_output}" "make test-scripts"
 
 echo "checking shell script syntax"
@@ -159,6 +163,10 @@ bash -n \
   "${REPO_ROOT}/scripts/stop-all.sh" \
   "${REPO_ROOT}/scripts/restart-all.sh" \
   "${REPO_ROOT}/scripts/status-all.sh" \
+  "${REPO_ROOT}/scripts/docker-start.sh" \
+  "${REPO_ROOT}/scripts/docker-stop.sh" \
+  "${REPO_ROOT}/scripts/docker-status.sh" \
+  "${REPO_ROOT}/scripts/docker-restart.sh" \
   "${REPO_ROOT}/scripts/build-broker-api.sh" \
   "${REPO_ROOT}/scripts/build-publisher-ui.sh" \
   "${REPO_ROOT}/scripts/build-subscriber.sh" \
