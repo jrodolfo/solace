@@ -33,3 +33,12 @@ echo "api health: http://localhost:8081/rest/actuator/health"
 echo "api docs:   http://localhost:8081/docs"
 echo "ui:         http://localhost:5173"
 echo "mysql:      localhost:3307"
+echo
+echo "subscriber logs:"
+echo "  ./scripts/docker-logs.sh subscriber"
+echo
+echo "all logs:"
+echo "  ./scripts/docker-logs.sh"
+echo
+echo "Docker Desktop:"
+echo "  Containers > solace > solace-subscriber > Logs"

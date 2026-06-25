@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help build-api build-ui build-subscriber build-all start-api start-ui start-subscriber start-all stop-all restart-all status-all docker-start docker-stop docker-status docker-restart test-api test-ui test-subscriber test-scripts test
+.PHONY: help build-api build-ui build-subscriber build-all start-api start-ui start-subscriber start-all stop-all restart-all status-all docker-start docker-stop docker-status docker-restart docker-logs test-api test-ui test-subscriber test-scripts test
 
 help:
 	@echo "available targets:"
@@ -19,6 +19,7 @@ help:
 	@echo "  make docker-stop       - stop the full Docker runtime"
 	@echo "  make docker-status     - show full Docker runtime status"
 	@echo "  make docker-restart    - restart the full Docker runtime"
+	@echo "  make docker-logs       - follow full Docker runtime logs"
 	@echo "  make test-api          - run broker api tests"
 	@echo "  make test-ui           - run publisher ui tests"
 	@echo "  make test-subscriber   - run subscriber tests"
@@ -69,6 +70,9 @@ docker-status:
 
 docker-restart:
 	@./scripts/docker-restart.sh
+
+docker-logs:
+	@./scripts/docker-logs.sh
 
 test-api:
 	@cd solace-broker-api && mvn test

@@ -151,6 +151,7 @@ assert_contains "${make_help_output}" "make docker-start"
 assert_contains "${make_help_output}" "make docker-stop"
 assert_contains "${make_help_output}" "make docker-status"
 assert_contains "${make_help_output}" "make docker-restart"
+assert_contains "${make_help_output}" "make docker-logs"
 assert_contains "${make_help_output}" "make test-scripts"
 
 echo "checking shell script syntax"
@@ -167,6 +168,7 @@ bash -n \
   "${REPO_ROOT}/scripts/docker-stop.sh" \
   "${REPO_ROOT}/scripts/docker-status.sh" \
   "${REPO_ROOT}/scripts/docker-restart.sh" \
+  "${REPO_ROOT}/scripts/docker-logs.sh" \
   "${REPO_ROOT}/scripts/build-broker-api.sh" \
   "${REPO_ROOT}/scripts/build-publisher-ui.sh" \
   "${REPO_ROOT}/scripts/build-subscriber.sh" \
@@ -356,6 +358,28 @@ assert_command_fails_with \
   "start-subscriber.sh cannot continue because a required Solace environment variable is missing: SOLACE_CLOUD_HOST" \
   env -u SOLACE_CLOUD_HOST -u SOLACE_CLOUD_VPN -u SOLACE_CLOUD_USERNAME -u SOLACE_CLOUD_PASSWORD \
   "${REPO_ROOT}/scripts/start-subscriber.sh"
+
+echo "checking docker log component validation"
+temp_fake_bin_dir="$(mktemp -d)"
+cat >"${temp_fake_bin_dir}/docker" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "compose" && "$2" == "version" ]]; then
+  exit 0
+fi
+if [[ "$1" == "compose" && "$2" == "logs" ]]; then
+  printf '%s\n' "$*"
+  exit 0
+fi
+echo "unexpected docker invocation: $*" >&2
+exit 1
+EOF
+chmod +x "${temp_fake_bin_dir}/docker"
+docker_subscriber_logs_output="$(PATH="${temp_fake_bin_dir}:$PATH" "${REPO_ROOT}/scripts/docker-logs.sh" subscriber)"
+assert_contains "${docker_subscriber_logs_output}" "compose logs -f solace-subscriber"
+assert_command_fails_with \
+  "unknown component: wrong-component" \
+  env PATH="${temp_fake_bin_dir}:$PATH" \
+  "${REPO_ROOT}/scripts/docker-logs.sh" wrong-component
 
 echo "checking publisher ui auto-install behavior"
 temp_ui_dir="$(mktemp -d)"
