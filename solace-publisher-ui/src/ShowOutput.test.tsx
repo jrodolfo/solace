@@ -62,12 +62,12 @@ describe("ShowOutput Component", () => {
             headers: {"content-type": "application/json"},
             config: {
                 headers: {},
-                data: {
+                data: JSON.stringify({
                     password: "secret123",
                     nested: {
                         authorization: "Bearer abc",
                     },
-                },
+                }),
             } as unknown as InternalAxiosRequestConfig,
             statusText: "Created",
             request: {},

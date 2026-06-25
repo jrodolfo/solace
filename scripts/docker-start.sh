@@ -25,7 +25,9 @@ require_solace_env_vars "docker-start.sh"
 cd "${REPO_ROOT}"
 
 echo "building and starting Docker runtime"
-docker compose up --build -d
+docker compose build solace-broker-api solace-subscriber
+docker compose build --no-cache solace-publisher-ui
+docker compose up -d --force-recreate
 
 echo
 echo "docker runtime started"

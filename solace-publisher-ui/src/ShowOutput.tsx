@@ -12,7 +12,24 @@ const maskSecret = (value: unknown): string => {
     return "*".repeat(String(value).length);
 };
 
-const sanitizeForDisplay = (value: unknown): unknown => {
+const tryParseJsonString = (value: string): unknown => {
+    const trimmedValue = value.trim();
+    if (!trimmedValue.startsWith("{") && !trimmedValue.startsWith("[")) {
+        return value;
+    }
+
+    try {
+        return JSON.parse(trimmedValue);
+    } catch {
+        return value;
+    }
+};
+
+const sanitizeForDisplay = (value: unknown, keyName = ""): unknown => {
+    if (typeof value === "string" && keyName === "data") {
+        return sanitizeForDisplay(tryParseJsonString(value));
+    }
+
     if (Array.isArray(value)) {
         return value.map((item) => sanitizeForDisplay(item));
     }
@@ -21,7 +38,7 @@ const sanitizeForDisplay = (value: unknown): unknown => {
         return Object.fromEntries(
             Object.entries(value).map(([key, entryValue]) => [
                 key,
-                SENSITIVE_KEY_PATTERN.test(key) ? maskSecret(entryValue) : sanitizeForDisplay(entryValue),
+                SENSITIVE_KEY_PATTERN.test(key) ? maskSecret(entryValue) : sanitizeForDisplay(entryValue, key),
             ])
         );
     }
