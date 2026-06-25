@@ -53,8 +53,8 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
      * {@inheritDoc}
      */
     @Override
-    public PublishMessageResponseDTO sendMessage(String topicName, String content, DeliveryMode deliveryMode, Optional<ParameterDTO> solaceParametersOptional) {
-        validateInput(topicName, content, deliveryMode);
+    public PublishMessageResponseDTO sendMessage(String topicName, String content, DeliveryMode deliveryMode, Integer priority, Optional<ParameterDTO> solaceParametersOptional) {
+        validateInput(topicName, content, deliveryMode, priority);
         Properties properties = resolveProperties(solaceParametersOptional);
         MessagingService messagingService = createMessagingService(properties);
         DirectMessagePublisher publisher = null;
@@ -62,7 +62,7 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
         try {
             connectMessagingService(messagingService);
             publisher = createAndStartPublisher(messagingService);
-            OutboundMessage message = buildOutboundMessage(messagingService, content, deliveryMode);
+            OutboundMessage message = buildOutboundMessage(messagingService, content, deliveryMode, priority);
             publishMessage(publisher, topicName, message, deliveryMode);
             pauseAfterPublish();
             PublishMessageResponseDTO returnMessage = buildResponse(topicName, content);
@@ -76,9 +76,12 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
     /**
      * Rejects empty topic or payload values before any broker work begins.
      */
-    private void validateInput(String topicName, String content, DeliveryMode deliveryMode) {
-        if (topicName == null || topicName.isEmpty() || content == null || content.isEmpty() || deliveryMode == null) {
+    private void validateInput(String topicName, String content, DeliveryMode deliveryMode, Integer priority) {
+        if (topicName == null || topicName.isEmpty() || content == null || content.isEmpty() || deliveryMode == null || priority == null) {
             throw new IllegalArgumentException(ERROR_EMPTY_MESSAGE_OR_TOPIC_NAME);
+        }
+        if (priority < 0 || priority > 255) {
+            throw new IllegalArgumentException("Message priority must be between 0 and 255");
         }
     }
 
@@ -157,11 +160,12 @@ public class DirectPublisherServiceImpl implements DirectPublisherService {
      * Creates the outbound payload to publish. The broker API currently treats
      * the request payload content as UTF-8 text.
      */
-    private OutboundMessage buildOutboundMessage(MessagingService messagingService, String content, DeliveryMode deliveryMode) {
+    OutboundMessage buildOutboundMessage(MessagingService messagingService, String content, DeliveryMode deliveryMode, Integer priority) {
         byte[] payload = content.getBytes(StandardCharsets.UTF_8);
         OutboundMessageBuilder messageBuilder = messagingService.messageBuilder();
         messageBuilder.withProperty(MessageProperties.APPLICATION_MESSAGE_ID, UUID.randomUUID().toString());
         messageBuilder.withProperty(MessageProperties.APPLICATION_MESSAGE_TYPE, deliveryMode.name());
+        messageBuilder.withPriority(priority);
         return messageBuilder.build(payload);
     }
 

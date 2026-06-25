@@ -53,6 +53,7 @@ const DEFAULT_BROWSER_STALE_PENDING_ONLY = false;
 const SAVED_BROWSER_VIEWS_STORAGE_KEY = "solace.publisher-ui.saved-browser-views";
 const SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY = "solace.publisher-ui.saved-view-action-history";
 const MAX_SAVED_VIEW_ACTION_HISTORY = 5;
+const MAX_MESSAGE_PRIORITY = 255;
 const DELIVERY_MODE_OPTIONS: DeliveryMode[] = ["DIRECT", "NON_PERSISTENT", "PERSISTENT"];
 const PAYLOAD_TYPE_OPTIONS: PayloadType[] = ["TEXT", "BINARY", "JSON", "XML"];
 
@@ -2646,6 +2647,8 @@ function validateMessagePayload(payload: unknown): MessagePayloadValidationError
     }
     if (!isNonNegativeNumber(payload.priority)) {
         validationErrors["message.priority"] = "message.priority is required";
+    } else if (!isMessagePriority(payload.priority)) {
+        validationErrors["message.priority"] = "message.priority must be less than or equal to 255";
     }
 
     if (!isRecord(payload.payload)) {
@@ -2695,6 +2698,10 @@ function hasNonBlankString(value: unknown): value is string {
 
 function isNonNegativeNumber(value: unknown): value is number {
     return typeof value === "number" && Number.isFinite(value) && value >= 0;
+}
+
+function isMessagePriority(value: unknown): value is number {
+    return isNonNegativeNumber(value) && value <= MAX_MESSAGE_PRIORITY;
 }
 
 function propertyCount(properties?: Record<string, string>): number {

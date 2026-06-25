@@ -630,14 +630,15 @@ public class MessageController {
 
         String topicName = wrapper.getMessage().getDestination();
         String content = wrapper.getMessage().getPayload().getContent();
+        Integer priority = wrapper.getMessage().getPriority();
         PublishMessageResponseDTO responseMessage;
 
         try {
             if (wrapper.parametersAreValid()) {
                 ParameterDTO parameterDTO = getParameterDTO(wrapper);
-                responseMessage = directPublisherService.sendMessage(topicName, content, wrapper.getMessage().getDeliveryMode(), Optional.of(parameterDTO));
+                responseMessage = directPublisherService.sendMessage(topicName, content, wrapper.getMessage().getDeliveryMode(), priority, Optional.of(parameterDTO));
             } else {
-                responseMessage = directPublisherService.sendMessage(topicName, content, wrapper.getMessage().getDeliveryMode(), Optional.empty());
+                responseMessage = directPublisherService.sendMessage(topicName, content, wrapper.getMessage().getDeliveryMode(), priority, Optional.empty());
             }
         } catch (IllegalArgumentException e) {
             markFailedSafely(savedMessage.getId(), topicName, e.getMessage());
@@ -906,12 +907,13 @@ public class MessageController {
 
         String topicName = storedMessage.getDestination();
         String content = storedMessage.getPayload().getContent();
+        Integer priority = storedMessage.getPriority();
         PublishMessageResponseDTO responseMessage;
 
         database.markMessagePending(messageId);
 
         try {
-            responseMessage = directPublisherService.sendMessage(topicName, content, storedMessage.getDeliveryMode(), Optional.empty());
+            responseMessage = directPublisherService.sendMessage(topicName, content, storedMessage.getDeliveryMode(), priority, Optional.empty());
         } catch (IllegalArgumentException e) {
             markFailedSafely(messageId, topicName, e.getMessage());
             logger.log(Level.WARNING, "Rejected retry request for stored message {0}: {1}", new Object[]{messageId, e.getMessage()});

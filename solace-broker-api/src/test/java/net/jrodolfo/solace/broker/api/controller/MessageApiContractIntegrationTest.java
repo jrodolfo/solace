@@ -83,6 +83,7 @@ class MessageApiContractIntegrationTest {
                 eq(TestDestinations.SYSTEM_01),
                 eq("01001000 01100101 01101100"),
                 eq(DeliveryMode.PERSISTENT),
+                eq(3),
                 any(Optional.class)))
                 .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"));
 
@@ -114,6 +115,7 @@ class MessageApiContractIntegrationTest {
                 eq(TestDestinations.SYSTEM_01),
                 eq("01001000 01100101 01101100"),
                 eq(DeliveryMode.PERSISTENT),
+                eq(3),
                 any(Optional.class));
     }
 
@@ -122,7 +124,7 @@ class MessageApiContractIntegrationTest {
         MessageWrapperDTO wrapper = validWrapper();
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
                 .when(directPublisherService)
-                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), eq(3), any(Optional.class));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -142,7 +144,7 @@ class MessageApiContractIntegrationTest {
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
                 .doReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"))
                 .when(directPublisherService)
-                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), eq(3), any(Optional.class));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -167,7 +169,7 @@ class MessageApiContractIntegrationTest {
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
                 .doReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"))
                 .when(directPublisherService)
-                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any(Optional.class));
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), eq(3), any(Optional.class));
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -204,6 +206,7 @@ class MessageApiContractIntegrationTest {
                 eq(TestDestinations.SYSTEM_01),
                 eq("01001000 01100101 01101100"),
                 eq(DeliveryMode.PERSISTENT),
+                eq(3),
                 any(Optional.class)))
                 .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"));
 

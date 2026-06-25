@@ -2,6 +2,7 @@ package net.jrodolfo.solace.broker.api.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
@@ -40,6 +41,7 @@ public class InnerMessageDTO {
      */
     @NotNull(message = "message.priority is required")
     @PositiveOrZero(message = "message.priority must be zero or greater")
+    @Max(value = 255, message = "message.priority must be less than or equal to 255")
     private Integer priority;
 
     /**

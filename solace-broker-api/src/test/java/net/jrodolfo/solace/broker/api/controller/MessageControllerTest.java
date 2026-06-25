@@ -661,7 +661,7 @@ class MessageControllerTest {
         private RuntimeException exception;
 
         @Override
-        public PublishMessageResponseDTO sendMessage(String topicName, String content, DeliveryMode deliveryMode, Optional<ParameterDTO> solaceParametersOptional) {
+        public PublishMessageResponseDTO sendMessage(String topicName, String content, DeliveryMode deliveryMode, Integer priority, Optional<ParameterDTO> solaceParametersOptional) {
             if (illegalArgumentException != null) {
                 throw illegalArgumentException;
             }

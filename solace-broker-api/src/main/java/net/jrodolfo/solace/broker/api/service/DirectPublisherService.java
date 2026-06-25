@@ -21,6 +21,7 @@ public interface DirectPublisherService {
      * @param topicName                Solace destination/topic name
      * @param content                  outbound payload content
      * @param deliveryMode             the {@link DeliveryMode} to use (Direct or Persistent)
+     * @param priority                 Solace message priority, from 0 through 255
      * @param solaceParametersOptional optional per-request broker parameters;
      *                                 empty means use server-side configuration
      * @return typed success response for the HTTP layer
@@ -28,5 +29,5 @@ public interface DirectPublisherService {
      * @throws RuntimeException         when broker configuration, connection, or publish
      *                                  steps fail
      */
-    PublishMessageResponseDTO sendMessage(String topicName, String content, DeliveryMode deliveryMode, Optional<ParameterDTO> solaceParametersOptional);
+    PublishMessageResponseDTO sendMessage(String topicName, String content, DeliveryMode deliveryMode, Integer priority, Optional<ParameterDTO> solaceParametersOptional);
 }

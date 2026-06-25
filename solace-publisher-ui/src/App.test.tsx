@@ -456,6 +456,21 @@ describe("Form Submission Tests", () => {
         expect(screen.getByText(/payload\.type must be one of text, binary, json, xml/i)).toBeInTheDocument();
         expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
     });
+
+    test("Handles priority above the supported Solace range before calling the api", async () => {
+        render(<App/>);
+
+        await fillRequiredFormFields();
+        await userEvent.clear(screen.getByLabelText(/^Priority$/i));
+        await userEvent.type(screen.getByLabelText(/^Priority$/i), "256");
+
+        await userEvent.click(screen.getByRole("button", {name: /publish message/i}));
+
+        expect(mockedAxios.post).not.toHaveBeenCalled();
+        expect(await screen.findByRole("alert")).toHaveTextContent("Request validation failed");
+        expect(screen.getByText(/message\.priority must be less than or equal to 255/i)).toBeInTheDocument();
+        expect(screen.getByText(/Status: 400/i)).toBeInTheDocument();
+    });
 });
 
 describe("Broker API Contract Tests", () => {

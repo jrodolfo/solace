@@ -283,7 +283,7 @@ class MessageControllerWebMvcTest {
             setId(1L);
         }});
         when(database.markMessagePublished(1L)).thenReturn(new Message());
-        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any()))
+        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), eq(3), any()))
                 .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"));
 
         mockMvc.perform(post("/api/v1/messages/message")
@@ -323,7 +323,7 @@ class MessageControllerWebMvcTest {
                 .andExpect(jsonPath("$.message").value("Broker connection parameters must include userName, password, host, and vpnName together, or omit all four to use server-side configuration"));
 
         verify(database, never()).savePendingMessage(any(MessageWrapperDTO.class));
-        verify(directPublisherService, never()).sendMessage(any(), any(), any(), any());
+        verify(directPublisherService, never()).sendMessage(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -335,7 +335,7 @@ class MessageControllerWebMvcTest {
         when(database.markMessageFailed(1L, "Failed to publish message to Solace broker")).thenReturn(new Message());
         doThrow(new BrokerPublishFailureException("Failed to publish message to Solace broker", new RuntimeException("Client error")))
                 .when(directPublisherService)
-                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any());
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), eq(3), any());
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -353,7 +353,7 @@ class MessageControllerWebMvcTest {
         when(database.savePendingMessage(any(MessageWrapperDTO.class))).thenReturn(new Message() {{
             setId(1L);
         }});
-        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any()))
+        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), eq(3), any()))
                 .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_01, "01001000 01100101 01101100"));
         doThrow(new IllegalStateException("database unavailable"))
                 .when(database)
@@ -379,7 +379,7 @@ class MessageControllerWebMvcTest {
         when(database.markMessageFailed(1L, "System environment variables SOLACE_CLOUD_HOST, SOLACE_CLOUD_VPN, SOLACE_CLOUD_USERNAME, SOLACE_CLOUD_PASSWORD are not set.")).thenReturn(new Message());
         doThrow(new BrokerConfigurationException("System environment variables SOLACE_CLOUD_HOST, SOLACE_CLOUD_VPN, SOLACE_CLOUD_USERNAME, SOLACE_CLOUD_PASSWORD are not set."))
                 .when(directPublisherService)
-                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any());
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), eq(3), any());
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -398,7 +398,7 @@ class MessageControllerWebMvcTest {
         when(database.markMessageFailed(1L, "Failed to connect to Solace broker")).thenReturn(new Message());
         doThrow(new BrokerConnectionException("Failed to connect to Solace broker", new RuntimeException("connect failed")))
                 .when(directPublisherService)
-                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), any());
+                .sendMessage(eq(TestDestinations.SYSTEM_01), eq("01001000 01100101 01101100"), eq(DeliveryMode.PERSISTENT), eq(3), any());
 
         mockMvc.perform(post("/api/v1/messages/message")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -415,7 +415,7 @@ class MessageControllerWebMvcTest {
         when(database.findMessageById(2L)).thenReturn(failedMessage);
         when(database.markMessagePending(2L)).thenReturn(failedMessage);
         when(database.markMessagePublished(2L)).thenReturn(failedMessage);
-        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_02), eq("01001000 01100101 01101100"), eq(DeliveryMode.DIRECT), any()))
+        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_02), eq("01001000 01100101 01101100"), eq(DeliveryMode.DIRECT), eq(1), any()))
                 .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_02, "01001000 01100101 01101100"));
 
         mockMvc.perform(post("/api/v1/messages/2/retry"))
@@ -458,7 +458,7 @@ class MessageControllerWebMvcTest {
         when(database.findMessageById(3L)).thenReturn(nonRetryableFailedMessage);
         when(database.markMessagePending(2L)).thenReturn(retryableFailedMessage);
         when(database.markMessagePublished(2L)).thenReturn(retryableFailedMessage);
-        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_02), eq("01001000 01100101 01101100"), eq(DeliveryMode.DIRECT), any()))
+        when(directPublisherService.sendMessage(eq(TestDestinations.SYSTEM_02), eq("01001000 01100101 01101100"), eq(DeliveryMode.DIRECT), eq(1), any()))
                 .thenReturn(new PublishMessageResponseDTO(TestDestinations.SYSTEM_02, "01001000 01100101 01101100"));
 
         mockMvc.perform(post("/api/v1/messages/retry")
