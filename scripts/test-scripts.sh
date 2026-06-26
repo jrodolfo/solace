@@ -419,8 +419,7 @@ cat >"${temp_fake_bin_dir}/docker" <<'EOF'
 if [[ "$1" == "compose" && "$2" == "version" ]]; then
   exit 0
 fi
-if [[ "$1" == "compose" && "$2" == "images" && "$3" == "-q" ]]; then
-  printf 'image-id-%s\n' "$4"
+if [[ "$1" == "image" && "$2" == "inspect" ]]; then
   exit 0
 fi
 echo "unexpected docker invocation: $*" >&2
@@ -436,15 +435,15 @@ docker_scan_output="$(PATH="${temp_fake_bin_dir}:$PATH" "${REPO_ROOT}/scripts/do
 assert_contains "${docker_scan_output}" "mode: release"
 assert_contains "${docker_scan_output}" "docker image security scan passed"
 docker_scan_trivy_log="$(cat "${trivy_log_file}")"
-assert_contains "${docker_scan_trivy_log}" "--severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed image-id-mysql"
-assert_contains "${docker_scan_trivy_log}" "image-id-solace-broker-api"
-assert_contains "${docker_scan_trivy_log}" "image-id-solace-publisher-ui"
-assert_contains "${docker_scan_trivy_log}" "image-id-solace-subscriber"
+assert_contains "${docker_scan_trivy_log}" "--severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed mysql:8.4"
+assert_contains "${docker_scan_trivy_log}" "solace-broker-api:local"
+assert_contains "${docker_scan_trivy_log}" "solace-publisher-ui:local"
+assert_contains "${docker_scan_trivy_log}" "solace-subscriber:local"
 : >"${trivy_log_file}"
 docker_scan_full_output="$(PATH="${temp_fake_bin_dir}:$PATH" "${REPO_ROOT}/scripts/docker-scan.sh" --full)"
 assert_contains "${docker_scan_full_output}" "mode: full"
 docker_scan_full_trivy_log="$(cat "${trivy_log_file}")"
-assert_contains "${docker_scan_full_trivy_log}" "--severity LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 image-id-mysql"
+assert_contains "${docker_scan_full_trivy_log}" "--severity LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 mysql:8.4"
 assert_command_fails_with \
   "unknown option: --bad-option" \
   env PATH="${temp_fake_bin_dir}:$PATH" \

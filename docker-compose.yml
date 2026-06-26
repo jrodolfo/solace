@@ -20,6 +20,7 @@ services:
 
   solace-broker-api:
     container_name: solace-broker-api
+    image: solace-broker-api:local
     build:
       context: ./solace-broker-api
     depends_on:
@@ -38,6 +39,7 @@ services:
 
   solace-publisher-ui:
     container_name: solace-publisher-ui
+    image: solace-publisher-ui:local
     build:
       context: ./solace-publisher-ui
       args:
@@ -49,6 +51,7 @@ services:
 
   solace-subscriber:
     container_name: solace-subscriber
+    image: solace-subscriber:local
     build:
       context: ./solace-subscriber
     environment:

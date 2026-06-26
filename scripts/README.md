@@ -163,8 +163,8 @@ The same workflows are also exposed through the root `Makefile`.
   `Containers > solace > solace-subscriber > Logs`.
 - `docker-status.sh` shows Compose service status and checks
   `http://localhost:8081/rest/actuator/health`.
-- `docker-scan.sh` scans `mysql`, `solace-broker-api`, `solace-publisher-ui`,
-  and `solace-subscriber` using the local image IDs reported by Docker Compose.
+- `docker-scan.sh` scans `mysql:8.4`, `solace-broker-api:local`,
+  `solace-publisher-ui:local`, and `solace-subscriber:local`.
   Run `./scripts/docker-build-all.sh` or `./scripts/docker-start.sh` first so
   the images exist locally.
 - `docker-scan.sh --full` is useful for investigation because it includes

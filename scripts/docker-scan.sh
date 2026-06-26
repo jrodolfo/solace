@@ -63,10 +63,10 @@ require_command trivy
 cd "${REPO_ROOT}"
 
 services=(
-  mysql
-  solace-broker-api
-  solace-publisher-ui
-  solace-subscriber
+  "mysql:mysql:8.4"
+  "solace-broker-api:solace-broker-api:local"
+  "solace-publisher-ui:solace-publisher-ui:local"
+  "solace-subscriber:solace-subscriber:local"
 )
 
 echo "docker image security scan"
@@ -81,14 +81,16 @@ echo
 
 scan_failures=0
 
-for service in "${services[@]}"; do
+for service_entry in "${services[@]}"; do
+  service="${service_entry%%:*}"
+  image_ref="${service_entry#*:}"
+
   echo "==================== ${service} ===================="
 
-  image_id="$(docker compose images -q "${service}" 2>/dev/null | head -n 1 | tr -d '\r')"
-
-  if [[ -z "${image_id}" ]]; then
+  if ! docker image inspect "${image_ref}" >/dev/null 2>&1; then
     echo "missing local image for service: ${service}" >&2
-    echo "run ./scripts/docker-start.sh or docker compose build before scanning" >&2
+    echo "expected image: ${image_ref}" >&2
+    echo "run ./scripts/docker-build-all.sh or ./scripts/docker-start.sh before scanning" >&2
     scan_failures=$((scan_failures + 1))
     echo
     continue
@@ -98,7 +100,7 @@ for service in "${services[@]}"; do
   if [[ "${ignore_unfixed}" == "true" ]]; then
     trivy_args+=(--ignore-unfixed)
   fi
-  trivy_args+=("${image_id}")
+  trivy_args+=("${image_ref}")
 
   if ! trivy "${trivy_args[@]}"; then
     scan_failures=$((scan_failures + 1))
