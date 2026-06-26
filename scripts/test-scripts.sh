@@ -432,17 +432,14 @@ exit 0
 EOF
 chmod +x "${temp_fake_bin_dir}/docker" "${temp_fake_bin_dir}/trivy"
 docker_scan_output="$(PATH="${temp_fake_bin_dir}:$PATH" "${REPO_ROOT}/scripts/docker-scan.sh")"
-assert_contains "${docker_scan_output}" "mode: release"
-assert_contains "${docker_scan_output}" "scope: project-owned runtime images"
+assert_contains "${docker_scan_output}" "mode: full"
+assert_contains "${docker_scan_output}" "scope: project-owned runtime images and local infrastructure images"
 assert_contains "${docker_scan_output}" "docker image security scan passed"
 docker_scan_trivy_log="$(cat "${trivy_log_file}")"
+assert_contains "${docker_scan_trivy_log}" "--severity LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 mysql:8.4"
 assert_contains "${docker_scan_trivy_log}" "solace-broker-api:local"
 assert_contains "${docker_scan_trivy_log}" "solace-publisher-ui:local"
 assert_contains "${docker_scan_trivy_log}" "solace-subscriber:local"
-if [[ "${docker_scan_trivy_log}" == *"mysql:8.4"* ]]; then
-  echo "release scan should not include MySQL infrastructure image" >&2
-  exit 1
-fi
 : >"${trivy_log_file}"
 docker_scan_full_output="$(PATH="${temp_fake_bin_dir}:$PATH" "${REPO_ROOT}/scripts/docker-scan.sh" --full)"
 assert_contains "${docker_scan_full_output}" "mode: full"

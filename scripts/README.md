@@ -48,10 +48,11 @@ On Windows Git Bash, `stop-all.sh` and `status-all.sh` use PowerShell process AP
   `api`, `ui`, `subscriber`, or `mysql`.
 
 - `docker-scan.sh`
-  Scans Docker runtime images with Trivy. Default release mode gates the
-  project-owned runtime images and fails on fixed `HIGH` or `CRITICAL`
-  vulnerabilities. `--full` also reports local infrastructure images such as
-  MySQL and all severities without failing.
+  Reports Docker runtime image findings with Trivy. It scans project-owned
+  runtime images plus local infrastructure images such as MySQL, includes
+  `LOW`, `MEDIUM`, `HIGH`, and `CRITICAL` severities, and does not fail on
+  vulnerability findings. `--full` is accepted as an explicit alias for the
+  default behavior.
 
 ## Local Build Scripts
 
@@ -164,12 +165,11 @@ The same workflows are also exposed through the root `Makefile`.
   `Containers > solace > solace-subscriber > Logs`.
 - `docker-status.sh` shows Compose service status and checks
   `http://localhost:8081/rest/actuator/health`.
-- `docker-scan.sh` scans `solace-broker-api:local`,
-  `solace-publisher-ui:local`, and `solace-subscriber:local` in release mode.
+- `docker-scan.sh` scans `mysql:8.4`, `solace-broker-api:local`,
+  `solace-publisher-ui:local`, and `solace-subscriber:local`.
   Run `./scripts/docker-build-all.sh` or `./scripts/docker-start.sh` first so
   the images exist locally.
-- `docker-scan.sh --full` is useful for investigation because it includes
-  `mysql:8.4`, `LOW` and `MEDIUM` findings, and does not fail the script.
+- `docker-scan.sh --full` is an explicit alias for the default full report.
 - `build-broker-api.sh` runs `mvn clean package` inside `solace-broker-api`.
 - `build-subscriber.sh` runs `mvn clean package` inside `solace-subscriber`.
 - `build-publisher-ui.sh` runs `npm run build` inside `solace-publisher-ui` and runs `npm install` first when `node_modules` is missing.

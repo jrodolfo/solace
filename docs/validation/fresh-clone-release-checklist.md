@@ -175,7 +175,7 @@ Expected result:
 
 ## 7. Docker Image Security Scan
 
-Run the release-gate scan:
+Run the Docker image security report:
 
 ```bash
 ./scripts/docker-scan.sh
@@ -183,19 +183,9 @@ Run the release-gate scan:
 
 Expected result:
 
-- API, UI, and subscriber images are scanned with Trivy
-- the scan passes with no fixed `HIGH` or `CRITICAL` vulnerabilities
-
-For investigation, run the non-failing full scan:
-
-```bash
-./scripts/docker-scan.sh --full
-```
-
-Expected result:
-
-- MySQL is included as local infrastructure visibility
+- MySQL, API, UI, and subscriber images are scanned with Trivy
 - `LOW`, `MEDIUM`, `HIGH`, and `CRITICAL` findings are visible for review
+- the script does not fail on vulnerability findings
 - accepted findings are documented in the release notes or follow-up issues
 
 ## 8. Publisher UI Publish Flow

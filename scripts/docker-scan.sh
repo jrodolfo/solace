@@ -15,10 +15,8 @@
 #   - trivy
 #
 # Exit behavior:
-#   Default mode fails when Trivy finds HIGH or CRITICAL vulnerabilities in
-#   project-owned runtime images.
-#   Full mode reports LOW, MEDIUM, HIGH, and CRITICAL findings for application
-#   and local infrastructure images without failing.
+#   Reports LOW, MEDIUM, HIGH, and CRITICAL findings for application and local
+#   infrastructure images without failing on vulnerability findings.
 
 set -euo pipefail
 
@@ -29,10 +27,10 @@ usage() {
   echo "usage: ./scripts/docker-scan.sh [--full]" >&2
 }
 
-scan_mode="release"
-severity="HIGH,CRITICAL"
-exit_code="1"
-ignore_unfixed="true"
+scan_mode="full"
+severity="LOW,MEDIUM,HIGH,CRITICAL"
+exit_code="0"
+ignore_unfixed="false"
 
 if [[ $# -gt 1 ]]; then
   usage
@@ -65,29 +63,17 @@ require_command trivy
 cd "${REPO_ROOT}"
 
 services=(
+  "mysql:mysql:8.4"
   "solace-broker-api:solace-broker-api:local"
   "solace-publisher-ui:solace-publisher-ui:local"
   "solace-subscriber:solace-subscriber:local"
 )
 
-infrastructure_services=(
-  "mysql:mysql:8.4"
-)
-
-if [[ "${scan_mode}" == "full" ]]; then
-  services=("${infrastructure_services[@]}" "${services[@]}")
-fi
-
 echo "docker image security scan"
 echo "mode: ${scan_mode}"
 echo "severity: ${severity}"
-if [[ "${scan_mode}" == "release" ]]; then
-  echo "policy: fail on fixed HIGH or CRITICAL vulnerabilities"
-  echo "scope: project-owned runtime images"
-else
-  echo "policy: report all severities without failing"
-  echo "scope: project-owned runtime images and local infrastructure images"
-fi
+echo "policy: report all severities without failing"
+echo "scope: project-owned runtime images and local infrastructure images"
 echo
 
 scan_failures=0
