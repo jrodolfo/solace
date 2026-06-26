@@ -114,6 +114,9 @@ Expected result:
 - Docker image references are listed and moving tags such as `latest` are flagged
 - no dependency files are modified by the report
 
+For the current triage posture, see
+`docs/validation/dependency-freshness-triage.md`.
+
 If you need to debug a specific stage, run the component commands directly:
 
 ```bash

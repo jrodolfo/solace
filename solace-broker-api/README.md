@@ -3,7 +3,7 @@
 [![CI](https://github.com/jrodolfo/solace/actions/workflows/ci.yml/badge.svg)](https://github.com/jrodolfo/solace/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
 [![Java 21](https://img.shields.io/badge/Java-21-007396?logo=openjdk&logoColor=white)](https://openjdk.org/)
-[![Spring Boot 3.3](https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Solace](https://img.shields.io/badge/Solace-PubSub%2B-00C895)](https://solace.com/)
 
@@ -15,7 +15,7 @@ Sample destinations used by examples and tests are listed in [../docs/reference/
 ## Stack
 
 - Java 21
-- Spring Boot 3.3
+- Spring Boot 3.5
 - Spring Web
 - Spring Data JPA
 - SpringDoc OpenAPI / Swagger UI
