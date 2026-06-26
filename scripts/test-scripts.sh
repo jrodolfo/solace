@@ -420,6 +420,7 @@ if [[ "$1" == "compose" && "$2" == "version" ]]; then
   exit 0
 fi
 if [[ "$1" == "image" && "$2" == "inspect" ]]; then
+  echo "sha256:test-image-id"
   exit 0
 fi
 echo "unexpected docker invocation: $*" >&2

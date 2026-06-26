@@ -84,7 +84,7 @@ for service_entry in "${services[@]}"; do
 
   echo "==================== ${service} ===================="
 
-  if ! docker image inspect "${image_ref}" >/dev/null 2>&1; then
+  if ! image_id="$(docker image inspect --format '{{.Id}}' "${image_ref}")" || [[ -z "${image_id}" ]]; then
     echo "missing local image for service: ${service}" >&2
     echo "expected image: ${image_ref}" >&2
     echo "run ./scripts/docker-build-all.sh or ./scripts/docker-start.sh before scanning" >&2
