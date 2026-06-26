@@ -115,10 +115,10 @@ The Docker image scan completed successfully under the current policy of
 reporting findings without failing. It reported:
 
 - `solace-publisher-ui:local`: 0 vulnerabilities
-- `solace-broker-api:local`: 2 high Alpine findings in `p11-kit` /
-  `p11-kit-trust`, fixed by Alpine package `0.26.2-r0`
-- `solace-subscriber:local`: the same 2 high Alpine findings in `p11-kit` /
-  `p11-kit-trust`
+- `solace-broker-api:local`: 0 vulnerabilities after refreshing Alpine
+  `p11-kit` / `p11-kit-trust` to `0.26.2-r0` during the image build
+- `solace-subscriber:local`: 0 vulnerabilities after the same Alpine package
+  refresh
 - `mysql:8.4`: local infrastructure findings in Oracle Linux / bundled Python
   packages
 
@@ -133,8 +133,10 @@ For the next maintenance pass:
    work, not routine freshness work.
 2. Review full `npm audit` dev-tooling findings separately from runtime
    exposure.
-3. Review Docker base images and Alpine `p11-kit` findings separately from
-   application dependency updates.
+3. Keep watching Docker base images for upstream refreshes. The Java runtime
+   images currently refresh Alpine `p11-kit` / `p11-kit-trust` during the image
+   build because the fixed packages are available in the pinned Alpine 3.23
+   repositories before they are present in the Temurin base layer.
 
 Do not combine the Spring Boot 4 or React 19 migrations with routine freshness
 work.
