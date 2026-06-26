@@ -165,6 +165,28 @@ If you want the smallest useful set to remember:
 
 The same workflows are also exposed through the root `Makefile`.
 
+## Why Dependency Freshness Matters
+
+`dependency-freshness.sh` is an early-warning report. It does not mean every
+reported package should be upgraded immediately.
+
+Trivy reports dependencies and images that are already known to be vulnerable.
+The freshness report shows where Maven dependencies, npm packages, and Docker
+image references are drifting behind before that drift becomes urgent security
+or compatibility work.
+
+Use it as maintenance radar:
+
+- Maven reports help track Spring Boot, Solace client, OpenTelemetry, Log4j,
+  test library, and Maven plugin update pressure.
+- npm reports help track UI package drift across Vite, Vitest, Axios, React
+  typings, ESLint, TypeScript, and related tooling.
+- Docker image checks flag old base-image references and moving tags such as
+  `latest`, which can make builds less reproducible.
+
+The goal is targeted, deliberate upgrades rather than reactive fixes after CI or
+security scans break.
+
 ## Detailed Notes
 
 - `docker-build-all.sh` pulls MySQL and builds the application images from the
