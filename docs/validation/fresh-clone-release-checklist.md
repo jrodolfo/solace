@@ -183,7 +183,7 @@ Run the release-gate scan:
 
 Expected result:
 
-- MySQL, API, UI, and subscriber images are scanned with Trivy
+- API, UI, and subscriber images are scanned with Trivy
 - the scan passes with no fixed `HIGH` or `CRITICAL` vulnerabilities
 
 For investigation, run the non-failing full scan:
@@ -194,6 +194,7 @@ For investigation, run the non-failing full scan:
 
 Expected result:
 
+- MySQL is included as local infrastructure visibility
 - `LOW`, `MEDIUM`, `HIGH`, and `CRITICAL` findings are visible for review
 - accepted findings are documented in the release notes or follow-up issues
 

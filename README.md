@@ -83,7 +83,7 @@ Common root commands:
 - `./scripts/docker-status.sh`: show Docker Compose service status and API health
 - `./scripts/docker-logs.sh`: follow logs for all Docker services
 - `./scripts/docker-logs.sh subscriber`: follow only subscriber logs
-- `./scripts/docker-scan.sh`: scan Docker runtime images with Trivy
+- `./scripts/docker-scan.sh`: scan project-owned Docker runtime images with Trivy
 - `./scripts/docker-stop.sh`: stop the Docker runtime
 - `./scripts/docker-restart.sh`: rebuild and restart the Docker runtime
 - `make test`: run API, UI, subscriber, and script tests

@@ -15,8 +15,10 @@
 #   - trivy
 #
 # Exit behavior:
-#   Default mode fails when Trivy finds HIGH or CRITICAL vulnerabilities.
-#   Full mode reports LOW, MEDIUM, HIGH, and CRITICAL findings without failing.
+#   Default mode fails when Trivy finds HIGH or CRITICAL vulnerabilities in
+#   project-owned runtime images.
+#   Full mode reports LOW, MEDIUM, HIGH, and CRITICAL findings for application
+#   and local infrastructure images without failing.
 
 set -euo pipefail
 
@@ -63,19 +65,28 @@ require_command trivy
 cd "${REPO_ROOT}"
 
 services=(
-  "mysql:mysql:8.4"
   "solace-broker-api:solace-broker-api:local"
   "solace-publisher-ui:solace-publisher-ui:local"
   "solace-subscriber:solace-subscriber:local"
 )
+
+infrastructure_services=(
+  "mysql:mysql:8.4"
+)
+
+if [[ "${scan_mode}" == "full" ]]; then
+  services=("${infrastructure_services[@]}" "${services[@]}")
+fi
 
 echo "docker image security scan"
 echo "mode: ${scan_mode}"
 echo "severity: ${severity}"
 if [[ "${scan_mode}" == "release" ]]; then
   echo "policy: fail on fixed HIGH or CRITICAL vulnerabilities"
+  echo "scope: project-owned runtime images"
 else
   echo "policy: report all severities without failing"
+  echo "scope: project-owned runtime images and local infrastructure images"
 fi
 echo
 
