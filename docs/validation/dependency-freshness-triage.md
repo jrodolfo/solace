@@ -18,8 +18,7 @@ automatic upgrade instruction.
 
 ## Safe Routine Candidates
 
-These updates look suitable for small, focused follow-up batches because they
-stay within the current architecture and major-version posture:
+Completed in the 2026-06-26 routine maintenance batch:
 
 - `com.solace:solace-messaging-client` `1.9.0 -> 1.10.0`
 - `io.opentelemetry.semconv:opentelemetry-semconv` `1.41.1 -> 1.42.0`
@@ -28,18 +27,24 @@ stay within the current architecture and major-version posture:
 - `maven-compiler-plugin` `3.11.0 -> 3.15.0`
 - `maven-jar-plugin` `3.3.0 -> 3.5.0`
 - `maven-shade-plugin` `3.6.0 -> 3.6.2`
-- npm packages where `Wanted` stays within the current package.json ranges,
-  such as Axios, Bootstrap, Vite 6, TypeScript 5, ESLint 9, Testing Library,
-  and React 18 typings
+- npm packages where `Wanted` stayed within the current package.json ranges,
+  including Axios, Bootstrap, `ws`, Vite 6, Vitest 3, TypeScript 5, ESLint 9,
+  Testing Library, and React 18 typings
+- removed unused runtime dependency `@jest/globals` so runtime audit results do
+  not include Jest-only transitive dependencies
 
-Validation for these updates should include:
+Validation completed for this batch:
 
 ```bash
-make test-api
-make test-subscriber
 make test-ui
 make build-ui
+make test-api
+make test-subscriber
+npm audit --omit=dev
+make dependency-freshness
 ```
+
+`npm audit --omit=dev` reports zero runtime vulnerabilities after this batch.
 
 ## Compatibility-Risk Candidates
 
@@ -58,6 +63,7 @@ Defer these unless there is a deliberate migration task:
 - Hibernate Validator `8.0.1.Final -> 9.1.1.Final`
 - Log4j `2.26.0 -> 3.0.0-beta*`
 - Netty `4.2.15.Final -> 5.0.0.Alpha2`
+- Maven Surefire `3.5.2 -> 3.6.0-M1`
 
 These are major-version or prerelease changes and need compatibility review,
 not a freshness-only upgrade.
@@ -86,7 +92,7 @@ checks pinning and registry availability. It does not choose newer image tags.
 
 `make release-check` passed on 2026-06-26.
 
-The Docker build reported npm audit findings for the current UI dependency
+The Docker build previously reported npm audit findings for the UI dependency
 tree:
 
 - 22 total vulnerabilities
@@ -95,9 +101,15 @@ tree:
 - 8 high
 - 3 critical
 
-Treat this as a separate security-maintenance task from general freshness
-triage. Start with `npm audit --omit=dev` to separate runtime exposure from
-development-only tooling exposure before applying fixes.
+The 2026-06-26 routine dependency batch resolved runtime audit exposure:
+
+```bash
+npm audit --omit=dev
+```
+
+now reports zero vulnerabilities. Remaining full `npm audit` findings are
+development-tooling transitive dependencies and should be handled separately
+from runtime dependency risk.
 
 The Docker image scan completed successfully under the current policy of
 reporting findings without failing. It reported:
@@ -115,12 +127,14 @@ vulnerabilities in the Trivy scan.
 
 ## Current Recommendation
 
-For the next maintenance pass, prefer one small routine batch:
+For the next maintenance pass:
 
-1. Java patch/minor updates for Solace client, OpenTelemetry semconv, Lombok,
-   H2, and stable Maven plugins.
-2. npm `Wanted` updates that remain within existing major versions.
-3. Docker base-image review only after the Java and npm batch is green.
+1. Treat remaining Maven and npm freshness output as compatibility-migration
+   work, not routine freshness work.
+2. Review full `npm audit` dev-tooling findings separately from runtime
+   exposure.
+3. Review Docker base images and Alpine `p11-kit` findings separately from
+   application dependency updates.
 
 Do not combine the Spring Boot 4 or React 19 migrations with routine freshness
 work.
