@@ -107,9 +107,9 @@ The 2026-06-26 routine dependency batch resolved runtime audit exposure:
 npm audit --omit=dev
 ```
 
-now reports zero vulnerabilities. Remaining full `npm audit` findings are
-development-tooling transitive dependencies and should be handled separately
-from runtime dependency risk.
+now reports zero vulnerabilities. The follow-up frontend dev-tooling cleanup
+removed unused Jest-era packages, switched TypeScript test globals to Vitest,
+and brought full `npm audit` to zero vulnerabilities.
 
 The Docker image scan completed successfully under the current policy of
 reporting findings without failing. It reported:
@@ -131,9 +131,7 @@ For the next maintenance pass:
 
 1. Treat remaining Maven and npm freshness output as compatibility-migration
    work, not routine freshness work.
-2. Review full `npm audit` dev-tooling findings separately from runtime
-   exposure.
-3. Keep watching Docker base images for upstream refreshes. The Java runtime
+2. Keep watching Docker base images for upstream refreshes. The Java runtime
    images currently refresh Alpine `p11-kit` / `p11-kit-trust` during the image
    build because the fixed packages are available in the pinned Alpine 3.23
    repositories before they are present in the Temurin base layer.
