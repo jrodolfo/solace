@@ -54,6 +54,11 @@ On Windows Git Bash, `stop-all.sh` and `status-all.sh` use PowerShell process AP
   vulnerability findings. `--full` is accepted as an explicit alias for the
   default behavior.
 
+- `release-check.sh`
+  Runs the full pre-release validation gate from one command: script smoke
+  tests, API tests, UI tests, subscriber tests, Docker runtime image build, and
+  Docker runtime image scan.
+
 ## Local Build Scripts
 
 - `build-broker-api.sh`
@@ -142,6 +147,8 @@ If you want the smallest useful set to remember:
   `./scripts/docker-logs.sh subscriber`
 - scan Docker images:
   `./scripts/docker-scan.sh`
+- run the full pre-release gate:
+  `make release-check`
 - check Docker runtime status:
   `./scripts/docker-status.sh`
 - stop Docker runtime:
@@ -170,6 +177,9 @@ The same workflows are also exposed through the root `Makefile`.
   Run `./scripts/docker-build-all.sh` or `./scripts/docker-start.sh` first so
   the images exist locally.
 - `docker-scan.sh --full` is an explicit alias for the default full report.
+- `release-check.sh` is the recommended local pre-release gate. It runs the
+  same major validation categories as CI and fails fast on the first broken
+  stage.
 - `build-broker-api.sh` runs `mvn clean package` inside `solace-broker-api`.
 - `build-subscriber.sh` runs `mvn clean package` inside `solace-subscriber`.
 - `build-publisher-ui.sh` runs `npm run build` inside `solace-publisher-ui` and runs `npm install` first when `node_modules` is missing.

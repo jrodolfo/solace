@@ -87,6 +87,7 @@ Common root commands:
 - `./scripts/docker-stop.sh`: stop the Docker runtime
 - `./scripts/docker-restart.sh`: rebuild and restart the Docker runtime
 - `make test`: run API, UI, subscriber, and script tests
+- `make release-check`: run the full pre-release gate, including tests, Docker image build, and Docker image scan
 
 For the full script inventory, see [scripts/README.md](scripts/README.md).
 
@@ -177,6 +178,14 @@ The workflow currently covers:
 - `solace-publisher-ui` build
 - `solace-subscriber` tests
 - `solace-subscriber` build
+- Docker runtime image build
+- Docker runtime image scan
+
+For local pre-release validation, run:
+
+```bash
+make release-check
+```
 
 ## Documentation Map
 

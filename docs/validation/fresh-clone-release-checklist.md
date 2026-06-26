@@ -89,10 +89,7 @@ Check:
 Run from the repository root:
 
 ```bash
-make test-scripts
-make test-api
-make test-ui
-make test-subscriber
+make release-check
 ```
 
 Expected result:
@@ -101,6 +98,23 @@ Expected result:
 - broker API tests pass
 - publisher UI tests pass
 - subscriber tests pass
+- Docker runtime images build successfully
+- Docker image security scan completes successfully
+
+If you need to debug a specific stage, run the component commands directly:
+
+```bash
+make test-scripts
+make test-api
+make test-ui
+make test-subscriber
+make docker-build-all
+make docker-scan
+```
+
+Expected result:
+
+- each component command passes independently
 
 Run the module builds:
 
@@ -117,7 +131,8 @@ Expected result:
 
 ## 4. Docker Image Build
 
-Build the Docker runtime images:
+The `make release-check` gate already builds the Docker runtime images. To run
+this step by itself:
 
 ```bash
 ./scripts/docker-build-all.sh
@@ -175,7 +190,8 @@ Expected result:
 
 ## 7. Docker Image Security Scan
 
-Run the Docker image security report:
+The `make release-check` gate already runs the Docker image security report. To
+run this step by itself:
 
 ```bash
 ./scripts/docker-scan.sh
@@ -186,7 +202,8 @@ Expected result:
 - MySQL, API, UI, and subscriber images are scanned with Trivy
 - `LOW`, `MEDIUM`, `HIGH`, and `CRITICAL` findings are visible for review
 - the script does not fail on vulnerability findings
-- accepted findings are documented in the release notes or follow-up issues
+- accepted local infrastructure findings, such as MySQL image findings, are
+  documented in the release notes or follow-up issues
 
 ## 8. Publisher UI Publish Flow
 

@@ -155,6 +155,7 @@ assert_contains "${make_help_output}" "make docker-restart"
 assert_contains "${make_help_output}" "make docker-logs"
 assert_contains "${make_help_output}" "make docker-scan"
 assert_contains "${make_help_output}" "make test-scripts"
+assert_contains "${make_help_output}" "make release-check"
 
 echo "checking shell script syntax"
 bash -n \
@@ -173,6 +174,7 @@ bash -n \
   "${REPO_ROOT}/scripts/docker-restart.sh" \
   "${REPO_ROOT}/scripts/docker-logs.sh" \
   "${REPO_ROOT}/scripts/docker-scan.sh" \
+  "${REPO_ROOT}/scripts/release-check.sh" \
   "${REPO_ROOT}/scripts/build-broker-api.sh" \
   "${REPO_ROOT}/scripts/build-publisher-ui.sh" \
   "${REPO_ROOT}/scripts/build-subscriber.sh" \

@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help build-api build-ui build-subscriber build-all start-api start-ui start-subscriber start-all stop-all restart-all status-all docker-build-all docker-start docker-stop docker-status docker-restart docker-logs docker-scan test-api test-ui test-subscriber test-scripts test
+.PHONY: help build-api build-ui build-subscriber build-all start-api start-ui start-subscriber start-all stop-all restart-all status-all docker-build-all docker-start docker-stop docker-status docker-restart docker-logs docker-scan test-api test-ui test-subscriber test-scripts test release-check
 
 help:
 	@echo "available targets:"
@@ -27,6 +27,7 @@ help:
 	@echo "  make test-subscriber   - run subscriber tests"
 	@echo "  make test-scripts      - run root script smoke tests"
 	@echo "  make test              - run all test targets"
+	@echo "  make release-check     - run the full pre-release validation gate"
 
 build-api:
 	@./scripts/build-broker-api.sh
@@ -95,3 +96,6 @@ test-scripts:
 	@./scripts/test-scripts.sh
 
 test: test-api test-ui test-subscriber test-scripts
+
+release-check:
+	@./scripts/release-check.sh
