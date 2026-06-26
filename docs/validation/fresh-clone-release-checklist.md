@@ -101,6 +101,19 @@ Expected result:
 - Docker runtime images build successfully
 - Docker image security scan completes successfully
 
+Run the advisory dependency freshness report:
+
+```bash
+make dependency-freshness
+```
+
+Expected result:
+
+- Maven dependency and plugin update reports are printed for the Java modules
+- npm update candidates are printed for the publisher UI when available
+- Docker image references are listed and moving tags such as `latest` are flagged
+- no dependency files are modified by the report
+
 If you need to debug a specific stage, run the component commands directly:
 
 ```bash
@@ -110,6 +123,7 @@ make test-ui
 make test-subscriber
 make docker-build-all
 make docker-scan
+make dependency-freshness
 ```
 
 Expected result:

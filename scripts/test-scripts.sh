@@ -154,6 +154,7 @@ assert_contains "${make_help_output}" "make docker-status"
 assert_contains "${make_help_output}" "make docker-restart"
 assert_contains "${make_help_output}" "make docker-logs"
 assert_contains "${make_help_output}" "make docker-scan"
+assert_contains "${make_help_output}" "make dependency-freshness"
 assert_contains "${make_help_output}" "make test-scripts"
 assert_contains "${make_help_output}" "make release-check"
 
@@ -174,6 +175,7 @@ bash -n \
   "${REPO_ROOT}/scripts/docker-restart.sh" \
   "${REPO_ROOT}/scripts/docker-logs.sh" \
   "${REPO_ROOT}/scripts/docker-scan.sh" \
+  "${REPO_ROOT}/scripts/dependency-freshness.sh" \
   "${REPO_ROOT}/scripts/release-check.sh" \
   "${REPO_ROOT}/scripts/build-broker-api.sh" \
   "${REPO_ROOT}/scripts/build-publisher-ui.sh" \
@@ -453,6 +455,51 @@ assert_command_fails_with \
   "unknown option: --bad-option" \
   env PATH="${temp_fake_bin_dir}:$PATH" \
   "${REPO_ROOT}/scripts/docker-scan.sh" --bad-option
+
+echo "checking dependency freshness report behavior"
+temp_fake_bin_dir="$(mktemp -d)"
+freshness_mvn_log_file="${temp_fake_bin_dir}/mvn.log"
+freshness_docker_log_file="${temp_fake_bin_dir}/docker.log"
+cat >"${temp_fake_bin_dir}/mvn" <<EOF
+#!/usr/bin/env bash
+echo "\$PWD \$*" >>"${freshness_mvn_log_file}"
+exit 0
+EOF
+cat >"${temp_fake_bin_dir}/npm" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "outdated" ]]; then
+  echo "package current wanted latest"
+  exit 1
+fi
+echo "unexpected npm invocation: $*" >&2
+exit 1
+EOF
+cat >"${temp_fake_bin_dir}/docker" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >>"${freshness_docker_log_file}"
+if [[ "\$1" == "buildx" && "\$2" == "version" ]]; then
+  exit 0
+fi
+if [[ "\$1" == "buildx" && "\$2" == "imagetools" && "\$3" == "inspect" ]]; then
+  exit 0
+fi
+echo "unexpected docker invocation: \$*" >&2
+exit 1
+EOF
+chmod +x "${temp_fake_bin_dir}/mvn" "${temp_fake_bin_dir}/npm" "${temp_fake_bin_dir}/docker"
+dependency_freshness_output="$(PATH="${temp_fake_bin_dir}:$PATH" "${REPO_ROOT}/scripts/dependency-freshness.sh")"
+assert_contains "${dependency_freshness_output}" "dependency freshness report"
+assert_contains "${dependency_freshness_output}" "policy: report only; no dependency files are modified"
+assert_contains "${dependency_freshness_output}" "npm reported outdated dependencies above"
+assert_contains "${dependency_freshness_output}" "warning: moving latest tag"
+assert_contains "${dependency_freshness_output}" "dependency freshness report complete"
+freshness_mvn_log="$(cat "${freshness_mvn_log_file}")"
+assert_contains "${freshness_mvn_log}" "versions:display-dependency-updates"
+assert_contains "${freshness_mvn_log}" "versions:display-plugin-updates"
+freshness_docker_log="$(cat "${freshness_docker_log_file}")"
+assert_contains "${freshness_docker_log}" "buildx version"
+assert_contains "${freshness_docker_log}" "buildx imagetools inspect node:20-bookworm-slim"
+assert_contains "${freshness_docker_log}" "buildx imagetools inspect mysql:8.4"
 
 echo "checking publisher ui auto-install behavior"
 temp_ui_dir="$(mktemp -d)"

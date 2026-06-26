@@ -88,6 +88,7 @@ Common root commands:
 - `./scripts/docker-restart.sh`: rebuild and restart the Docker runtime
 - `make test`: run API, UI, subscriber, and script tests
 - `make release-check`: run the full pre-release gate, including tests, Docker image build, and Docker image scan
+- `make dependency-freshness`: report available Maven, npm, and Docker image updates without changing files
 
 For the full script inventory, see [scripts/README.md](scripts/README.md).
 
@@ -185,6 +186,12 @@ For local pre-release validation, run:
 
 ```bash
 make release-check
+```
+
+For an advisory dependency freshness report, run:
+
+```bash
+make dependency-freshness
 ```
 
 ## Documentation Map
