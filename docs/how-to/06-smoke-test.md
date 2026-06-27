@@ -5,7 +5,7 @@ modules:
 
 - `solace-broker-api`
 - `solace-publisher-ui`
-- `solace-Subscriber`
+- `solace-subscriber`
 
 The goal is to publish one message from the React UI, receive it through Solace
 Cloud, observe it in the Subscriber container logs, and confirm that the broker
@@ -46,10 +46,10 @@ From the repository root, build and start the full Docker runtime:
 ./scripts/docker-start.sh
 ```
 
-`docker-build-all.sh` - the first run can take longer because Docker may need to
-download base images and build each module image
-`docker-start.sh` starts the Broker API, Publisher UI, Subscriber,
-and MySQL services.
+- `docker-build-all.sh` - the first run can take longer because Docker may need
+  to download base images and build each module image.
+- `docker-start.sh` starts the Broker API, Publisher UI, Subscriber, and MySQL
+  services.
 
 ![Terminal showing project startup preparation](../images/smoke-test/02.png)
 
@@ -70,12 +70,12 @@ running.
 
 ![Terminal showing API, UI, and Subscriber startup output](../images/smoke-test/05.png)
 
-## 4. Confirm MySQL, Subscriber, Broker-API and Publisher-UI in Docker Desktop
+## 4. Confirm MySQL, Subscriber, Broker API, and Publisher UI in Docker Desktop
 
 Open Docker Desktop and confirm that the MySQL image and container are present.
 The Broker API uses this database container to store publish attempts.
 
-![Docker Desktop showing MySQL, Subscriber, Broker-API and Publisher-UI containers](../images/smoke-test/06.png)
+![Docker Desktop showing MySQL, Subscriber, Broker API, and Publisher UI containers](../images/smoke-test/06.png)
 
 ## 5. Open the Publisher UI
 
@@ -182,7 +182,7 @@ The UI should show a successful publish response.
 Check the Docker logs. From the repository root, run:
 
 ```bash
-./scripts/docker-logs.sh Subscriber
+./scripts/docker-logs.sh subscriber
 ```
 
 The Subscriber log should show that it received the message published to
@@ -195,7 +195,7 @@ To follow all service logs, run:
 ```
 
 In Docker Desktop, you can also open
-`Containers > solace > solace-Subscriber > Logs`.
+`Containers > solace > solace-subscriber > Logs`.
 
 ![Docker logs showing Subscriber activity](../images/smoke-test/22.png)
 
