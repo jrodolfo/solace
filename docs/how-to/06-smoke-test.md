@@ -5,10 +5,10 @@ modules:
 
 - `solace-broker-api`
 - `solace-publisher-ui`
-- `solace-subscriber`
+- `solace-Subscriber`
 
 The goal is to publish one message from the React UI, receive it through Solace
-Cloud, observe it in the subscriber container logs, and confirm that the broker
+Cloud, observe it in the Subscriber container logs, and confirm that the broker
 API persisted the publish attempt in MySQL.
 
 Use your own Solace Cloud values. The screenshots are examples only.
@@ -32,22 +32,24 @@ The smoke test uses the sample destinations documented in
 ## 1. Start Docker Desktop
 
 Start Docker Desktop before running the project scripts. The project runtime
-uses Docker Compose for MySQL, the broker API, the publisher UI, and the
-subscriber.
+uses Docker Compose for MySQL, the Broker API, the Publisher UI, and the
+Subscriber.
 
 ![Docker Desktop application started](../images/smoke-test/01.png)
 
 ## 2. Start the Docker Runtime
 
-From the repository root, start the full Docker runtime:
+From the repository root, build and start the full Docker runtime:
 
 ```bash
+./scripts/docker-build-all.sh
 ./scripts/docker-start.sh
 ```
 
-`docker-start.sh` builds and starts the broker API, publisher UI, subscriber,
-and MySQL services. The first run can take longer because Docker may need to
-download base images and build each module image.
+`docker-build-all.sh` - the first run can take longer because Docker may need to
+download base images and build each module image
+`docker-start.sh` starts the Broker API, Publisher UI, Subscriber,
+and MySQL services.
 
 ![Terminal showing project startup preparation](../images/smoke-test/02.png)
 
@@ -66,24 +68,24 @@ running.
 
 ![Terminal running the project startup script](../images/smoke-test/04.png)
 
-![Terminal showing API, UI, and subscriber startup output](../images/smoke-test/05.png)
+![Terminal showing API, UI, and Subscriber startup output](../images/smoke-test/05.png)
 
-## 4. Confirm MySQL in Docker Desktop
+## 4. Confirm MySQL, Subscriber, Broker-API and Publisher-UI in Docker Desktop
 
 Open Docker Desktop and confirm that the MySQL image and container are present.
-The broker API uses this database container to store publish attempts.
+The Broker API uses this database container to store publish attempts.
 
-![Docker Desktop showing local MySQL image and container](../images/smoke-test/06.png)
+![Docker Desktop showing MySQL, Subscriber, Broker-API and Publisher-UI containers](../images/smoke-test/06.png)
 
 ## 5. Open the Publisher UI
 
-Open the React publisher UI in your browser:
+Open the React Publisher UI in your browser:
 
 ```text
 http://localhost:5173
 ```
 
-The Docker workflow exposes the publisher UI on port `5173`.
+The Docker workflow exposes the Publisher UI on port `5173`.
 
 ![Publisher UI running in the browser](../images/smoke-test/07.png)
 
@@ -105,7 +107,7 @@ Open **Cluster Manager**, select your broker service, and then select
 ## 7. Connect Broker Manager Publisher and Subscriber
 
 In Broker Manager, open **Try Me!** and select **Connect** in both the publisher
-and subscriber panels.
+and Subscriber panels.
 
 ![Broker Manager Try Me page with Publisher and Subscriber panels](../images/smoke-test/10.png)
 
@@ -113,7 +115,7 @@ Edit the **Topic Subscriber** field.
 
 ![Topic Subscriber field ready to edit](../images/smoke-test/11.png)
 
-Use this subscriber topic pattern:
+Use this Subscriber topic pattern:
 
 ```text
 solace/java/direct/system-0*
@@ -180,10 +182,10 @@ The UI should show a successful publish response.
 Check the Docker logs. From the repository root, run:
 
 ```bash
-./scripts/docker-logs.sh subscriber
+./scripts/docker-logs.sh Subscriber
 ```
 
-The subscriber log should show that it received the message published to
+The Subscriber log should show that it received the message published to
 `solace/java/direct/system-01`.
 
 To follow all service logs, run:
@@ -193,9 +195,9 @@ To follow all service logs, run:
 ```
 
 In Docker Desktop, you can also open
-`Containers > solace > solace-subscriber > Logs`.
+`Containers > solace > solace-Subscriber > Logs`.
 
-![Terminal logs showing broker API and subscriber activity](../images/smoke-test/22.png)
+![Docker logs showing Subscriber activity](../images/smoke-test/22.png)
 
 In Broker Manager, confirm that the subscribed topic receives the message.
 
@@ -203,7 +205,7 @@ In Broker Manager, confirm that the subscribed topic receives the message.
 
 ## 11. Verify the Message in the Publisher UI Read Tab
 
-The publisher UI can also confirm that the broker API persisted the publish
+The Publisher UI can also confirm that the Broker API persisted the publish
 attempt. Open the read/stored-messages tab, load the records, and verify that
 the latest message shows the expected destination, payload, lifecycle status,
 and timestamps.
