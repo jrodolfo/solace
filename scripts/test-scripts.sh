@@ -229,6 +229,7 @@ assert_equals "8" "${java_8_version}"
 echo "checking start-all log multiplexer handles initially empty logs"
 temp_log_multiplexer_dir="$(mktemp -d)"
 multiplexer_output_file="${temp_log_multiplexer_dir}/output.log"
+multiplexer_error_file="${temp_log_multiplexer_dir}/error.log"
 
 (
   export SOLACE_CLOUD_HOST="test-host"
@@ -253,10 +254,16 @@ multiplexer_output_file="${temp_log_multiplexer_dir}/output.log"
   printf '%s\n' "subscriber line after startup" >>"${LOG_FILES[1]}"
   sleep 0.6
   stop_log_multiplexer
-) >"${multiplexer_output_file}"
+) >"${multiplexer_output_file}" 2>"${multiplexer_error_file}"
 multiplexer_output="$(cat "${multiplexer_output_file}")"
 assert_contains "${multiplexer_output}" "[api] api line after startup"
 assert_contains "${multiplexer_output}" "[subscriber] subscriber line after startup"
+multiplexer_error="$(cat "${multiplexer_error_file}")"
+if [[ -n "${multiplexer_error}" ]]; then
+  echo "unexpected log multiplexer stderr:" >&2
+  printf '%s\n' "${multiplexer_error}" >&2
+  exit 1
+fi
 
 echo "checking external workspace stop marker handling"
 temp_stop_dir="$(mktemp -d)"

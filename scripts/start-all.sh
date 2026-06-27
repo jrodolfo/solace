@@ -74,6 +74,7 @@ print_separator() {
 start_log_multiplexer() {
   (
     set +e
+    trap 'exit 0' INT TERM
 
     local next_lines=()
     local previous_component=""
