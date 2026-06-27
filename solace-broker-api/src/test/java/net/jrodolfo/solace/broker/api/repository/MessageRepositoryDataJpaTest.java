@@ -13,7 +13,7 @@ import net.jrodolfo.solace.broker.api.jpa.PayloadType;
 import net.jrodolfo.solace.broker.api.jpa.PublishStatus;
 import net.jrodolfo.solace.broker.api.service.DatabaseImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 
 import java.time.LocalDateTime;
 import java.util.List;

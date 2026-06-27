@@ -424,7 +424,7 @@ public class DatabaseImpl implements Database {
             LocalDateTime createdAtTo,
             LocalDateTime publishedAtFrom,
             LocalDateTime publishedAtTo) {
-        Specification<Message> specification = Specification.where(null);
+        Specification<Message> specification = Specification.unrestricted();
 
         if (hasText(destination)) {
             specification = specification.and(stringContains("destination", destination));
