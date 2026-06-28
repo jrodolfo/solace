@@ -491,7 +491,12 @@ public class MessageController {
      * @return a {@link ResponseEntity} containing the publish result.
      * @throws BadRequestException if the request is invalid.
      */
-    @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}) // Allow React app origin
+    @CrossOrigin(origins = {
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174"
+    }) // Allow React app origin
     @Operation(summary = "Send a message", description = "Send a message to the Solace Broker", tags = {"messages"})
     @ApiResponses(value = {
             @ApiResponse(

@@ -364,6 +364,7 @@ function App() {
     const [savedViewHistoryClock, setSavedViewHistoryClock] = useState(0);
     const [activeWorkspaceSection, setActiveWorkspaceSection] = useState<WorkspaceSection>("PUBLISH");
     const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
+    const latestSavedViewActionId = savedViewActionHistory[0]?.id ?? "";
 
     useEffect(() => {
         if (savedViewActionHistory.length === 0) {
@@ -375,7 +376,7 @@ function App() {
         }, 30_000);
 
         return () => window.clearInterval(intervalId);
-    }, [savedViewActionHistory[0]?.id]);
+    }, [latestSavedViewActionId, savedViewActionHistory.length]);
 
     /**
      * Builds a complete browser query from current control state plus optional
@@ -1473,9 +1474,20 @@ function App() {
             <div className="container-fluid px-4 px-lg-5 py-4 py-lg-5">
                 <header className="publisher-hero mb-4">
                     <div>
-                        <h1 className="publisher-title mb-1">Publisher Workspace</h1>
+                        <h1 className="publisher-title mb-1">Solace Workspace</h1>
                         <p className="publisher-subtitle mb-0">
                             Publish messages and inspect stored results.
+                        </p>
+                        <p className="publisher-meta mb-0">
+                            Software Developer: Rod Oliveira <span aria-hidden="true">|</span>{" "}
+                            <a href="https://github.com/jrodolfo/solace" target="_blank" rel="noreferrer">
+                                GitHub Repo
+                            </a>{" "}
+                            <span aria-hidden="true">|</span>{" "}
+                            <a href="https://jrodolfo.net" target="_blank" rel="noreferrer">
+                                Website
+                            </a>{" "}
+                            <span aria-hidden="true">|</span> © 2026 Rod Oliveira MIT License
                         </p>
                     </div>
                 </header>
@@ -1847,8 +1859,13 @@ function App() {
                             )}
 
                             <form onSubmit={handleBrowseMessages}>
-                                <div className="form-section-block browser-filter-block">
-                                    <div className="row g-3">
+                                <div className="browser-control-stack">
+                                    <section className="form-section-block browser-control-section">
+                                        <div className="browser-control-section-header">
+                                            <p className="workspace-kicker mb-1">filters</p>
+                                            <h3 className="browser-control-title mb-0">Message Filters</h3>
+                                        </div>
+                                        <div className="row g-3">
                                         <div className="col-md-4">
                                             <label htmlFor="filterDestination" className="form-label">
                                                 Filter Destination
@@ -2004,7 +2021,16 @@ function App() {
                                                 onChange={(e) => setFilterPublishedAtTo(e.target.value)}
                                             />
                                         </div>
-                                        <div className="col-md-2">
+                                        </div>
+                                    </section>
+
+                                    <section className="form-section-block browser-control-section">
+                                        <div className="browser-control-section-header">
+                                            <p className="workspace-kicker mb-1">browse</p>
+                                            <h3 className="browser-control-title mb-0">Sort & Paging</h3>
+                                        </div>
+                                        <div className="row g-3 align-items-end">
+                                            <div className="col-md-2">
                                             <label htmlFor="browserSortBy" className="form-label">
                                                 Sort By
                                             </label>
@@ -2020,7 +2046,7 @@ function App() {
                                                 <option value="innerMessageId">innerMessageId</option>
                                             </select>
                                         </div>
-                                        <div className="col-md-2">
+                                            <div className="col-md-2">
                                             <label htmlFor="browserSortDirection" className="form-label">
                                                 Sort Direction
                                             </label>
@@ -2034,7 +2060,7 @@ function App() {
                                                 <option value="asc">asc</option>
                                             </select>
                                         </div>
-                                        <div className="col-md-2">
+                                            <div className="col-md-2">
                                             <label htmlFor="browserPage" className="form-label">
                                                 Page
                                             </label>
@@ -2047,7 +2073,7 @@ function App() {
                                                 onChange={(e) => setBrowserPage(e.target.value)}
                                             />
                                         </div>
-                                        <div className="col-md-2">
+                                            <div className="col-md-2">
                                             <label htmlFor="browserSize" className="form-label">
                                                 Size
                                             </label>
@@ -2060,11 +2086,36 @@ function App() {
                                                 value={browserSize}
                                                 onChange={(e) => setBrowserSize(e.target.value)}
                                             />
+                                            </div>
+                                            <div className="col-md-4">
+                                                <div className="browser-button-row">
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-outline-secondary"
+                                                        onClick={loadPreviousPage}
+                                                        disabled={!messagesResponse || messagesResponse.first || isLoadingMessages || isBulkRetrying}
+                                                    >
+                                                        Previous Page
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-outline-secondary"
+                                                        onClick={loadNextPage}
+                                                        disabled={!messagesResponse || messagesResponse.last || isLoadingMessages || isBulkRetrying}
+                                                    >
+                                                        Next Page
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </section>
 
-                                    <div className="d-flex gap-2 mt-3 flex-wrap">
-                                        <div className="saved-view-controls d-flex gap-2 flex-wrap align-items-end w-100">
+                                    <section className="form-section-block browser-control-section">
+                                        <div className="browser-control-section-header">
+                                            <p className="workspace-kicker mb-1">views</p>
+                                            <h3 className="browser-control-title mb-0">Saved & Built-In Views</h3>
+                                        </div>
+                                        <div className="saved-view-controls browser-button-row align-items-end">
                                             <div className="saved-view-field">
                                                 <label htmlFor="builtInBrowserViews" className="form-label">
                                                     Built-In Views
@@ -2212,7 +2263,15 @@ function App() {
                                                 </div>
                                             </div>
                                         )}
-                                        {messagesResponse && messagesResponse.items.some((message) => message.publishStatus === "FAILED" && message.retrySupported) && (
+                                    </section>
+
+                                    <section className="form-section-block browser-control-section">
+                                        <div className="browser-control-section-header">
+                                            <p className="workspace-kicker mb-1">shortcuts</p>
+                                            <h3 className="browser-control-title mb-0">Common Views</h3>
+                                        </div>
+                                        <div className="browser-button-row">
+                                            {messagesResponse && messagesResponse.items.some((message) => message.publishStatus === "FAILED" && message.retrySupported) && (
                                             <button
                                                 type="button"
                                                 className="btn btn-outline-danger"
@@ -2221,120 +2280,123 @@ function App() {
                                             >
                                                 {isBulkRetrying ? "Retrying Visible Failed Messages..." : "Retry Visible Failed Messages"}
                                             </button>
-                                        )}
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-danger"
-                                            onClick={() => applyBrowserPreset("FAILED_TODAY")}
-                                            disabled={isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Failed Today
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-success"
-                                            onClick={() => applyBrowserPreset("PUBLISHED_TODAY")}
-                                            disabled={isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Published Today
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-warning"
-                                            onClick={() => applyBrowserPreset("PENDING_NOW")}
-                                            disabled={isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Pending Now
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-secondary"
-                                            onClick={() => applyBrowserPreset("FAILED_LAST_24H")}
-                                            disabled={isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Failed Last 24h
-                                        </button>
-                                        <button type="submit" className="btn btn-secondary" disabled={isLoadingMessages || isBulkRetrying}>
-                                            {isLoadingMessages ? "Loading..." : "Load Messages"}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-primary"
-                                            onClick={refreshBrowserResults}
-                                            disabled={isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Refresh Results
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-info"
-                                            onClick={copyCurrentFilterQuery}
-                                            disabled={isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Copy Filter Query
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-dark"
-                                            onClick={resetBrowserFilters}
-                                            disabled={isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Reset Filters
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-secondary"
-                                            onClick={loadPreviousPage}
-                                            disabled={!messagesResponse || messagesResponse.first || isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Previous Page
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-info"
-                                            onClick={exportFilteredResults}
-                                            disabled={isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Export Filtered Results JSON
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-info"
-                                            onClick={exportFilteredResultsCsv}
-                                            disabled={isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Export Filtered Results CSV
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-info"
-                                            onClick={exportCurrentPage}
-                                            disabled={!messagesResponse || isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Export Current Page JSON
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-info"
-                                            onClick={exportCurrentPageCsv}
-                                            disabled={!messagesResponse || isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Export Current Page CSV
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-secondary"
-                                            onClick={loadNextPage}
-                                            disabled={!messagesResponse || messagesResponse.last || isLoadingMessages || isBulkRetrying}
-                                        >
-                                            Next Page
-                                        </button>
-                                    </div>
-                                    <p className="browser-export-note mb-0 mt-3">
+                                            )}
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-danger"
+                                                onClick={() => applyBrowserPreset("FAILED_TODAY")}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Failed Today
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-success"
+                                                onClick={() => applyBrowserPreset("PUBLISHED_TODAY")}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Published Today
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-warning"
+                                                onClick={() => applyBrowserPreset("PENDING_NOW")}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Pending Now
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-secondary"
+                                                onClick={() => applyBrowserPreset("FAILED_LAST_24H")}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Failed Last 24h
+                                            </button>
+                                        </div>
+                                    </section>
+
+                                    <section className="form-section-block browser-control-section">
+                                        <div className="browser-control-section-header">
+                                            <p className="workspace-kicker mb-1">results</p>
+                                            <h3 className="browser-control-title mb-0">Load & Utilities</h3>
+                                        </div>
+                                        <div className="browser-button-row">
+                                            <button type="submit" className="btn btn-secondary" disabled={isLoadingMessages || isBulkRetrying}>
+                                                {isLoadingMessages ? "Loading..." : "Load Messages"}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-primary"
+                                                onClick={refreshBrowserResults}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Refresh Results
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-info"
+                                                onClick={copyCurrentFilterQuery}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Copy Filter Query
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-dark"
+                                                onClick={resetBrowserFilters}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Reset Filters
+                                            </button>
+                                        </div>
+                                    </section>
+
+                                    <section className="form-section-block browser-control-section">
+                                        <div className="browser-control-section-header">
+                                            <p className="workspace-kicker mb-1">export</p>
+                                            <h3 className="browser-control-title mb-0">Download Results</h3>
+                                        </div>
+                                        <div className="browser-button-row">
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-info"
+                                                onClick={exportFilteredResults}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Export Filtered Results JSON
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-info"
+                                                onClick={exportFilteredResultsCsv}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Export Filtered Results CSV
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-info"
+                                                onClick={exportCurrentPage}
+                                                disabled={!messagesResponse || isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Export Current Page JSON
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-info"
+                                                onClick={exportCurrentPageCsv}
+                                                disabled={!messagesResponse || isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Export Current Page CSV
+                                            </button>
+                                        </div>
+                                        <p className="browser-export-note mb-0 mt-3">
                                         Current-page export uses the messages already loaded below. Filtered-result export downloads the full
                                         matching result set from the backend. JSON preserves the response structure, while CSV flattens fields for
                                         spreadsheet use.
-                                    </p>
+                                        </p>
+                                    </section>
                                 </div>
                             </form>
 

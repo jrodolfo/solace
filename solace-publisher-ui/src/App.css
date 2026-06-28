@@ -35,6 +35,24 @@
     max-width: 42rem;
 }
 
+.publisher-meta {
+    color: rgba(248, 251, 255, 0.82);
+    font-size: 0.9rem;
+    margin-top: 0.35rem;
+}
+
+.publisher-meta a {
+    color: #f8fbff;
+    font-weight: 700;
+    text-decoration-color: rgba(248, 251, 255, 0.5);
+    text-underline-offset: 0.18rem;
+}
+
+.publisher-meta a:hover,
+.publisher-meta a:focus-visible {
+    text-decoration-color: #f8fbff;
+}
+
 .workspace-card {
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(21, 48, 71, 0.08);
@@ -222,6 +240,31 @@
     color: #5b7488;
     font-size: 0.92rem;
     max-width: 60rem;
+}
+
+.browser-control-stack {
+    display: grid;
+    gap: 1rem;
+}
+
+.browser-control-section {
+    background: #f8fbfd;
+}
+
+.browser-control-section-header {
+    margin-bottom: 0.85rem;
+}
+
+.browser-control-title {
+    color: #12324b;
+    font-size: 1.02rem;
+    font-weight: 700;
+}
+
+.browser-button-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .saved-view-controls {
