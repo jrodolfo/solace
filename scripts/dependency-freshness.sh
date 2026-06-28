@@ -44,10 +44,21 @@ run_maven_report() {
     cd "${module_dir}"
 
     if grep -q "<parent>" pom.xml; then
+      echo
+      echo "Maven parent updates:"
       mvn versions:display-parent-updates
     fi
 
-    mvn versions:display-dependency-updates
+    echo
+    echo "Maven direct dependency updates:"
+    mvn versions:display-dependency-updates -DprocessDependencyManagement=false
+
+    echo
+    echo "Maven dependency-management updates:"
+    mvn versions:display-dependency-updates -DprocessDependencies=false -DprocessDependencyManagement=true
+
+    echo
+    echo "Maven plugin updates:"
     mvn versions:display-plugin-updates
   )
 }

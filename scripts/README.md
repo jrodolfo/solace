@@ -207,8 +207,11 @@ security scans break.
   the images exist locally.
 - `docker-scan.sh --full` is an explicit alias for the default full report.
 - `dependency-freshness.sh` runs Maven Versions Plugin reports, `npm outdated`,
-  and Docker image reference checks. It is report-only and does not update
-  `pom.xml`, `package-lock.json`, Dockerfiles, or Compose files.
+  and Docker image reference checks. The Maven output separates direct
+  dependencies, dependency-management entries, parent updates, and plugin
+  updates so project-owned drift is easier to distinguish from managed
+  framework noise. It is report-only and does not update `pom.xml`,
+  `package-lock.json`, Dockerfiles, or Compose files.
 - `release-check.sh` is the recommended local pre-release gate. It runs the
   same major validation categories as CI and fails fast on the first broken
   stage.

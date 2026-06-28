@@ -11,6 +11,11 @@ make dependency-freshness
 The freshness report is advisory. It reports available Maven, npm, and Docker
 image updates without changing project files.
 
+Maven output is split into parent, direct dependency, dependency-management, and
+plugin update sections. Treat the direct dependency section as the first place
+to look for project-owned drift; dependency-management output is often inherited
+framework radar.
+
 ## Current Read
 
 The report is intentionally noisy. Treat it as maintenance radar, not as an

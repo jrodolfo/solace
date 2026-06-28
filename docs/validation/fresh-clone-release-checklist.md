@@ -109,7 +109,8 @@ make dependency-freshness
 
 Expected result:
 
-- Maven dependency and plugin update reports are printed for the Java modules
+- Maven parent, direct dependency, dependency-management, and plugin update
+  reports are printed for the Java modules
 - npm update candidates are printed for the publisher UI when available
 - Docker image references are listed and moving tags such as `latest` are flagged
 - no dependency files are modified by the report
