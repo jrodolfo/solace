@@ -48,12 +48,7 @@ From the repository root, build and start the full Docker runtime:
 
 - `docker-build-all.sh` - the first run can take longer because Docker may need
   to download base images and build each module image.
-- `docker-start.sh` starts the Broker API, Publisher UI, Subscriber, and MySQL
-  services.
-
-![Terminal showing project startup preparation](../images/smoke-test/02.png)
-
-![Terminal showing project build progress](../images/smoke-test/03.png)
+- `docker-start.sh` starts the Broker API, Publisher UI, Subscriber, and MySQL services.
 
 ## 3. Confirm Runtime Startup
 
@@ -62,13 +57,6 @@ Check the runtime status:
 ```bash
 ./scripts/docker-status.sh
 ```
-
-The API should report healthy, and the Docker Compose services should be
-running.
-
-![Terminal running the project startup script](../images/smoke-test/04.png)
-
-![Terminal showing API, UI, and Subscriber startup output](../images/smoke-test/05.png)
 
 ## 4. Confirm MySQL, Subscriber, Broker API, and Publisher UI in Docker Desktop
 
