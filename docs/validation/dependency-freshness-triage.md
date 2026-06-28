@@ -1,6 +1,6 @@
 # Dependency Freshness Triage
 
-Date: 2026-06-26
+Date: 2026-06-28
 
 Source command:
 
@@ -33,6 +33,20 @@ Completed in the 2026-06-26 routine maintenance batch:
 - removed unused runtime dependency `@jest/globals` so runtime audit results do
   not include Jest-only transitive dependencies
 
+Completed in the 2026-06-27 and 2026-06-28 compatibility readiness passes:
+
+- Spring Boot `3.5.16 -> 4.1.0`
+- SpringDoc `2.8.17 -> 3.0.3`
+- Jackson 2 BOM compatibility update for the API scan finding
+- React `18.3.1 -> 19.2.7`
+- Vitest `3 -> 4`
+- Vite `6 -> 8`
+- ESLint `9 -> 10`
+- TypeScript `5 -> 6`
+- jsdom `26 -> 29`
+- `@types/node` `22 -> 26`
+- JUnit Jupiter `5.11.4 -> 6.1.1` for the subscriber module
+
 Validation completed for this batch:
 
 ```bash
@@ -46,27 +60,17 @@ make dependency-freshness
 
 `npm audit --omit=dev` reports zero runtime vulnerabilities after this batch.
 
-## Compatibility-Risk Candidates
+## Remaining Compatibility-Risk Candidates
 
 Defer these unless there is a deliberate migration task:
 
-- Spring Boot `3.5.16 -> 4.1.0`
-- Spring Framework / Spring Data / Spring Security managed dependency jumps to
-  the Spring 7 generation
-- React `18.3.1 -> 19.2.7`
-- Jest `29 -> 30`
-- Vitest `3 -> 4`
-- TypeScript `5 -> 6`
-- JUnit Jupiter `5.11.4 -> 6.1.0`
-- SpringDoc `2.8.17 -> 3.0.3`, unless paired with Spring Boot 4 compatibility
-  review
-- Hibernate Validator `8.0.1.Final -> 9.1.1.Final`
 - Log4j `2.26.0 -> 3.0.0-beta*`
 - Netty `4.2.15.Final -> 5.0.0.Alpha2`
 - Maven Surefire `3.5.2 -> 3.6.0-M1`
+- Maven 4-only compiler and jar plugin updates
 
-These are major-version or prerelease changes and need compatibility review,
-not a freshness-only upgrade.
+These are prerelease, alpha, milestone, or Maven 4-only changes and need
+compatibility review, not a freshness-only upgrade.
 
 ## Docker Image Review
 
@@ -129,12 +133,11 @@ vulnerabilities in the Trivy scan.
 
 For the next maintenance pass:
 
-1. Treat remaining Maven and npm freshness output as compatibility-migration
-   work, not routine freshness work.
+1. Treat remaining Maven freshness output as compatibility-migration work, not
+   routine freshness work.
 2. Keep watching Docker base images for upstream refreshes. The Java runtime
    images currently refresh Alpine `p11-kit` / `p11-kit-trust` during the image
    build because the fixed packages are available in the pinned Alpine 3.23
    repositories before they are present in the Temurin base layer.
 
-Do not combine the Spring Boot 4 or React 19 migrations with routine freshness
-work.
+Do not combine prerelease dependency migrations with routine freshness work.
