@@ -162,6 +162,54 @@ const sortSavedViews = (savedViews: SavedBrowserView[]) =>
     [...savedViews].sort((left, right) => left.name.localeCompare(right.name));
 
 /**
+ * Loads saved browser views from localStorage during initial render.
+ *
+ * @returns The persisted saved views, sorted by name.
+ */
+const loadSavedViewsFromStorage = (): SavedBrowserView[] => {
+    try {
+        const savedViewsJson = window.localStorage.getItem(SAVED_BROWSER_VIEWS_STORAGE_KEY);
+        if (!savedViewsJson) {
+            return [];
+        }
+
+        const parsedSavedViews = JSON.parse(savedViewsJson) as SavedBrowserView[];
+        if (!Array.isArray(parsedSavedViews)) {
+            return [];
+        }
+
+        return sortSavedViews(parsedSavedViews);
+    } catch (error) {
+        console.error("Failed to load saved browser views.", error);
+        return [];
+    }
+};
+
+/**
+ * Loads the saved-view action history from localStorage during initial render.
+ *
+ * @returns The persisted action history entries.
+ */
+const loadSavedViewActionHistoryFromStorage = (): SavedViewActionHistoryEntry[] => {
+    try {
+        const historyJson = window.localStorage.getItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY);
+        if (!historyJson) {
+            return [];
+        }
+
+        const parsedHistory = JSON.parse(historyJson) as SavedViewActionHistoryEntry[];
+        if (!Array.isArray(parsedHistory)) {
+            return [];
+        }
+
+        return parsedHistory;
+    } catch (error) {
+        console.error("Failed to load saved-view action history.", error);
+        return [];
+    }
+};
+
+/**
  * Normalizes a browser query state before writing it to localStorage.
  *
  * Empty optional fields are removed so exported saved-view JSON stays compact
@@ -311,47 +359,11 @@ function App() {
     const [savedViewName, setSavedViewName] = useState("");
     const [selectedBuiltInViewKey, setSelectedBuiltInViewKey] = useState("");
     const [selectedSavedViewName, setSelectedSavedViewName] = useState("");
-    const [savedViews, setSavedViews] = useState<SavedBrowserView[]>([]);
-    const [savedViewActionHistory, setSavedViewActionHistory] = useState<SavedViewActionHistoryEntry[]>([]);
+    const [savedViews, setSavedViews] = useState<SavedBrowserView[]>(loadSavedViewsFromStorage);
+    const [savedViewActionHistory, setSavedViewActionHistory] = useState<SavedViewActionHistoryEntry[]>(loadSavedViewActionHistoryFromStorage);
     const [savedViewHistoryClock, setSavedViewHistoryClock] = useState(0);
     const [activeWorkspaceSection, setActiveWorkspaceSection] = useState<WorkspaceSection>("PUBLISH");
     const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
-
-    useEffect(() => {
-        try {
-            const savedViewsJson = window.localStorage.getItem(SAVED_BROWSER_VIEWS_STORAGE_KEY);
-            if (!savedViewsJson) {
-                return;
-            }
-
-            const parsedSavedViews = JSON.parse(savedViewsJson) as SavedBrowserView[];
-            if (!Array.isArray(parsedSavedViews)) {
-                return;
-            }
-
-            setSavedViews(sortSavedViews(parsedSavedViews));
-        } catch (error) {
-            console.error("Failed to load saved browser views.", error);
-        }
-    }, []);
-
-    useEffect(() => {
-        try {
-            const historyJson = window.localStorage.getItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY);
-            if (!historyJson) {
-                return;
-            }
-
-            const parsedHistory = JSON.parse(historyJson) as SavedViewActionHistoryEntry[];
-            if (!Array.isArray(parsedHistory)) {
-                return;
-            }
-
-            setSavedViewActionHistory(parsedHistory);
-        } catch (error) {
-            console.error("Failed to load saved-view action history.", error);
-        }
-    }, []);
 
     useEffect(() => {
         if (savedViewActionHistory.length === 0) {
