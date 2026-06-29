@@ -42,6 +42,8 @@ const isAllowedDeliveryMode = (value: unknown): value is DeliveryMode =>
 const isAllowedPayloadType = (value: unknown): value is PayloadType =>
     typeof value === "string" && PAYLOAD_TYPE_OPTIONS.includes(value as PayloadType);
 
+const formatSelectOptionLabel = (value: string) => value.toLowerCase().replace(/_/g, " ");
+
 /**
  * Query contract shared by the stored-message browser controls.
  */
@@ -908,15 +910,17 @@ function App() {
                                 </div>
                             )}
 
-                            <form onSubmit={handleBrowseMessages}>
-                                <div className="browser-control-stack">
+                            <div className="browser-workspace-layout">
+                                <div className="browser-controls-column">
+                                    <form onSubmit={handleBrowseMessages}>
+                                        <div className="browser-control-stack">
                                     <section className="form-section-block browser-control-section">
                                         <div className="browser-control-section-header">
                                             <p className="workspace-kicker mb-1">filters</p>
                                             <h3 className="browser-control-title mb-0">Message Filters</h3>
                                         </div>
                                         <div className="row g-3">
-                                        <div className="col-md-4">
+                                        <div className="col-12">
                                             <label htmlFor="filterDestination" className="form-label">
                                                 Filter Destination
                                             </label>
@@ -926,10 +930,9 @@ function App() {
                                                 className="form-control"
                                                 value={filterDestination}
                                                 onChange={(e) => setFilterDestination(e.target.value)}
-                                                placeholder="Filter by destination"
                                             />
                                         </div>
-                                        <div className="col-md-4">
+                                        <div className="col-12">
                                             <label htmlFor="filterDeliveryMode" className="form-label">
                                                 Filter Delivery Mode
                                             </label>
@@ -942,12 +945,12 @@ function App() {
                                                 <option value="">all delivery modes</option>
                                                 {DELIVERY_MODE_OPTIONS.map((deliveryModeOption) => (
                                                     <option key={deliveryModeOption} value={deliveryModeOption}>
-                                                        {deliveryModeOption}
+                                                        {formatSelectOptionLabel(deliveryModeOption)}
                                                     </option>
                                                 ))}
                                             </select>
                                         </div>
-                                        <div className="col-md-4">
+                                        <div className="col-12">
                                             <label htmlFor="filterPayloadType" className="form-label">
                                                 Filter Payload Type
                                             </label>
@@ -960,12 +963,12 @@ function App() {
                                                 <option value="">all payload types</option>
                                                 {PAYLOAD_TYPE_OPTIONS.map((payloadTypeOption) => (
                                                     <option key={payloadTypeOption} value={payloadTypeOption}>
-                                                        {payloadTypeOption}
+                                                        {formatSelectOptionLabel(payloadTypeOption)}
                                                     </option>
                                                 ))}
                                             </select>
                                         </div>
-                                        <div className="col-md-4">
+                                        <div className="col-12">
                                             <label htmlFor="filterInnerMessageId" className="form-label">
                                                 Filter Inner Message Id
                                             </label>
@@ -975,10 +978,9 @@ function App() {
                                                 className="form-control"
                                                 value={filterInnerMessageId}
                                                 onChange={(e) => setFilterInnerMessageId(e.target.value)}
-                                                placeholder="Filter by inner message id"
                                             />
                                         </div>
-                                        <div className="col-md-4">
+                                        <div className="col-12">
                                             <label htmlFor="filterPublishStatus" className="form-label">
                                                 Filter Publish Status
                                             </label>
@@ -1000,11 +1002,11 @@ function App() {
                                                 <option value="FAILED">FAILED</option>
                                             </select>
                                         </div>
-                                        <div className="col-md-2">
-                                            <label htmlFor="filterStalePendingOnly" className="form-label">
-                                                Stale Pending Only
-                                            </label>
-                                            <div className="form-check mt-2">
+                                        <div className="col-12">
+                                            <div className="browser-checkbox-row mt-2">
+                                                <label className="form-check-label" htmlFor="filterStalePendingOnly">
+                                                    Only stale pending
+                                                </label>
                                                 <input
                                                     id="filterStalePendingOnly"
                                                     type="checkbox"
@@ -1018,12 +1020,9 @@ function App() {
                                                         }
                                                     }}
                                                 />
-                                                <label className="form-check-label" htmlFor="filterStalePendingOnly">
-                                                    only stale pending
-                                                </label>
                                             </div>
                                         </div>
-                                        <div className="col-md-3">
+                                        <div className="col-6">
                                             <label htmlFor="filterCreatedAtFrom" className="form-label">
                                                 Created At From
                                             </label>
@@ -1035,7 +1034,7 @@ function App() {
                                                 onChange={(e) => setFilterCreatedAtFrom(e.target.value)}
                                             />
                                         </div>
-                                        <div className="col-md-3">
+                                        <div className="col-6">
                                             <label htmlFor="filterCreatedAtTo" className="form-label">
                                                 Created At To
                                             </label>
@@ -1047,7 +1046,7 @@ function App() {
                                                 onChange={(e) => setFilterCreatedAtTo(e.target.value)}
                                             />
                                         </div>
-                                        <div className="col-md-3">
+                                        <div className="col-6">
                                             <label htmlFor="filterPublishedAtFrom" className="form-label">
                                                 Published At From
                                             </label>
@@ -1059,7 +1058,7 @@ function App() {
                                                 onChange={(e) => setFilterPublishedAtFrom(e.target.value)}
                                             />
                                         </div>
-                                        <div className="col-md-3">
+                                        <div className="col-6">
                                             <label htmlFor="filterPublishedAtTo" className="form-label">
                                                 Published At To
                                             </label>
@@ -1080,7 +1079,7 @@ function App() {
                                             <h3 className="browser-control-title mb-0">Sort & Paging</h3>
                                         </div>
                                         <div className="row g-3 align-items-end">
-                                            <div className="col-md-3">
+                                            <div className="col-12">
                                                 <label htmlFor="browserSortBy" className="form-label">
                                                     Sort By
                                                 </label>
@@ -1096,7 +1095,7 @@ function App() {
                                                     <option value="innerMessageId">innerMessageId</option>
                                                 </select>
                                             </div>
-                                            <div className="col-md-3">
+                                            <div className="col-12">
                                                 <label htmlFor="browserSortDirection" className="form-label">
                                                     Sort Direction
                                                 </label>
@@ -1110,7 +1109,7 @@ function App() {
                                                     <option value="asc">asc</option>
                                                 </select>
                                             </div>
-                                            <div className="col-md-3">
+                                            <div className="col-12">
                                                 <label htmlFor="browserSize" className="form-label">
                                                     Messages Per Page
                                                 </label>
@@ -1155,36 +1154,37 @@ function App() {
                                         </div>
                                     </section>
 
+                                        </div>
+                                    </form>
                                 </div>
-                            </form>
 
-                            {isLoadingMessages && (
-                                <div className="mt-4 browser-feedback-card" role="status" aria-live="polite">
-                                    <strong>Loading stored messages...</strong>
-                                    <span>Fetching the latest results for the current filters.</span>
-                                </div>
-                            )}
+                                <div className="browser-results-column">
+                                    {isLoadingMessages && (
+                                        <div className="browser-feedback-card" role="status" aria-live="polite">
+                                            <strong>Loading stored messages...</strong>
+                                            <span>Fetching the latest results for the current filters.</span>
+                                        </div>
+                                    )}
 
-                            {!isLoadingMessages && !hasLoadedMessages && (
-                                <div className="mt-4 browser-feedback-card">
-                                    <strong>No results loaded yet.</strong>
-                                    <span>Choose filters and page size above, then select Load Messages to fetch the first visible page.</span>
-                                </div>
-                            )}
+                                    {!isLoadingMessages && !hasLoadedMessages && (
+                                        <div className="browser-feedback-card">
+                                            <strong>No results loaded yet.</strong>
+                                            <span>Choose filters and messages per page, then select Load Messages to fetch the first visible page.</span>
+                                        </div>
+                                    )}
 
-                            {!isLoadingMessages && messagesResponse && (
-                                <div className="mt-4">
+                                    {!isLoadingMessages && messagesResponse && (
+                                        <div>
                                     <div className="browser-summary mb-3" data-testid="browser-summary">
                                         <div>
                                             <strong>
                                                 Showing {visibleMessageCount === 0 ? "0" : `${visibleStartIndex}-${visibleEndIndex}`} of{" "}
-                                                {matchingMessageCount} matching messages
+                                                {matchingMessageCount} messages
                                             </strong>
                                         </div>
                                         <div className="browser-summary-actions">
                                             <span>
-                                                Visible page {messagesResponse.page + 1} of {messagesResponse.totalPages || 1}, page size{" "}
-                                                {messagesResponse.size}
+                                                Page {messagesResponse.page + 1} of {messagesResponse.totalPages || 1}
                                             </span>
                                             <div className="browser-button-row">
                                                 <button
@@ -1449,8 +1449,10 @@ function App() {
                                             ))}
                                         </div>
                                     )}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            </div>
                         </section>
                     </div>
                 </div>

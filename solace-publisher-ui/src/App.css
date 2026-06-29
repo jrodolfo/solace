@@ -261,6 +261,18 @@
     border-radius: 0.9rem;
 }
 
+.browser-workspace-layout {
+    display: grid;
+    grid-template-columns: minmax(18rem, 0.3fr) minmax(0, 0.7fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.browser-controls-column,
+.browser-results-column {
+    min-width: 0;
+}
+
 .browser-control-stack {
     display: grid;
     gap: 1rem;
@@ -284,6 +296,13 @@
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+}
+
+.browser-checkbox-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
 }
 
 .message-browser-card {
@@ -370,6 +389,10 @@
 
     .workspace-card {
         padding: 1.1rem;
+    }
+
+    .browser-workspace-layout {
+        grid-template-columns: 1fr;
     }
 }
 
