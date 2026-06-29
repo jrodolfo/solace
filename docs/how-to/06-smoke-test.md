@@ -39,16 +39,16 @@ Subscriber.
 
 ## 2. Start the Docker Runtime
 
-From the repository root, build and start the full Docker runtime:
+From the repository root, start the full Docker runtime:
 
 ```bash
-./scripts/docker-build-all.sh
 ./scripts/docker-start.sh
 ```
 
-- `docker-build-all.sh` - the first run can take longer because Docker may need
-  to download base images and build each module image.
-- `docker-start.sh` starts the Broker API, Publisher UI, Subscriber, and MySQL services.
+- `docker-start.sh` prepares images with `docker-build-all.sh`, then starts the
+  Broker API, Publisher UI, Subscriber, and MySQL services.
+- The first run can take longer because Docker may need to download base images
+  and build each module image.
 
 ## 3. Confirm Runtime Startup
 
@@ -133,8 +133,7 @@ In Solace Cloud, collect the four values required by this project:
 
 ![Solace Cloud connection details](../images/smoke-test/15.png)
 
-Enter those values in the **Connection Broker Access** section of the publisher
-UI.
+Enter those values in the **Broker Access** section of the publisher UI.
 
 ![Publisher UI Connection Broker Access section](../images/smoke-test/16.png)
 
