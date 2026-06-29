@@ -300,10 +300,6 @@ function App() {
         setHasLoadedMessages(false);
     };
 
-    const refreshBrowserResults = async () => {
-        await fetchMessages();
-    };
-
     const updateBrowserSize = (value: string) => {
         setBrowserSize(value);
         setBrowserPage(DEFAULT_BROWSER_PAGE);
@@ -1134,14 +1130,6 @@ function App() {
                                         <div className="browser-button-row">
                                             <button type="submit" className="btn btn-outline-primary" disabled={isLoadingMessages}>
                                                 {isLoadingMessages ? "Loading..." : "Load Messages"}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-primary"
-                                                onClick={refreshBrowserResults}
-                                                disabled={isLoadingMessages}
-                                            >
-                                                Refresh Results
                                             </button>
                                             <button
                                                 type="button"

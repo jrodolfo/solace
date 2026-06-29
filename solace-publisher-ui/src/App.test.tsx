@@ -40,7 +40,7 @@ test('it shows the write workspace by default', async () => {
 
     expect(screen.queryByRole('button', {name: /publish message/i})).not.toBeInTheDocument();
     expect(screen.getByRole('button', {name: /load messages/i})).toBeInTheDocument();
-    expect(screen.getByRole('button', {name: /refresh results/i})).toBeInTheDocument();
+    expect(screen.queryByRole('button', {name: /refresh results/i})).not.toBeInTheDocument();
     expect(screen.getByRole('button', {name: /reset filters/i})).toBeInTheDocument();
     expect(screen.getByLabelText(/Created At From/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Created At To/i)).toBeInTheDocument();
@@ -1262,73 +1262,6 @@ describe("Stored Messages Browser", () => {
 
         expect(await screen.findByRole("alert")).toHaveTextContent("sortBy must be one of createdAt, priority, destination, innerMessageId");
         expect(screen.getByText(/status: 400/i)).toBeInTheDocument();
-    });
-
-    test("Refreshes stored messages with the current query state", async () => {
-        mockedAxios.get
-            .mockResolvedValueOnce({
-                data: buildMessagesPage(0, {
-                    size: 15,
-                    first: true,
-                    last: false,
-                }),
-                status: 200,
-                statusText: "OK",
-                headers: new AxiosHeaders(),
-                config: {headers: new AxiosHeaders()},
-            })
-            .mockResolvedValueOnce({
-                data: buildMessagesPage(0, {
-                    size: 15,
-                    first: true,
-                    last: false,
-                }),
-                status: 200,
-                statusText: "OK",
-                headers: new AxiosHeaders(),
-                config: {headers: new AxiosHeaders()},
-            });
-
-        await renderReadWorkspace();
-
-        await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-03");
-        await userEvent.selectOptions(screen.getByLabelText(/Filter Delivery Mode/i), "PERSISTENT");
-        await userEvent.type(screen.getByLabelText(/Filter Inner Message Id/i), "003");
-        await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
-        await userEvent.type(screen.getByLabelText(/Created At From/i), "2026-04-20T09:30");
-        await userEvent.type(screen.getByLabelText(/Created At To/i), "2026-04-20T18:45");
-        await userEvent.type(screen.getByLabelText(/Published At From/i), "2026-04-21T07:00");
-        await userEvent.type(screen.getByLabelText(/Published At To/i), "2026-04-21T08:15");
-        await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
-        await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
-        await userEvent.clear(screen.getByLabelText(/^Messages Per Page$/i));
-        await userEvent.type(screen.getByLabelText(/^Messages Per Page$/i), "15");
-
-        await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
-        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
-
-        await userEvent.click(screen.getByRole("button", {name: /refresh results/i}));
-        await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(2));
-
-        expect(mockedAxios.get).toHaveBeenLastCalledWith(
-            "http://localhost:8081/api/v1/messages/all",
-            {
-                params: {
-                    page: 0,
-                    size: 15,
-                    destination: "system-03",
-                    deliveryMode: "PERSISTENT",
-                    innerMessageId: "003",
-                    publishStatus: "FAILED",
-                    createdAtFrom: "2026-04-20T09:30:00",
-                    createdAtTo: "2026-04-20T18:45:00",
-                    publishedAtFrom: "2026-04-21T07:00:00",
-                    publishedAtTo: "2026-04-21T08:15:00",
-                    sortBy: "priority",
-                    sortDirection: "asc",
-                },
-            }
-        );
     });
 
     test("Resets browser filters back to defaults", async () => {
