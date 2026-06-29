@@ -443,7 +443,7 @@ function App() {
     const clearSavedViewActionHistory = () => {
         setSavedViewActionHistory([]);
         window.localStorage.removeItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY);
-        setBrowserMessage("Cleared recent saved view actions.");
+        setBrowserMessage("Cleared recent saved search actions.");
         setBrowserVariant("info");
         setBrowserStatusCode(null);
         setBrowserFeedbackDetails(null);
@@ -1334,6 +1334,14 @@ function App() {
         },
         {published: 0, failed: 0, pending: 0, stalePending: 0}
     );
+    const visibleMessageCount = messagesResponse?.items.length ?? 0;
+    const matchingMessageCount = messagesResponse?.totalElements ?? 0;
+    const visibleStartIndex =
+        messagesResponse && visibleMessageCount > 0 ? messagesResponse.page * messagesResponse.size + 1 : 0;
+    const visibleEndIndex =
+        messagesResponse && visibleMessageCount > 0
+            ? Math.min(messagesResponse.page * messagesResponse.size + visibleMessageCount, messagesResponse.totalElements)
+            : 0;
 
     const applyLifecycleQuickFilter = async (publishStatus: "PUBLISHED" | "FAILED" | "PENDING") => {
         setFilterPublishStatus(publishStatus);
@@ -1473,23 +1481,28 @@ function App() {
 
             <div className="container-fluid px-4 px-lg-5 py-4 py-lg-5">
                 <header className="publisher-hero mb-4">
-                    <div>
-                        <h1 className="publisher-title mb-1">Solace Workspace</h1>
-                        <p className="publisher-subtitle mb-0">
-                            Publish messages and inspect stored results.
-                        </p>
-                        <p className="publisher-meta mb-0">
-                            Software Developer: Rod Oliveira <span aria-hidden="true">|</span>{" "}
-                            <a href="https://github.com/jrodolfo/solace" target="_blank" rel="noreferrer">
-                                GitHub Repo
-                            </a>{" "}
-                            <span aria-hidden="true">|</span>{" "}
-                            <a href="https://jrodolfo.net" target="_blank" rel="noreferrer">
-                                Website
-                            </a>{" "}
-                            <span aria-hidden="true">|</span> © 2026 Rod Oliveira MIT License
-                        </p>
-                    </div>
+                    <h1 className="publisher-title mb-0">Solace Workspace</h1>
+                    <p className="publisher-subtitle mb-0">
+                        Publish messages and inspect stored results
+                    </p>
+                    <p className="publisher-meta mb-0">
+                        © 2026{" "}
+                        <a href="https://jrodolfo.net" target="_blank" rel="noreferrer">
+                            Rod Oliveira
+                        </a>{" "}
+                        <span aria-hidden="true">|</span>{" "}
+                        <a
+                            href="https://github.com/jrodolfo/solace/blob/main/LICENSE"
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            MIT License
+                        </a>{" "}
+                        <span aria-hidden="true">|</span>{" "}
+                        <a href="https://github.com/jrodolfo/solace" target="_blank" rel="noreferrer">
+                            GitHub Repo
+                        </a>
+                    </p>
                 </header>
 
                 <div className="workspace-tabs mb-4" role="tablist" aria-label="Workspace sections">
@@ -1765,7 +1778,7 @@ function App() {
                                 </div>
 
                                 <div className="publish-actions mt-4">
-                                    <button type="submit" className="btn btn-primary btn-lg">
+                                    <button type="submit" className="workspace-action-button workspace-action-button-primary">
                                         Publish Message
                                     </button>
                                 </div>
@@ -2028,6 +2041,9 @@ function App() {
                                         <div className="browser-control-section-header">
                                             <p className="workspace-kicker mb-1">browse</p>
                                             <h3 className="browser-control-title mb-0">Sort & Paging</h3>
+                                            <p className="browser-control-copy mb-0">
+                                                Page and size control how many matching messages are loaded into the results below.
+                                            </p>
                                         </div>
                                         <div className="row g-3 align-items-end">
                                             <div className="col-md-2">
@@ -2112,130 +2128,145 @@ function App() {
 
                                     <section className="form-section-block browser-control-section">
                                         <div className="browser-control-section-header">
-                                            <p className="workspace-kicker mb-1">views</p>
-                                            <h3 className="browser-control-title mb-0">Saved & Built-In Views</h3>
+                                            <p className="workspace-kicker mb-1">searches</p>
+                                            <h3 className="browser-control-title mb-0">Use a Saved Search</h3>
                                         </div>
-                                        <div className="saved-view-controls browser-button-row align-items-end">
-                                            <div className="saved-view-field">
-                                                <label htmlFor="builtInBrowserViews" className="form-label">
-                                                    Built-In Views
-                                                </label>
-                                                <select
-                                                    id="builtInBrowserViews"
-                                                    className="form-select"
-                                                    value={selectedBuiltInViewKey}
-                                                    onChange={(e) => setSelectedBuiltInViewKey(e.target.value)}
-                                                    disabled={isLoadingMessages || isBulkRetrying}
-                                                >
-                                                    <option value="">select a built-in view</option>
-                                                    {builtInBrowserViews.map((view) => (
-                                                        <option key={view.key} value={view.key}>
-                                                            {view.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                        <div className="saved-search-grid">
+                                            <div className="saved-search-group">
+                                                <h4 className="saved-search-group-title">Built-In Searches</h4>
+                                                <div className="browser-button-row align-items-end">
+                                                    <div className="saved-view-field">
+                                                        <label htmlFor="builtInBrowserViews" className="form-label">
+                                                            Built-In Searches
+                                                        </label>
+                                                        <select
+                                                            id="builtInBrowserViews"
+                                                            className="form-select"
+                                                            value={selectedBuiltInViewKey}
+                                                            onChange={(e) => setSelectedBuiltInViewKey(e.target.value)}
+                                                            disabled={isLoadingMessages || isBulkRetrying}
+                                                        >
+                                                            <option value="">select a built-in search</option>
+                                                            {builtInBrowserViews.map((view) => (
+                                                                <option key={view.key} value={view.key}>
+                                                                    {view.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-outline-secondary"
+                                                        onClick={applyBuiltInView}
+                                                        disabled={isLoadingMessages || isBulkRetrying}
+                                                    >
+                                                        Apply Search
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-secondary"
-                                                onClick={applyBuiltInView}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Apply Built-In View
-                                            </button>
-                                            <div className="saved-view-field">
-                                                <label htmlFor="savedViewName" className="form-label">
-                                                    Saved View Name
-                                                </label>
-                                                <input
-                                                    id="savedViewName"
-                                                    type="text"
-                                                    className="form-control"
-                                                    value={savedViewName}
-                                                    onChange={(e) => setSavedViewName(e.target.value)}
-                                                    placeholder="e.g. failed today"
-                                                />
+                                            <div className="saved-search-group">
+                                                <h4 className="saved-search-group-title">Saved Searches</h4>
+                                                <div className="browser-button-row align-items-end">
+                                                    <div className="saved-view-field">
+                                                        <label htmlFor="savedViews" className="form-label">
+                                                            Saved Searches
+                                                        </label>
+                                                        <select
+                                                            id="savedViews"
+                                                            className="form-select"
+                                                            value={selectedSavedViewName}
+                                                            onChange={(e) => setSelectedSavedViewName(e.target.value)}
+                                                            disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
+                                                        >
+                                                            <option value="">select a saved search</option>
+                                                            {savedViews.map((view) => (
+                                                                <option key={view.name} value={view.name}>
+                                                                    {view.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-outline-primary"
+                                                        onClick={loadSavedView}
+                                                        disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
+                                                    >
+                                                        Load Search
+                                                    </button>
+                                                    <div className="saved-view-field">
+                                                        <label htmlFor="savedViewName" className="form-label">
+                                                            Saved Search Name
+                                                        </label>
+                                                        <input
+                                                            id="savedViewName"
+                                                            type="text"
+                                                            className="form-control"
+                                                            value={savedViewName}
+                                                            onChange={(e) => setSavedViewName(e.target.value)}
+                                                            placeholder="e.g. failed today"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-outline-success"
+                                                        onClick={saveCurrentView}
+                                                        disabled={isLoadingMessages || isBulkRetrying}
+                                                    >
+                                                        Save Current Search
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-success"
-                                                onClick={saveCurrentView}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Save Current View
-                                            </button>
-                                            <div className="saved-view-field">
-                                                <label htmlFor="savedViews" className="form-label">
-                                                    Saved Views
-                                                </label>
-                                                <select
-                                                    id="savedViews"
-                                                    className="form-select"
-                                                    value={selectedSavedViewName}
-                                                    onChange={(e) => setSelectedSavedViewName(e.target.value)}
-                                                    disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
-                                                >
-                                                    <option value="">select a saved view</option>
-                                                    {savedViews.map((view) => (
-                                                        <option key={view.name} value={view.name}>
-                                                            {view.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                            <div className="saved-search-group">
+                                                <h4 className="saved-search-group-title">Manage Saved Searches</h4>
+                                                <div className="browser-button-row">
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-outline-warning"
+                                                        onClick={renameSavedView}
+                                                        disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
+                                                    >
+                                                        Rename
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-outline-dark"
+                                                        onClick={deleteSavedView}
+                                                        disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-outline-info"
+                                                        onClick={exportSavedViews}
+                                                        disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
+                                                    >
+                                                        Export
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-outline-secondary"
+                                                        onClick={openSavedViewsImport}
+                                                        disabled={isLoadingMessages || isBulkRetrying}
+                                                    >
+                                                        Import
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-primary"
-                                                onClick={loadSavedView}
-                                                disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Load Saved View
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-warning"
-                                                onClick={renameSavedView}
-                                                disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Rename Saved View
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-dark"
-                                                onClick={deleteSavedView}
-                                                disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Delete Saved View
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-info"
-                                                onClick={exportSavedViews}
-                                                disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Export Saved Views
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-secondary"
-                                                onClick={openSavedViewsImport}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Import Saved Views
-                                            </button>
                                             <input
                                                 ref={savedViewsImportInputRef}
                                                 type="file"
                                                 accept="application/json"
                                                 className="d-none"
                                                 onChange={importSavedViews}
-                                                aria-label="Import Saved Views File"
+                                                aria-label="Import Saved Searches File"
                                             />
                                         </div>
                                         {savedViewActionHistory.length > 0 && (
                                             <div className="saved-view-history w-100">
                                                 <div className="saved-view-history-header">
-                                                    <p className="saved-view-history-title mb-0">Recent Saved View Actions</p>
+                                                    <p className="saved-view-history-title mb-0">Recent Saved Search Actions</p>
                                                     <button
                                                         type="button"
                                                         className="btn btn-sm btn-outline-secondary"
@@ -2268,7 +2299,10 @@ function App() {
                                     <section className="form-section-block browser-control-section">
                                         <div className="browser-control-section-header">
                                             <p className="workspace-kicker mb-1">shortcuts</p>
-                                            <h3 className="browser-control-title mb-0">Common Views</h3>
+                                            <h3 className="browser-control-title mb-0">Common Searches</h3>
+                                            <p className="browser-control-copy mb-0">
+                                                Use these shortcuts to apply frequent filters and load matching messages quickly.
+                                            </p>
                                         </div>
                                         <div className="browser-button-row">
                                             {messagesResponse && messagesResponse.items.some((message) => message.publishStatus === "FAILED" && message.retrySupported) && (
@@ -2319,7 +2353,10 @@ function App() {
                                     <section className="form-section-block browser-control-section">
                                         <div className="browser-control-section-header">
                                             <p className="workspace-kicker mb-1">results</p>
-                                            <h3 className="browser-control-title mb-0">Load & Utilities</h3>
+                                            <h3 className="browser-control-title mb-0">Load Results</h3>
+                                            <p className="browser-control-copy mb-0">
+                                                Load Messages fetches one visible page from the full set matching the current filters.
+                                            </p>
                                         </div>
                                         <div className="browser-button-row">
                                             <button type="submit" className="btn btn-secondary" disabled={isLoadingMessages || isBulkRetrying}>
@@ -2356,31 +2393,18 @@ function App() {
                                         <div className="browser-control-section-header">
                                             <p className="workspace-kicker mb-1">export</p>
                                             <h3 className="browser-control-title mb-0">Download Results</h3>
+                                            <p className="browser-control-copy mb-0">
+                                                Visible Page exports only the messages loaded below. All Matches exports every message matching the current filters.
+                                            </p>
                                         </div>
                                         <div className="browser-button-row">
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-info"
-                                                onClick={exportFilteredResults}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Export Filtered Results JSON
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-info"
-                                                onClick={exportFilteredResultsCsv}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Export Filtered Results CSV
-                                            </button>
                                             <button
                                                 type="button"
                                                 className="btn btn-outline-info"
                                                 onClick={exportCurrentPage}
                                                 disabled={!messagesResponse || isLoadingMessages || isBulkRetrying}
                                             >
-                                                Export Current Page JSON
+                                                Export Visible Page JSON
                                             </button>
                                             <button
                                                 type="button"
@@ -2388,14 +2412,39 @@ function App() {
                                                 onClick={exportCurrentPageCsv}
                                                 disabled={!messagesResponse || isLoadingMessages || isBulkRetrying}
                                             >
-                                                Export Current Page CSV
+                                                Export Visible Page CSV
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-info"
+                                                onClick={exportFilteredResults}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Export All Matches JSON
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline-info"
+                                                onClick={exportFilteredResultsCsv}
+                                                disabled={isLoadingMessages || isBulkRetrying}
+                                            >
+                                                Export All Matches CSV
                                             </button>
                                         </div>
-                                        <p className="browser-export-note mb-0 mt-3">
-                                        Current-page export uses the messages already loaded below. Filtered-result export downloads the full
-                                        matching result set from the backend. JSON preserves the response structure, while CSV flattens fields for
-                                        spreadsheet use.
-                                        </p>
+                                        <ul className="browser-export-note mb-0 mt-3">
+                                            <li>
+                                                <strong>Export Visible Page JSON:</strong> exports only the messages currently loaded below, in JSON format.
+                                            </li>
+                                            <li>
+                                                <strong>Export Visible Page CSV:</strong> exports only the messages currently loaded below, in CSV format.
+                                            </li>
+                                            <li>
+                                                <strong>Export All Matches JSON:</strong> gets every message matching the current filters, across all pages, then exports them in JSON format.
+                                            </li>
+                                            <li>
+                                                <strong>Export All Matches CSV:</strong> gets every message matching the current filters, across all pages, then exports them in CSV format.
+                                            </li>
+                                        </ul>
                                     </section>
                                 </div>
                             </form>
@@ -2410,7 +2459,7 @@ function App() {
                             {!isLoadingMessages && !hasLoadedMessages && (
                                 <div className="mt-4 browser-feedback-card">
                                     <strong>No results loaded yet.</strong>
-                                    <span>Use the browser controls above, then select `Load Messages` to fetch stored messages.</span>
+                                    <span>Choose filters and page size above, then select Load Messages to fetch the first visible page.</span>
                                 </div>
                             )}
 
@@ -2419,15 +2468,18 @@ function App() {
                                     <div className="browser-summary mb-3">
                                         <div>
                                             <strong>
-                                                Page {messagesResponse.page + 1} of {messagesResponse.totalPages || 1}
+                                                Showing {visibleMessageCount === 0 ? "0" : `${visibleStartIndex}-${visibleEndIndex}`} of{" "}
+                                                {matchingMessageCount} matching messages
                                             </strong>
                                         </div>
                                         <span>
-                                            {messagesResponse.totalElements} stored messages total, page size {messagesResponse.size}
+                                            Visible page {messagesResponse.page + 1} of {messagesResponse.totalPages || 1}, page size{" "}
+                                            {messagesResponse.size}
                                         </span>
                                     </div>
                                     <p className="browser-summary-caption mb-2">
-                                        Filtered totals cover the full matching result set. Page counts cover only the messages shown below.
+                                        Matching messages are the full backend result set for the current filters. The visible page is only the
+                                        subset loaded below.
                                     </p>
                                     <p className="browser-summary-caption browser-summary-caption-secondary mb-2">
                                         Retryable failed messages can be retried under the current server-side policy. Non-retryable failed messages are blocked by that policy.

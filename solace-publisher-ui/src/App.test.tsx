@@ -60,7 +60,7 @@ test('it shows the write workspace by default', async () => {
     expect(screen.getByLabelText(/Published At From/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Published At To/i)).toBeInTheDocument();
     expect(screen.getByText(/No results loaded yet\./i)).toBeInTheDocument();
-    expect(screen.getByText(/Current-page export uses the messages already loaded below\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Visible Page exports only the messages loaded below\./i)).toBeInTheDocument();
 });
 
 test("it switches the active workspace tab", async () => {
@@ -718,12 +718,12 @@ describe("Stored Messages Browser", () => {
         await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
         await userEvent.clear(screen.getByLabelText(/^Size$/i));
         await userEvent.type(screen.getByLabelText(/^Size$/i), "15");
-        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
+        await userEvent.type(screen.getByLabelText(/Saved Search Name/i), "Failed Priority View");
 
-        await userEvent.click(screen.getByRole("button", {name: /save current view/i}));
+        await userEvent.click(screen.getByRole("button", {name: /save current search/i}));
 
         expect(await screen.findByText(/Saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("Failed Priority View");
+        expect(screen.getByLabelText(/^Saved Searches$/i)).toHaveValue("Failed Priority View");
 
         expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
             {
@@ -775,8 +775,8 @@ describe("Stored Messages Browser", () => {
         await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-09");
-        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
-        await userEvent.click(screen.getByRole("button", {name: /^save current view$/i}));
+        await userEvent.type(screen.getByLabelText(/Saved Search Name/i), "Failed Priority View");
+        await userEvent.click(screen.getByRole("button", {name: /^save current search$/i}));
 
         expect(confirmMock).toHaveBeenCalledWith('A saved browser view named "Failed Priority View" already exists. Overwrite it?');
         expect(await screen.findByText(/Saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
@@ -819,8 +819,8 @@ describe("Stored Messages Browser", () => {
         await renderReadWorkspace();
 
         await userEvent.type(screen.getByLabelText(/Filter Destination/i), "system-09");
-        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
-        await userEvent.click(screen.getByRole("button", {name: /^save current view$/i}));
+        await userEvent.type(screen.getByLabelText(/Saved Search Name/i), "Failed Priority View");
+        await userEvent.click(screen.getByRole("button", {name: /^save current search$/i}));
 
         expect(confirmMock).toHaveBeenCalledWith('A saved browser view named "Failed Priority View" already exists. Overwrite it?');
         expect(await screen.findByText(/Kept the existing saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
@@ -849,26 +849,26 @@ describe("Stored Messages Browser", () => {
     test("Shows recent saved view action history for save rename and delete", async () => {
         await renderReadWorkspace();
 
-        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Failed Priority View");
-        await userEvent.click(screen.getByRole("button", {name: /save current view/i}));
-        expect(await screen.findByText(/Recent Saved View Actions/i)).toBeInTheDocument();
+        await userEvent.type(screen.getByLabelText(/Saved Search Name/i), "Failed Priority View");
+        await userEvent.click(screen.getByRole("button", {name: /save current search/i}));
+        expect(await screen.findByText(/Recent Saved Search Actions/i)).toBeInTheDocument();
         expect(screen.getByText(/Keeps the 5 most recent actions\./i)).toBeInTheDocument();
         expect(screen.getByText('Saved "Failed Priority View"')).toBeInTheDocument();
 
-        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
-        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Renamed Failed View");
-        await userEvent.click(screen.getByRole("button", {name: /rename saved view/i}));
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Searches$/i), "Failed Priority View");
+        await userEvent.type(screen.getByLabelText(/Saved Search Name/i), "Renamed Failed View");
+        await userEvent.click(screen.getByRole("button", {name: /rename/i}));
         expect(await screen.findByText('Renamed "Failed Priority View" to "Renamed Failed View"')).toBeInTheDocument();
 
-        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Renamed Failed View");
-        await userEvent.click(screen.getByRole("button", {name: /delete saved view/i}));
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Searches$/i), "Renamed Failed View");
+        await userEvent.click(screen.getByRole("button", {name: /delete/i}));
         expect(await screen.findByText('Deleted "Renamed Failed View"')).toBeInTheDocument();
     });
 
     test("Shows built-in browser views separately from local saved views", async () => {
         await renderReadWorkspace();
 
-        const builtInViews = screen.getByLabelText(/^Built-In Views$/i);
+        const builtInViews = screen.getByLabelText(/^Built-In Searches$/i);
         expect(within(builtInViews).getByRole("option", {name: "failed today"})).toBeInTheDocument();
         expect(within(builtInViews).getByRole("option", {name: "stale pending only"})).toBeInTheDocument();
         expect(within(builtInViews).getByRole("option", {name: "published today"})).toBeInTheDocument();
@@ -891,8 +891,8 @@ describe("Stored Messages Browser", () => {
 
         await renderReadWorkspace();
 
-        await userEvent.selectOptions(screen.getByLabelText(/^Built-In Views$/i), "STALE_PENDING_ONLY");
-        await userEvent.click(screen.getByRole("button", {name: /apply built-in view/i}));
+        await userEvent.selectOptions(screen.getByLabelText(/^Built-In Searches$/i), "STALE_PENDING_ONLY");
+        await userEvent.click(screen.getByRole("button", {name: /apply search/i}));
 
         expect(screen.getByLabelText(/Filter Publish Status/i)).toHaveValue("PENDING");
         expect(screen.getByLabelText(/only stale pending/i)).toBeChecked();
@@ -956,8 +956,8 @@ describe("Stored Messages Browser", () => {
 
         await renderReadWorkspace();
 
-        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Stale Pending Review");
-        await userEvent.click(screen.getByRole("button", {name: /load saved view/i}));
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Searches$/i), "Stale Pending Review");
+        await userEvent.click(screen.getByRole("button", {name: /load search/i}));
 
         expect(screen.getByLabelText(/Filter Destination/i)).toHaveValue("system-03");
         expect(screen.getByLabelText(/Filter Delivery Mode/i)).toHaveValue("PERSISTENT");
@@ -1021,12 +1021,12 @@ describe("Stored Messages Browser", () => {
 
         await renderReadWorkspace();
 
-        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
-        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Renamed Failed View");
-        await userEvent.click(screen.getByRole("button", {name: /rename saved view/i}));
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Searches$/i), "Failed Priority View");
+        await userEvent.type(screen.getByLabelText(/Saved Search Name/i), "Renamed Failed View");
+        await userEvent.click(screen.getByRole("button", {name: /rename/i}));
 
         expect(await screen.findByText(/Renamed saved browser view "Failed Priority View" to "Renamed Failed View"\./i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("Renamed Failed View");
+        expect(screen.getByLabelText(/^Saved Searches$/i)).toHaveValue("Renamed Failed View");
         expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
             {
                 name: "Renamed Failed View",
@@ -1094,9 +1094,9 @@ describe("Stored Messages Browser", () => {
 
         await renderReadWorkspace();
 
-        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
-        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Published Review");
-        await userEvent.click(screen.getByRole("button", {name: /rename saved view/i}));
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Searches$/i), "Failed Priority View");
+        await userEvent.type(screen.getByLabelText(/Saved Search Name/i), "Published Review");
+        await userEvent.click(screen.getByRole("button", {name: /rename/i}));
 
         expect(confirmMock).toHaveBeenCalledWith('A saved browser view named "Published Review" already exists. Overwrite it?');
         expect(await screen.findByText(/Renamed saved browser view "Failed Priority View" to "Published Review"\./i)).toBeInTheDocument();
@@ -1168,9 +1168,9 @@ describe("Stored Messages Browser", () => {
 
         await renderReadWorkspace();
 
-        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
-        await userEvent.type(screen.getByLabelText(/Saved View Name/i), "Published Review");
-        await userEvent.click(screen.getByRole("button", {name: /rename saved view/i}));
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Searches$/i), "Failed Priority View");
+        await userEvent.type(screen.getByLabelText(/Saved Search Name/i), "Published Review");
+        await userEvent.click(screen.getByRole("button", {name: /rename/i}));
 
         expect(confirmMock).toHaveBeenCalledWith('A saved browser view named "Published Review" already exists. Overwrite it?');
         expect(await screen.findByText(/Kept the existing saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
@@ -1241,8 +1241,8 @@ describe("Stored Messages Browser", () => {
 
         await renderReadWorkspace();
 
-        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
-        await userEvent.click(screen.getByRole("button", {name: /rename saved view/i}));
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Searches$/i), "Failed Priority View");
+        await userEvent.click(screen.getByRole("button", {name: /rename/i}));
 
         expect(await screen.findByText(/Saved view name is required\./i)).toBeInTheDocument();
     });
@@ -1274,11 +1274,11 @@ describe("Stored Messages Browser", () => {
 
         await renderReadWorkspace();
 
-        await userEvent.selectOptions(screen.getByLabelText(/^Saved Views$/i), "Failed Priority View");
-        await userEvent.click(screen.getByRole("button", {name: /delete saved view/i}));
+        await userEvent.selectOptions(screen.getByLabelText(/^Saved Searches$/i), "Failed Priority View");
+        await userEvent.click(screen.getByRole("button", {name: /delete/i}));
 
         expect(await screen.findByText(/Deleted saved browser view "Failed Priority View"\./i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("");
+        expect(screen.getByLabelText(/^Saved Searches$/i)).toHaveValue("");
         expect(screen.queryByRole("option", {name: "Failed Priority View"})).not.toBeInTheDocument();
         expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([]);
     });
@@ -1310,7 +1310,7 @@ describe("Stored Messages Browser", () => {
 
         await renderReadWorkspace();
 
-        await userEvent.click(screen.getByRole("button", {name: /export saved views/i}));
+        await userEvent.click(screen.getByRole("button", {name: /^export$/i}));
 
         expect(createObjectUrlMock).toHaveBeenCalledTimes(1);
         const exportedBlob = createObjectUrlMock.mock.calls[0]?.[0] as MockBlob;
@@ -1420,14 +1420,14 @@ describe("Stored Messages Browser", () => {
             {type: "application/json"}
         );
 
-        await userEvent.upload(screen.getByLabelText(/Import Saved Views File/i), importFile);
+        await userEvent.upload(screen.getByLabelText(/Import Saved Searches File/i), importFile);
 
         const alert = await screen.findByRole("alert");
         expect(alert).toHaveTextContent("Imported 2 saved browser views. Added 1. Updated 1. Skipped 1 invalid entry. (status: 207)");
         expect(alert).toHaveTextContent("Added: Failed Direct Review");
         expect(alert).toHaveTextContent("Updated: Published Today Review");
         expect(alert).toHaveTextContent("Skipped: entry 3");
-        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("Failed Direct Review");
+        expect(screen.getByLabelText(/^Saved Searches$/i)).toHaveValue("Failed Direct Review");
         expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([
             {
                 name: "Failed Direct Review",
@@ -1501,12 +1501,12 @@ describe("Stored Messages Browser", () => {
             {type: "application/json"}
         );
 
-        await userEvent.upload(screen.getByLabelText(/Import Saved Views File/i), importFile);
+        await userEvent.upload(screen.getByLabelText(/Import Saved Searches File/i), importFile);
 
         const alert = await screen.findByRole("alert");
         expect(alert).toHaveTextContent("Imported 0 saved browser views. Skipped 2 invalid entries. (status: 400)");
         expect(alert).toHaveTextContent("Skipped: entry 1, Missing Query");
-        expect(screen.getByLabelText(/^Saved Views$/i)).toHaveValue("");
+        expect(screen.getByLabelText(/^Saved Searches$/i)).toHaveValue("");
         expect(JSON.parse(window.localStorage.getItem("solace.publisher-ui.saved-browser-views") ?? "[]")).toEqual([]);
     });
 
@@ -1558,9 +1558,9 @@ describe("Stored Messages Browser", () => {
             {type: "application/json"}
         );
 
-        await userEvent.upload(screen.getByLabelText(/Import Saved Views File/i), importFile);
+        await userEvent.upload(screen.getByLabelText(/Import Saved Searches File/i), importFile);
 
-        expect(await screen.findByText(/Recent Saved View Actions/i)).toBeInTheDocument();
+        expect(await screen.findByText(/Recent Saved Search Actions/i)).toBeInTheDocument();
         expect(screen.getByText("Imported 2 views")).toBeInTheDocument();
     });
 
@@ -1581,7 +1581,7 @@ describe("Stored Messages Browser", () => {
 
         await renderReadWorkspace();
 
-        expect(screen.getByText(/Recent Saved View Actions/i)).toBeInTheDocument();
+        expect(screen.getByText(/Recent Saved Search Actions/i)).toBeInTheDocument();
         expect(screen.getByText("2 minutes ago")).toBeInTheDocument();
 
         act(() => {
@@ -1608,12 +1608,12 @@ describe("Stored Messages Browser", () => {
 
         await renderReadWorkspace();
 
-        expect(screen.getByText(/Recent Saved View Actions/i)).toBeInTheDocument();
+        expect(screen.getByText(/Recent Saved Search Actions/i)).toBeInTheDocument();
         expect(screen.getByText('Saved "Failed Priority View"')).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole("button", {name: /clear history/i}));
 
-        expect(await screen.findByRole("alert")).toHaveTextContent("Cleared recent saved view actions.");
+        expect(await screen.findByRole("alert")).toHaveTextContent("Cleared recent saved search actions.");
         expect(screen.queryByRole("button", {name: /clear history/i})).not.toBeInTheDocument();
         expect(screen.queryByText('Saved "Failed Priority View"')).not.toBeInTheDocument();
         expect(window.localStorage.getItem("solace.publisher-ui.saved-view-action-history")).toBeNull();
@@ -1893,7 +1893,7 @@ describe("Stored Messages Browser", () => {
 
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
-        expect(screen.getByText(/filtered totals cover the full matching result set/i)).toBeInTheDocument();
+        expect(screen.getByText(/matching messages are the full backend result set/i)).toBeInTheDocument();
         expect(screen.getByText(/retryable failed messages can be retried under the current server-side policy/i)).toBeInTheDocument();
 
         const aggregateSummary = screen.getByTestId("browser-lifecycle-summary-aggregate");
@@ -2073,7 +2073,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
 
-        await userEvent.click(screen.getByRole("button", {name: /export current page json/i}));
+        await userEvent.click(screen.getByRole("button", {name: /export visible page json/i}));
 
         expect(createObjectUrlMock).toHaveBeenCalledTimes(1);
         const exportBlob = createObjectUrlMock.mock.calls[0][0] as MockBlob;
@@ -2127,7 +2127,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.click(screen.getByRole("button", {name: /load messages/i}));
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
 
-        await userEvent.click(screen.getByRole("button", {name: /export current page csv/i}));
+        await userEvent.click(screen.getByRole("button", {name: /export visible page csv/i}));
 
         const exportBlob = createObjectUrlMock.mock.calls[0][0] as MockBlob;
         expect(exportBlob.type).toBe("text/csv;charset=utf-8");
@@ -2200,7 +2200,7 @@ describe("Stored Messages Browser", () => {
         await userEvent.type(screen.getByLabelText(/Published At To/i), "2026-04-21T08:15");
         await userEvent.selectOptions(screen.getByLabelText(/Sort By/i), "priority");
         await userEvent.selectOptions(screen.getByLabelText(/Sort Direction/i), "asc");
-        await userEvent.click(screen.getByRole("button", {name: /export filtered results json/i}));
+        await userEvent.click(screen.getByRole("button", {name: /export all matches json/i}));
 
         expect(mockedAxios.get).toHaveBeenCalledWith(
             "http://localhost:8081/api/v1/messages/export",
@@ -2282,7 +2282,7 @@ describe("Stored Messages Browser", () => {
         await renderReadWorkspace();
 
         await userEvent.selectOptions(screen.getByLabelText(/Filter Publish Status/i), "FAILED");
-        await userEvent.click(screen.getByRole("button", {name: /export filtered results csv/i}));
+        await userEvent.click(screen.getByRole("button", {name: /export all matches csv/i}));
 
         expect(mockedAxios.get).toHaveBeenCalledWith(
             "http://localhost:8081/api/v1/messages/export",
