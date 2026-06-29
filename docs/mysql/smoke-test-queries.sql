@@ -2,14 +2,19 @@
 SHOW DATABASES;
 USE solace;
 SHOW TABLES;
-DESCRIBE Message;
-DESCRIBE Payload;
-DESCRIBE Property;
+DESCRIBE message;
+DESCRIBE payload;
+DESCRIBE property;
+
+-- Delete all rows from the table:
+-- DELETE FROM property;
+-- DELETE FROM payload;
+-- DELETE FROM message;
 
 -- Quick table checks:
-SELECT * FROM Message;
-SELECT * FROM Payload;
-SELECT * FROM Property;
+SELECT * FROM message;
+SELECT * FROM payload;
+SELECT * FROM property;
 
 -- View the latest stored publish attempts:
 SELECT
@@ -25,7 +30,7 @@ SELECT
     retry_blocked_reason,
     created_at,
     updated_at
-FROM Message
+FROM message
 ORDER BY id DESC;
 
 -- View message payloads:
@@ -36,7 +41,7 @@ SELECT
     message_id,
     created_at,
     updated_at
-FROM Payload
+FROM payload
 ORDER BY id DESC;
 
 -- View message properties:
@@ -47,7 +52,7 @@ SELECT
     message_id,
     created_at,
     updated_at
-FROM Property
+FROM property
 ORDER BY id DESC;
 
 -- View messages with their payloads:
@@ -61,6 +66,6 @@ SELECT
     p.content AS payload_content,
     m.created_at,
     m.updated_at
-FROM Message m
-         JOIN Payload p ON p.message_id = m.id
+FROM message m
+         JOIN payload p ON p.message_id = m.id
 ORDER BY m.id DESC;
