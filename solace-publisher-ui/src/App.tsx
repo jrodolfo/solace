@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import {useState} from "react";
 import axios, {AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig} from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
@@ -6,7 +6,7 @@ import ShowOutput from "./ShowOutput.tsx";
 import type {SolaceBrokerAPIError} from "./SolaceBrokerAPIError.ts";
 import type {MessagePayloadValidationErrorMap} from "./SolaceBrokerAPIError.ts";
 import type {SolaceBrokerAPIResponse} from "./SolaceBrokerAPIResponse.ts";
-import type {BulkRetryResponse, BulkRetryResultItem, DeliveryMode, FilteredMessagesExportResponse, PagedStoredMessagesResponse, PayloadType, StoredMessage} from "./StoredMessageTypes.ts";
+import type {DeliveryMode, PagedStoredMessagesResponse, PayloadType} from "./StoredMessageTypes.ts";
 
 /**
  * Represents a row in the message properties form.
@@ -17,24 +17,6 @@ type MessagePropertyFormRow = {
     /** The property value. */
     value: string;
 };
-
-/**
- * Predefined browser view presets.
- */
-type BrowserPreset =
-    | "FAILED_TODAY"
-    | "PUBLISHED_TODAY"
-    | "PENDING_NOW"
-    | "FAILED_LAST_24H";
-
-/**
- * Keys for built-in browser views.
- */
-type BuiltInBrowserViewKey =
-    | "FAILED_TODAY"
-    | "STALE_PENDING_ONLY"
-    | "PUBLISHED_TODAY"
-    | "PENDING_NOW";
 
 const DEFAULT_BROWSER_SORT_BY = "createdAt";
 const DEFAULT_BROWSER_SORT_DIRECTION = "desc";
@@ -50,9 +32,6 @@ const DEFAULT_BROWSER_CREATED_AT_TO = "";
 const DEFAULT_BROWSER_PUBLISHED_AT_FROM = "";
 const DEFAULT_BROWSER_PUBLISHED_AT_TO = "";
 const DEFAULT_BROWSER_STALE_PENDING_ONLY = false;
-const SAVED_BROWSER_VIEWS_STORAGE_KEY = "solace.publisher-ui.saved-browser-views";
-const SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY = "solace.publisher-ui.saved-view-action-history";
-const MAX_SAVED_VIEW_ACTION_HISTORY = 5;
 const MAX_MESSAGE_PRIORITY = 255;
 const DELIVERY_MODE_OPTIONS: DeliveryMode[] = ["DIRECT", "NON_PERSISTENT", "PERSISTENT"];
 const PAYLOAD_TYPE_OPTIONS: PayloadType[] = ["TEXT", "BINARY", "JSON", "XML"];
@@ -64,8 +43,7 @@ const isAllowedPayloadType = (value: unknown): value is PayloadType =>
     typeof value === "string" && PAYLOAD_TYPE_OPTIONS.includes(value as PayloadType);
 
 /**
- * Query contract shared by the stored-message browser, saved views, export
- * actions, and generated query URLs.
+ * Query contract shared by the stored-message browser controls.
  */
 type BrowserQueryState = {
     /** Page number to fetch. */
@@ -99,207 +77,9 @@ type BrowserQueryState = {
 };
 
 /**
- * A user-saved stored-message browser view persisted in localStorage.
- */
-type SavedBrowserView = {
-    /** The name given to the saved view. */
-    name: string;
-    /** The query state associated with the view. */
-    query: BrowserQueryState;
-};
-
-/**
- * A built-in system browser view.
- */
-type BuiltInBrowserView = {
-    /** The unique key for the built-in view. */
-    key: BuiltInBrowserViewKey;
-    /** The display name of the view. */
-    name: string;
-    /** The query state associated with the view. */
-    query: BrowserQueryState;
-};
-
-/**
  * Sections of the workspace.
  */
 type WorkspaceSection = "PUBLISH" | "BROWSER";
-
-/**
- * Details used to explain partial outcomes, such as saved-view import rows that
- * were added, updated, or skipped.
- */
-type BrowserFeedbackDetails = {
-    /** List of added items. */
-    added?: string[];
-    /** List of updated items. */
-    updated?: string[];
-    /** List of skipped items. */
-    skipped?: string[];
-};
-
-/**
- * Entry in the local-only audit trail of saved-view actions.
- */
-type SavedViewActionHistoryEntry = {
-    /** Unique identifier for the history entry. */
-    id: string;
-    /** The action performed. */
-    action: "saved" | "renamed" | "deleted" | "imported";
-    /** The label or name of the affected view. */
-    label: string;
-    /** ISO timestamp when the action occurred. */
-    timestamp: string;
-};
-
-/**
- * Sorts an array of saved browser views by name alphabetically.
- * 
- * @param savedViews - The array of saved views to sort.
- * @returns A new array of sorted saved views.
- */
-const sortSavedViews = (savedViews: SavedBrowserView[]) =>
-    [...savedViews].sort((left, right) => left.name.localeCompare(right.name));
-
-/**
- * Loads saved browser views from localStorage during initial render.
- *
- * @returns The persisted saved views, sorted by name.
- */
-const loadSavedViewsFromStorage = (): SavedBrowserView[] => {
-    try {
-        const savedViewsJson = window.localStorage.getItem(SAVED_BROWSER_VIEWS_STORAGE_KEY);
-        if (!savedViewsJson) {
-            return [];
-        }
-
-        const parsedSavedViews = JSON.parse(savedViewsJson) as SavedBrowserView[];
-        if (!Array.isArray(parsedSavedViews)) {
-            return [];
-        }
-
-        return sortSavedViews(parsedSavedViews);
-    } catch (error) {
-        console.error("Failed to load saved browser views.", error);
-        return [];
-    }
-};
-
-/**
- * Loads the saved-view action history from localStorage during initial render.
- *
- * @returns The persisted action history entries.
- */
-const loadSavedViewActionHistoryFromStorage = (): SavedViewActionHistoryEntry[] => {
-    try {
-        const historyJson = window.localStorage.getItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY);
-        if (!historyJson) {
-            return [];
-        }
-
-        const parsedHistory = JSON.parse(historyJson) as SavedViewActionHistoryEntry[];
-        if (!Array.isArray(parsedHistory)) {
-            return [];
-        }
-
-        return parsedHistory;
-    } catch (error) {
-        console.error("Failed to load saved-view action history.", error);
-        return [];
-    }
-};
-
-/**
- * Normalizes a browser query state before writing it to localStorage.
- *
- * Empty optional fields are removed so exported saved-view JSON stays compact
- * and does not imply that an empty value has semantic meaning.
- * 
- * @param query - The query state to normalize.
- * @returns The normalized query state.
- */
-const normalizeBrowserQueryForPersistence = (query: BrowserQueryState): BrowserQueryState => {
-    const normalizedQuery: BrowserQueryState = {...query};
-    if (!normalizedQuery.payloadType) {
-        delete normalizedQuery.payloadType;
-    }
-    return normalizedQuery;
-};
-
-/**
- * Reads a File object as a text string.
- * 
- * @param file - The file to read.
- * @returns A promise that resolves to the file content as text.
- */
-const readFileAsText = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result ?? ""));
-        reader.onerror = () => reject(reader.error ?? new Error("Failed to read file."));
-        reader.readAsText(file);
-    });
-
-/**
- * Formats a saved view action history entry into a human-readable string.
- * 
- * @param entry - The history entry to format.
- * @returns A formatted string describing the action.
- */
-const formatSavedViewAction = (entry: SavedViewActionHistoryEntry) => {
-    if (entry.action === "saved") {
-        return `Saved "${entry.label}"`;
-    }
-    if (entry.action === "renamed") {
-        return `Renamed ${entry.label}`;
-    }
-    if (entry.action === "deleted") {
-        return `Deleted "${entry.label}"`;
-    }
-    return `Imported ${entry.label}`;
-};
-
-/**
- * Formats a timestamp into a relative time string (e.g., "5 minutes ago").
- * 
- * @param value - The ISO timestamp to format.
- * @returns A relative time string.
- */
-const formatSavedViewActionTimestamp = (value: string) => {
-    const timestamp = new Date(value).getTime();
-    const diffMs = Date.now() - timestamp;
-
-    if (diffMs < 60_000) {
-        return "just now";
-    }
-
-    const diffMinutes = Math.floor(diffMs / 60_000);
-    if (diffMinutes < 60) {
-        return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
-    }
-
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) {
-        return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-    }
-
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
-};
-
-/**
- * Formats a timestamp into an absolute, human-readable date and time string.
- * 
- * @param value - The ISO timestamp to format.
- * @returns An absolute time string.
- */
-const formatSavedViewActionAbsoluteTimestamp = (value: string) =>
-    new Intl.DateTimeFormat(undefined, {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit"
-    }).format(new Date(value));
 
 const brokerApiBaseUrl = (import.meta.env.VITE_BROKER_API_BASE_URL ?? "http://localhost:8081").replace(/\/+$/, "");
 
@@ -311,7 +91,6 @@ function App() {
     const apiUrl = `${brokerApiBaseUrl}/api/v1/messages/message`;
     const messagesBaseUrl = `${brokerApiBaseUrl}/api/v1/messages`;
     const messagesApiUrl = `${brokerApiBaseUrl}/api/v1/messages/all`;
-    const messagesExportApiUrl = `${brokerApiBaseUrl}/api/v1/messages/export`;
 
     // Broker credentials are kept only in React state for the current publish request.
     const [userName, setUserName] = useState("");
@@ -347,40 +126,17 @@ function App() {
     const [browserMessage, setBrowserMessage] = useState<string | null>(null);
     const [browserVariant, setBrowserVariant] = useState<"success" | "danger" | "info" | null>(null);
     const [browserStatusCode, setBrowserStatusCode] = useState<number | null>(null);
-    const [browserFeedbackDetails, setBrowserFeedbackDetails] = useState<BrowserFeedbackDetails | null>(null);
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [retryingMessageId, setRetryingMessageId] = useState<string | null>(null);
     const [reconcilingMessageId, setReconcilingMessageId] = useState<string | null>(null);
-    const [isBulkRetrying, setIsBulkRetrying] = useState(false);
     const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
     const [hasLoadedMessages, setHasLoadedMessages] = useState(false);
     const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
-    const [bulkRetryResults, setBulkRetryResults] = useState<BulkRetryResultItem[] | null>(null);
-    const [savedViewName, setSavedViewName] = useState("");
-    const [selectedBuiltInViewKey, setSelectedBuiltInViewKey] = useState("");
-    const [selectedSavedViewName, setSelectedSavedViewName] = useState("");
-    const [savedViews, setSavedViews] = useState<SavedBrowserView[]>(loadSavedViewsFromStorage);
-    const [savedViewActionHistory, setSavedViewActionHistory] = useState<SavedViewActionHistoryEntry[]>(loadSavedViewActionHistoryFromStorage);
-    const [savedViewHistoryClock, setSavedViewHistoryClock] = useState(0);
     const [activeWorkspaceSection, setActiveWorkspaceSection] = useState<WorkspaceSection>("PUBLISH");
-    const savedViewsImportInputRef = useRef<HTMLInputElement | null>(null);
-    const latestSavedViewActionId = savedViewActionHistory[0]?.id ?? "";
-
-    useEffect(() => {
-        if (savedViewActionHistory.length === 0) {
-            return;
-        }
-
-        const intervalId = window.setInterval(() => {
-            setSavedViewHistoryClock((currentValue) => currentValue + 1);
-        }, 30_000);
-
-        return () => window.clearInterval(intervalId);
-    }, [latestSavedViewActionId, savedViewActionHistory.length]);
 
     /**
      * Builds a complete browser query from current control state plus optional
-     * overrides used by pagination, presets, saved views, and quick filters.
+     * overrides used by pagination and quick filters.
      */
     const currentBrowserQuery = (overrides?: Partial<BrowserQueryState>): BrowserQueryState => ({
         page: overrides?.page ?? Number(browserPage),
@@ -398,77 +154,6 @@ function App() {
         sortBy: overrides?.sortBy ?? browserSortBy,
         sortDirection: overrides?.sortDirection ?? browserSortDirection
     });
-
-    const builtInBrowserViews = getBuiltInBrowserViews();
-
-    /**
-     * Persists saved browser views as the browser-owned source of truth.
-     *
-     * The backend intentionally does not store saved views; only message
-     * lifecycle data belongs server-side.
-     * 
-     * @param nextSavedViews - The array of saved views to persist.
-     */
-    const persistSavedViews = (nextSavedViews: SavedBrowserView[]) => {
-        const sortedSavedViews = sortSavedViews(nextSavedViews);
-        setSavedViews(sortedSavedViews);
-        window.localStorage.setItem(SAVED_BROWSER_VIEWS_STORAGE_KEY, JSON.stringify(sortedSavedViews));
-        return sortedSavedViews;
-    };
-
-    /**
-     * Records an action performed on a saved view in the action history.
-     * 
-     * @param action - The type of action performed.
-     * @param label - The label or name of the affected view.
-     */
-    const recordSavedViewAction = (action: SavedViewActionHistoryEntry["action"], label: string) => {
-        const nextHistory = [
-            {
-                id: `${action}-${label}-${Date.now()}`,
-                action,
-                label,
-                timestamp: new Date().toISOString(),
-            },
-            ...savedViewActionHistory,
-        ].slice(0, MAX_SAVED_VIEW_ACTION_HISTORY);
-
-        setSavedViewActionHistory(nextHistory);
-        window.localStorage.setItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
-    };
-
-    /**
-     * Clears the local saved-view action feed without changing saved views.
-     */
-    const clearSavedViewActionHistory = () => {
-        setSavedViewActionHistory([]);
-        window.localStorage.removeItem(SAVED_VIEW_ACTION_HISTORY_STORAGE_KEY);
-        setBrowserMessage("Cleared recent saved search actions.");
-        setBrowserVariant("info");
-        setBrowserStatusCode(null);
-        setBrowserFeedbackDetails(null);
-    };
-
-    /**
-     * Applies a query object back into the browser controls before fetching.
-     */
-    const applyBrowserQueryState = (query: BrowserQueryState) => {
-        setFilterDestination(query.destination);
-        setFilterDeliveryMode(query.deliveryMode);
-        setFilterPayloadType(query.payloadType ?? "");
-        setFilterInnerMessageId(query.innerMessageId);
-        setFilterPublishStatus(query.publishStatus);
-        setFilterStalePendingOnly(query.stalePendingOnly);
-        setFilterCreatedAtFrom(query.createdAtFrom);
-        setFilterCreatedAtTo(query.createdAtTo);
-        setFilterPublishedAtFrom(query.publishedAtFrom);
-        setFilterPublishedAtTo(query.publishedAtTo);
-        setBrowserSortBy(query.sortBy);
-        setBrowserSortDirection(query.sortDirection);
-        setBrowserPage(String(query.page));
-        setBrowserSize(String(query.size));
-        setExpandedMessageId(null);
-    };
 
     const updateProperty = (index: number, field: keyof MessagePropertyFormRow, value: string) => {
         setProperties((currentProperties) =>
@@ -511,7 +196,7 @@ function App() {
         }
 
         if (!Number.isInteger(nextSize) || nextSize < 1 || nextSize > 100) {
-            setBrowserMessage("Size must be between 1 and 100.");
+            setBrowserMessage("Messages per page must be between 1 and 100.");
             setBrowserVariant("danger");
             setBrowserStatusCode(400);
             return;
@@ -521,8 +206,6 @@ function App() {
         setBrowserMessage(null);
         setBrowserVariant(null);
         setBrowserStatusCode(null);
-        setBrowserFeedbackDetails(null);
-        setBulkRetryResults(null);
 
         try {
             const response = await axios.get<PagedStoredMessagesResponse>(messagesApiUrl, {
@@ -549,7 +232,7 @@ function App() {
             setBrowserSize(String(response.data.size));
             setExpandedMessageId(null);
             setHasLoadedMessages(true);
-            setBrowserMessage(`Loaded ${response.data.items.length} messages.`);
+            setBrowserMessage(formatLoadedMessages(response.data.items.length));
             setBrowserVariant("info");
             setBrowserStatusCode(response.status);
         } catch (error) {
@@ -572,7 +255,8 @@ function App() {
 
     const handleBrowseMessages = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        await fetchMessages();
+        setBrowserPage(DEFAULT_BROWSER_PAGE);
+        await fetchMessages({page: Number(DEFAULT_BROWSER_PAGE)});
     };
 
     const loadPreviousPage = async () => {
@@ -610,364 +294,17 @@ function App() {
         setBrowserMessage(null);
         setBrowserVariant(null);
         setBrowserStatusCode(null);
-        setBrowserFeedbackDetails(null);
         setMessagesResponse(null);
         setHasLoadedMessages(false);
-        setBulkRetryResults(null);
-        setSavedViewName("");
-        setSelectedBuiltInViewKey("");
-        setSelectedSavedViewName("");
     };
 
     const refreshBrowserResults = async () => {
         await fetchMessages();
     };
 
-    const saveCurrentView = () => {
-        const normalizedName = savedViewName.trim();
-        if (!normalizedName) {
-            setBrowserMessage("Saved view name is required.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(400);
-            return;
-        }
-
-        const savedView: SavedBrowserView = {
-            name: normalizedName,
-            query: normalizeBrowserQueryForPersistence(currentBrowserQuery({page: Number(DEFAULT_BROWSER_PAGE)})),
-        };
-
-        try {
-            const existingSavedView = savedViews.find((view) => view.name === normalizedName);
-            if (existingSavedView && !window.confirm(`A saved browser view named "${normalizedName}" already exists. Overwrite it?`)) {
-                setBrowserMessage(`Kept the existing saved browser view "${normalizedName}".`);
-                setBrowserVariant("info");
-                setBrowserStatusCode(null);
-                return;
-            }
-
-            const existingSavedViews = savedViews.filter((view) => view.name !== normalizedName);
-            persistSavedViews([...existingSavedViews, savedView]);
-            setSelectedSavedViewName(normalizedName);
-            setSavedViewName("");
-            recordSavedViewAction("saved", normalizedName);
-            setBrowserMessage(`Saved browser view "${normalizedName}".`);
-            setBrowserVariant("success");
-            setBrowserStatusCode(null);
-        } catch (error) {
-            console.error("Failed to save the browser view.", error);
-            setBrowserMessage("Failed to save the browser view.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(500);
-        }
-    };
-
-    const loadSavedView = async () => {
-        if (!selectedSavedViewName) {
-            setBrowserMessage("Select a saved browser view to load.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(400);
-            return;
-        }
-
-        const selectedSavedView = savedViews.find((view) => view.name === selectedSavedViewName);
-        if (!selectedSavedView) {
-            setBrowserMessage(`Saved browser view "${selectedSavedViewName}" was not found.`);
-            setBrowserVariant("danger");
-            setBrowserStatusCode(404);
-            return;
-        }
-
-        const queryToLoad = {...selectedSavedView.query, page: Number(DEFAULT_BROWSER_PAGE)};
-        applyBrowserQueryState(queryToLoad);
-        setSavedViewName("");
-        await fetchMessages(queryToLoad);
-    };
-
-    const deleteSavedView = () => {
-        if (!selectedSavedViewName) {
-            setBrowserMessage("Select a saved browser view to delete.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(400);
-            return;
-        }
-
-        try {
-            const nextSavedViews = savedViews.filter((view) => view.name !== selectedSavedViewName);
-            persistSavedViews(nextSavedViews);
-            recordSavedViewAction("deleted", selectedSavedViewName);
-            setBrowserMessage(`Deleted saved browser view "${selectedSavedViewName}".`);
-            setBrowserVariant("info");
-            setBrowserStatusCode(null);
-            setSelectedSavedViewName("");
-        } catch (error) {
-            console.error("Failed to delete the browser view.", error);
-            setBrowserMessage("Failed to delete the browser view.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(500);
-        }
-    };
-
-    const renameSavedView = () => {
-        if (!selectedSavedViewName) {
-            setBrowserMessage("Select a saved browser view to rename.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(400);
-            return;
-        }
-
-        const normalizedName = savedViewName.trim();
-        if (!normalizedName) {
-            setBrowserMessage("Saved view name is required.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(400);
-            return;
-        }
-
-        try {
-            const selectedSavedView = savedViews.find((view) => view.name === selectedSavedViewName);
-            if (!selectedSavedView) {
-                setBrowserMessage(`Saved browser view "${selectedSavedViewName}" was not found.`);
-                setBrowserVariant("danger");
-                setBrowserStatusCode(404);
-                return;
-            }
-
-            const isOverwritingDifferentSavedView =
-                normalizedName !== selectedSavedViewName &&
-                savedViews.some((view) => view.name === normalizedName);
-
-            if (isOverwritingDifferentSavedView && !window.confirm(`A saved browser view named "${normalizedName}" already exists. Overwrite it?`)) {
-                setBrowserMessage(`Kept the existing saved browser view "${selectedSavedViewName}".`);
-                setBrowserVariant("info");
-                setBrowserStatusCode(null);
-                return;
-            }
-
-            const renamedViews = savedViews
-                .filter((view) => view.name !== selectedSavedViewName && view.name !== normalizedName);
-
-            persistSavedViews([
-                ...renamedViews,
-                {
-                    ...selectedSavedView,
-                    name: normalizedName,
-                }
-            ]);
-            setSelectedSavedViewName(normalizedName);
-            setSavedViewName("");
-            recordSavedViewAction("renamed", `"${selectedSavedViewName}" to "${normalizedName}"`);
-            setBrowserMessage(`Renamed saved browser view "${selectedSavedViewName}" to "${normalizedName}".`);
-            setBrowserVariant("success");
-            setBrowserStatusCode(null);
-        } catch (error) {
-            console.error("Failed to rename the browser view.", error);
-            setBrowserMessage("Failed to rename the browser view.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(500);
-        }
-    };
-
-    const applyBuiltInView = async () => {
-        if (!selectedBuiltInViewKey) {
-            setBrowserMessage("Select a built-in browser view to apply.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(400);
-            return;
-        }
-
-        const selectedBuiltInView = builtInBrowserViews.find((view) => view.key === selectedBuiltInViewKey);
-        if (!selectedBuiltInView) {
-            setBrowserMessage(`Built-in browser view "${selectedBuiltInViewKey}" was not found.`);
-            setBrowserVariant("danger");
-            setBrowserStatusCode(404);
-            return;
-        }
-
-        applyBrowserQueryState(selectedBuiltInView.query);
-        setSavedViewName("");
-        setSelectedSavedViewName("");
-        await fetchMessages(selectedBuiltInView.query);
-    };
-
-    /**
-     * Exports only browser-owned saved views, not stored broker messages.
-     */
-    const exportSavedViews = () => {
-        if (savedViews.length === 0) {
-            setBrowserMessage("No saved browser views are available to export.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(400);
-            setBrowserFeedbackDetails(null);
-            return;
-        }
-
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const exportPayload = {
-            exportedAt: new Date().toISOString(),
-            savedViews,
-        };
-
-        const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {type: "application/json"});
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = `stored-message-browser-views-${timestamp}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-        setBrowserMessage(`Exported ${savedViews.length} saved browser view${savedViews.length === 1 ? "" : "s"}.`);
-        setBrowserVariant("info");
-        setBrowserStatusCode(null);
-        setBrowserFeedbackDetails(null);
-    };
-
-    const openSavedViewsImport = () => {
-        savedViewsImportInputRef.current?.click();
-    };
-
-    /**
-     * Imports saved browser views from the JSON shape produced by exportSavedViews.
-     *
-     * Invalid entries are skipped so one bad view does not discard the rest of
-     * the import file.
-     */
-    const importSavedViews = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) {
-            return;
-        }
-
-        try {
-            const fileContents = await readFileAsText(file);
-            const parsedImport = JSON.parse(fileContents) as {savedViews?: SavedBrowserView[]};
-            if (!Array.isArray(parsedImport.savedViews)) {
-                setBrowserMessage("Imported saved views file is invalid.");
-                setBrowserVariant("danger");
-                setBrowserStatusCode(400);
-                setBrowserFeedbackDetails(null);
-                return;
-            }
-
-            const mergedViewsByName = new Map(savedViews.map((view) => [view.name, view]));
-            let addedCount = 0;
-            let updatedCount = 0;
-            let skippedCount = 0;
-            const addedNames: string[] = [];
-            const updatedNames: string[] = [];
-            const skippedNames: string[] = [];
-
-            parsedImport.savedViews.forEach((view, index) => {
-                const normalizedName = typeof view?.name === "string" ? view.name.trim() : "";
-                if (!normalizedName || !view?.query || typeof view.query !== "object") {
-                    skippedCount += 1;
-                    skippedNames.push(normalizedName || `entry ${index + 1}`);
-                    return;
-                }
-
-                if (mergedViewsByName.has(normalizedName)) {
-                    updatedCount += 1;
-                    updatedNames.push(normalizedName);
-                } else {
-                    addedCount += 1;
-                    addedNames.push(normalizedName);
-                }
-
-                mergedViewsByName.set(normalizedName, {...view, name: normalizedName});
-            });
-
-            const mergedViews = persistSavedViews(Array.from(mergedViewsByName.values()));
-            setSelectedSavedViewName(mergedViews[0]?.name ?? "");
-            setSavedViewName("");
-            if (addedCount === 0 && updatedCount === 0) {
-                setBrowserMessage(`Imported 0 saved browser views. Skipped ${skippedCount} invalid entr${skippedCount === 1 ? "y" : "ies"}.`);
-                setBrowserVariant("danger");
-                setBrowserStatusCode(400);
-                setBrowserFeedbackDetails({
-                    skipped: skippedNames,
-                });
-                return;
-            }
-
-            const summaryParts = [
-                `Imported ${addedCount + updatedCount} saved browser view${addedCount + updatedCount === 1 ? "" : "s"}.`,
-                `Added ${addedCount}.`,
-                `Updated ${updatedCount}.`,
-            ];
-            if (skippedCount > 0) {
-                summaryParts.push(`Skipped ${skippedCount} invalid entr${skippedCount === 1 ? "y" : "ies"}.`);
-            }
-
-            setBrowserMessage(summaryParts.join(" "));
-            setBrowserVariant(skippedCount > 0 ? "info" : "success");
-            setBrowserStatusCode(skippedCount > 0 ? 207 : null);
-            setBrowserFeedbackDetails({
-                ...(addedNames.length > 0 ? {added: addedNames} : {}),
-                ...(updatedNames.length > 0 ? {updated: updatedNames} : {}),
-                ...(skippedNames.length > 0 ? {skipped: skippedNames} : {}),
-            });
-            recordSavedViewAction("imported", `${addedCount + updatedCount} view${addedCount + updatedCount === 1 ? "" : "s"}`);
-        } catch (error) {
-            console.error("Failed to import saved browser views.", error);
-            setBrowserMessage("Failed to import saved browser views.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(400);
-            setBrowserFeedbackDetails(null);
-        } finally {
-            event.target.value = "";
-        }
-    };
-
-    const applyBrowserPreset = (preset: BrowserPreset) => {
-        const now = new Date();
-        const startOfToday = startOfDay(now);
-        const endOfToday = endOfDay(now);
-        const last24Hours = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-
-        setFilterDestination("");
-        setFilterDeliveryMode("");
-        setFilterInnerMessageId("");
-        setFilterStalePendingOnly(DEFAULT_BROWSER_STALE_PENDING_ONLY);
+    const updateBrowserSize = (value: string) => {
+        setBrowserSize(value);
         setBrowserPage(DEFAULT_BROWSER_PAGE);
-        setExpandedMessageId(null);
-        setBrowserMessage(null);
-        setBrowserVariant(null);
-        setBrowserStatusCode(null);
-        setBulkRetryResults(null);
-
-        if (preset === "FAILED_TODAY") {
-            setFilterPublishStatus("FAILED");
-            setFilterCreatedAtFrom(toDateTimeLocalValue(startOfToday));
-            setFilterCreatedAtTo(toDateTimeLocalValue(endOfToday));
-            setFilterPublishedAtFrom(DEFAULT_BROWSER_PUBLISHED_AT_FROM);
-            setFilterPublishedAtTo(DEFAULT_BROWSER_PUBLISHED_AT_TO);
-            return;
-        }
-
-        if (preset === "PUBLISHED_TODAY") {
-            setFilterPublishStatus("PUBLISHED");
-            setFilterCreatedAtFrom(DEFAULT_BROWSER_CREATED_AT_FROM);
-            setFilterCreatedAtTo(DEFAULT_BROWSER_CREATED_AT_TO);
-            setFilterPublishedAtFrom(toDateTimeLocalValue(startOfToday));
-            setFilterPublishedAtTo(toDateTimeLocalValue(endOfToday));
-            return;
-        }
-
-        if (preset === "PENDING_NOW") {
-            setFilterPublishStatus("PENDING");
-            setFilterCreatedAtFrom(DEFAULT_BROWSER_CREATED_AT_FROM);
-            setFilterCreatedAtTo(DEFAULT_BROWSER_CREATED_AT_TO);
-            setFilterPublishedAtFrom(DEFAULT_BROWSER_PUBLISHED_AT_FROM);
-            setFilterPublishedAtTo(DEFAULT_BROWSER_PUBLISHED_AT_TO);
-            return;
-        }
-
-        setFilterPublishStatus("FAILED");
-        setFilterCreatedAtFrom(toDateTimeLocalValue(last24Hours));
-        setFilterCreatedAtTo(toDateTimeLocalValue(now));
-        setFilterPublishedAtFrom(DEFAULT_BROWSER_PUBLISHED_AT_FROM);
-        setFilterPublishedAtTo(DEFAULT_BROWSER_PUBLISHED_AT_TO);
     };
 
     /**
@@ -1013,74 +350,6 @@ function App() {
     };
 
     /**
-     * Retries retryable failed messages that are visible on the current page.
-     *
-     * This delegates to the backend bulk retry endpoint so mixed outcomes are
-     * returned as structured per-message results.
-     * 
-     * @returns A promise that resolves when the bulk retry operation is complete.
-     */
-    const retryVisibleFailedMessages = async () => {
-        const failedMessages = (messagesResponse?.items ?? []).filter(
-            (message) => message.publishStatus === "FAILED" && message.retrySupported
-        );
-
-        if (failedMessages.length === 0) {
-            setBrowserMessage("No visible retryable failed messages are available to retry.");
-            setBrowserVariant("danger");
-            setBrowserStatusCode(400);
-            return;
-        }
-
-        setIsBulkRetrying(true);
-        setBrowserMessage(null);
-        setBrowserVariant(null);
-        setBrowserStatusCode(null);
-        setBulkRetryResults(null);
-
-        try {
-            const response = await axios.post<BulkRetryResponse>(`${messagesBaseUrl}/retry`, {
-                messageIds: failedMessages.map((message) => message.id),
-            });
-
-            await fetchMessages(messagesResponse ? {page: messagesResponse.page, size: messagesResponse.size} : undefined);
-
-            const batchResult = response.data;
-            setBulkRetryResults(batchResult.results);
-            const detailSummary = [
-                `${batchResult.retriedSuccessfully} retried`,
-                `${batchResult.failedToRetry} failed`,
-                `${batchResult.skipped} skipped`,
-            ].join(", ");
-
-            if (batchResult.failedToRetry === 0 && batchResult.skipped === 0) {
-                setBrowserMessage(`Bulk retry completed successfully. ${detailSummary}.`);
-                setBrowserVariant("success");
-            } else if (batchResult.retriedSuccessfully === 0) {
-                setBrowserMessage(`Bulk retry did not complete successfully. ${detailSummary}.`);
-                setBrowserVariant("danger");
-            } else {
-                setBrowserMessage(`Bulk retry completed with mixed results. ${detailSummary}.`);
-                setBrowserVariant("info");
-            }
-            setBrowserStatusCode(response.status);
-        } catch (error) {
-            if (axios.isAxiosError<SolaceBrokerAPIError>(error) && error.response) {
-                setBrowserMessage(error.response.data?.message ?? "Failed to retry the visible failed messages.");
-                setBrowserVariant("danger");
-                setBrowserStatusCode(error.response.status);
-            } else {
-                console.error("Failed to retry the visible failed messages.", error);
-                setBrowserMessage("Failed to retry the visible failed messages.");
-                setBrowserVariant("danger");
-                setBrowserStatusCode(500);
-            }
-        } finally {
-            setIsBulkRetrying(false);
-        }
-    };
-
-    /**
      * Reconciles a message that the backend has already marked as stale pending.
      *
      * The UI does not decide staleness; it only calls the reconciliation
@@ -1120,7 +389,7 @@ function App() {
 
     /**
      * Copies a string value to the system clipboard and shows feedback.
-     * 
+     *
      * @param label - A label for the value being copied (used for feedback).
      * @param value - The string value to copy.
      * @returns A promise that resolves when the copy operation is complete.
@@ -1138,186 +407,6 @@ function App() {
     /**
      * Builds a shareable stored-message query URL from the current filters.
      */
-    const buildMessagesQueryUrl = (overrides?: Partial<BrowserQueryState>) => {
-        const query = currentBrowserQuery(overrides);
-        const url = new URL(messagesApiUrl);
-        url.searchParams.set("page", String(query.page));
-        url.searchParams.set("size", String(query.size));
-        appendBrowserQueryParams(url, query);
-        return url.toString();
-    };
-
-    const appendBrowserQueryParams = (url: URL, query: BrowserQueryState) => {
-        if (query.destination) {
-            url.searchParams.set("destination", query.destination);
-        }
-        if (query.deliveryMode) {
-            url.searchParams.set("deliveryMode", query.deliveryMode);
-        }
-        if (query.payloadType) {
-            url.searchParams.set("payloadType", query.payloadType);
-        }
-        if (query.innerMessageId) {
-            url.searchParams.set("innerMessageId", query.innerMessageId);
-        }
-        if (query.publishStatus) {
-            url.searchParams.set("publishStatus", query.publishStatus);
-        }
-        if (query.stalePendingOnly) {
-            url.searchParams.set("stalePendingOnly", "true");
-        }
-        if (query.createdAtFrom) {
-            url.searchParams.set("createdAtFrom", toIsoLocalDateTime(query.createdAtFrom));
-        }
-        if (query.createdAtTo) {
-            url.searchParams.set("createdAtTo", toIsoLocalDateTime(query.createdAtTo));
-        }
-        if (query.publishedAtFrom) {
-            url.searchParams.set("publishedAtFrom", toIsoLocalDateTime(query.publishedAtFrom));
-        }
-        if (query.publishedAtTo) {
-            url.searchParams.set("publishedAtTo", toIsoLocalDateTime(query.publishedAtTo));
-        }
-        url.searchParams.set("sortBy", query.sortBy);
-        url.searchParams.set("sortDirection", query.sortDirection);
-    };
-
-    const copyCurrentFilterQuery = async () => {
-        await copyToClipboard("Current filter query", buildMessagesQueryUrl());
-    };
-
-    /**
-     * Exports only the currently loaded browser page as JSON.
-     */
-    const exportCurrentPage = () => {
-        if (!messagesResponse) {
-            return;
-        }
-
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const exportPayload = {
-            exportedAt: new Date().toISOString(),
-            page: messagesResponse.page,
-            size: messagesResponse.size,
-            totalElements: messagesResponse.totalElements,
-            totalPages: messagesResponse.totalPages,
-            lifecycleCounts: messagesResponse.lifecycleCounts,
-            items: messagesResponse.items,
-        };
-
-        downloadFile(
-            JSON.stringify(exportPayload, null, 2),
-            "application/json",
-            `stored-messages-page-${messagesResponse.page + 1}-${timestamp}.json`
-        );
-        setBrowserMessage(`Exported ${messagesResponse.items.length} messages from the current page.`);
-        setBrowserVariant("info");
-        setBrowserStatusCode(null);
-    };
-
-    const exportCurrentPageCsv = () => {
-        if (!messagesResponse) {
-            return;
-        }
-
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        downloadFile(
-            buildStoredMessagesCsv(messagesResponse.items),
-            "text/csv;charset=utf-8",
-            `stored-messages-page-${messagesResponse.page + 1}-${timestamp}.csv`
-        );
-        setBrowserMessage(`Exported ${messagesResponse.items.length} messages from the current page as CSV.`);
-        setBrowserVariant("info");
-        setBrowserStatusCode(null);
-    };
-
-    /**
-     * Exports every stored message matching the active filters as JSON.
-     */
-    const exportFilteredResults = async () => {
-        try {
-            const response = await axios.get<FilteredMessagesExportResponse>(messagesExportApiUrl, {
-                params: {
-                    ...(filterDestination.trim() ? {destination: filterDestination.trim()} : {}),
-                    ...(filterDeliveryMode ? {deliveryMode: filterDeliveryMode} : {}),
-                    ...(filterPayloadType ? {payloadType: filterPayloadType} : {}),
-                    ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
-                    ...(filterPublishStatus ? {publishStatus: filterPublishStatus} : {}),
-                    ...(filterStalePendingOnly ? {stalePendingOnly: true} : {}),
-                    ...(filterCreatedAtFrom ? {createdAtFrom: toIsoLocalDateTime(filterCreatedAtFrom)} : {}),
-                    ...(filterCreatedAtTo ? {createdAtTo: toIsoLocalDateTime(filterCreatedAtTo)} : {}),
-                    ...(filterPublishedAtFrom ? {publishedAtFrom: toIsoLocalDateTime(filterPublishedAtFrom)} : {}),
-                    ...(filterPublishedAtTo ? {publishedAtTo: toIsoLocalDateTime(filterPublishedAtTo)} : {}),
-                    sortBy: browserSortBy,
-                    sortDirection: browserSortDirection,
-                }
-            });
-
-            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-            downloadFile(
-                JSON.stringify(response.data, null, 2),
-                "application/json",
-                `stored-messages-filtered-export-${timestamp}.json`
-            );
-            setBrowserMessage(`Exported ${response.data.items.length} filtered messages.`);
-            setBrowserVariant("info");
-            setBrowserStatusCode(response.status);
-        } catch (error) {
-            if (axios.isAxiosError<SolaceBrokerAPIError>(error) && error.response) {
-                setBrowserMessage(error.response.data?.message ?? "Failed to export filtered messages.");
-                setBrowserVariant("danger");
-                setBrowserStatusCode(error.response.status);
-            } else {
-                console.error("Failed to export filtered messages.", error);
-                setBrowserMessage("Failed to export filtered messages.");
-                setBrowserVariant("danger");
-                setBrowserStatusCode(500);
-            }
-        }
-    };
-
-    const exportFilteredResultsCsv = async () => {
-        try {
-            const response = await axios.get<FilteredMessagesExportResponse>(messagesExportApiUrl, {
-                params: {
-                    ...(filterDestination.trim() ? {destination: filterDestination.trim()} : {}),
-                    ...(filterDeliveryMode ? {deliveryMode: filterDeliveryMode} : {}),
-                    ...(filterPayloadType ? {payloadType: filterPayloadType} : {}),
-                    ...(filterInnerMessageId.trim() ? {innerMessageId: filterInnerMessageId.trim()} : {}),
-                    ...(filterPublishStatus ? {publishStatus: filterPublishStatus} : {}),
-                    ...(filterStalePendingOnly ? {stalePendingOnly: true} : {}),
-                    ...(filterCreatedAtFrom ? {createdAtFrom: toIsoLocalDateTime(filterCreatedAtFrom)} : {}),
-                    ...(filterCreatedAtTo ? {createdAtTo: toIsoLocalDateTime(filterCreatedAtTo)} : {}),
-                    ...(filterPublishedAtFrom ? {publishedAtFrom: toIsoLocalDateTime(filterPublishedAtFrom)} : {}),
-                    ...(filterPublishedAtTo ? {publishedAtTo: toIsoLocalDateTime(filterPublishedAtTo)} : {}),
-                    sortBy: browserSortBy,
-                    sortDirection: browserSortDirection,
-                }
-            });
-
-            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-            downloadFile(
-                buildStoredMessagesCsv(response.data.items),
-                "text/csv;charset=utf-8",
-                `stored-messages-filtered-export-${timestamp}.csv`
-            );
-            setBrowserMessage(`Exported ${response.data.items.length} filtered messages as CSV.`);
-            setBrowserVariant("info");
-            setBrowserStatusCode(response.status);
-        } catch (error) {
-            if (axios.isAxiosError<SolaceBrokerAPIError>(error) && error.response) {
-                setBrowserMessage(error.response.data?.message ?? "Failed to export filtered messages as CSV.");
-                setBrowserVariant("danger");
-                setBrowserStatusCode(error.response.status);
-            } else {
-                console.error("Failed to export filtered messages as CSV.", error);
-                setBrowserMessage("Failed to export filtered messages as CSV.");
-                setBrowserVariant("danger");
-                setBrowserStatusCode(500);
-            }
-        }
-    };
-
     const pageLifecycleCounts = (messagesResponse?.items ?? []).reduce(
         (counts, message) => {
             if (message.publishStatus === "PUBLISHED") {
@@ -1351,7 +440,6 @@ function App() {
         setBrowserMessage(null);
         setBrowserVariant(null);
         setBrowserStatusCode(null);
-        setBulkRetryResults(null);
         await fetchMessages({page: Number(DEFAULT_BROWSER_PAGE), publishStatus, stalePendingOnly: false});
     };
 
@@ -1363,7 +451,6 @@ function App() {
         setBrowserMessage(null);
         setBrowserVariant(null);
         setBrowserStatusCode(null);
-        setBulkRetryResults(null);
         await fetchMessages({page: Number(DEFAULT_BROWSER_PAGE), publishStatus: "PENDING", stalePendingOnly: true});
     };
 
@@ -1615,10 +702,10 @@ function App() {
                                                     onChange={(e) => setVpnName(e.target.value)}
                                                     placeholder="e.g. my-solace-service"
                                                     required
-                                                />
-                                            </div>
+                                            />
                                         </div>
-                                    </section>
+                                    </div>
+                                </section>
 
                                     <section className="form-section-block">
                                         <div className="form-section-heading">
@@ -1808,59 +895,9 @@ function App() {
 
                             {browserMessage && browserVariant && (
                                 <div className={`alert alert-${browserVariant}`} role="alert">
-                                    <div>{browserMessage}{browserStatusCode !== null && ` (status: ${browserStatusCode})`}</div>
-                                    {browserFeedbackDetails && (
-                                        <div className="browser-feedback-details mt-2">
-                                            {browserFeedbackDetails.added && browserFeedbackDetails.added.length > 0 && (
-                                                <div>
-                                                    <strong>Added:</strong> {browserFeedbackDetails.added.join(", ")}
-                                                </div>
-                                            )}
-                                            {browserFeedbackDetails.updated && browserFeedbackDetails.updated.length > 0 && (
-                                                <div>
-                                                    <strong>Updated:</strong> {browserFeedbackDetails.updated.join(", ")}
-                                                </div>
-                                            )}
-                                            {browserFeedbackDetails.skipped && browserFeedbackDetails.skipped.length > 0 && (
-                                                <div>
-                                                    <strong>Skipped:</strong> {browserFeedbackDetails.skipped.join(", ")}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {bulkRetryResults && bulkRetryResults.length > 0 && (
-                                <div className="bulk-retry-results-panel mb-3" aria-live="polite">
-                                    <div className="bulk-retry-results-header">
-                                        <strong>Bulk Retry Results</strong>
-                                        <span>{bulkRetryResults.length} result{bulkRetryResults.length === 1 ? "" : "s"}</span>
-                                    </div>
-                                    <div className="bulk-retry-results-list">
-                                        {bulkRetryResults.map((result, index) => (
-                                            <div className="bulk-retry-result-row" key={`${result.messageId ?? "unknown"}-${index}`}>
-                                                <div className="bulk-retry-result-topline">
-                                                    <strong>message id {result.messageId ?? "unknown"}</strong>
-                                                    <span className={`badge text-bg-${
-                                                        result.outcome === "RETRIED"
-                                                            ? "success"
-                                                            : result.outcome === "SKIPPED"
-                                                                ? "secondary"
-                                                                : "danger"
-                                                    }`}>
-                                                        {result.outcome.toLowerCase()}
-                                                    </span>
-                                                </div>
-                                                <p className="mb-1">{result.detail}</p>
-                                                {result.publishStatus && (
-                                                    <p className="mb-0">
-                                                        <span className="meta-label">publish status</span>
-                                                        {result.publishStatus}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        ))}
+                                    <div>
+                                        {browserMessage}
+                                        {browserVariant === "danger" && browserStatusCode !== null && ` (status: ${browserStatusCode})`}
                                     </div>
                                 </div>
                             )}
@@ -2041,312 +1078,52 @@ function App() {
                                         <div className="browser-control-section-header">
                                             <p className="workspace-kicker mb-1">browse</p>
                                             <h3 className="browser-control-title mb-0">Sort & Paging</h3>
-                                            <p className="browser-control-copy mb-0">
-                                                Page and size control how many matching messages are loaded into the results below.
-                                            </p>
                                         </div>
                                         <div className="row g-3 align-items-end">
-                                            <div className="col-md-2">
-                                            <label htmlFor="browserSortBy" className="form-label">
-                                                Sort By
-                                            </label>
-                                            <select
-                                                id="browserSortBy"
-                                                className="form-select"
-                                                value={browserSortBy}
-                                                onChange={(e) => setBrowserSortBy(e.target.value)}
-                                            >
-                                                <option value="createdAt">createdAt</option>
-                                                <option value="priority">priority</option>
-                                                <option value="destination">destination</option>
-                                                <option value="innerMessageId">innerMessageId</option>
-                                            </select>
-                                        </div>
-                                            <div className="col-md-2">
-                                            <label htmlFor="browserSortDirection" className="form-label">
-                                                Sort Direction
-                                            </label>
-                                            <select
-                                                id="browserSortDirection"
-                                                className="form-select"
-                                                value={browserSortDirection}
-                                                onChange={(e) => setBrowserSortDirection(e.target.value)}
-                                            >
-                                                <option value="desc">desc</option>
-                                                <option value="asc">asc</option>
-                                            </select>
-                                        </div>
-                                            <div className="col-md-2">
-                                            <label htmlFor="browserPage" className="form-label">
-                                                Page
-                                            </label>
-                                            <input
-                                                id="browserPage"
-                                                type="number"
-                                                min="0"
-                                                className="form-control"
-                                                value={browserPage}
-                                                onChange={(e) => setBrowserPage(e.target.value)}
-                                            />
-                                        </div>
-                                            <div className="col-md-2">
-                                            <label htmlFor="browserSize" className="form-label">
-                                                Size
-                                            </label>
-                                            <input
-                                                id="browserSize"
-                                                type="number"
-                                                min="1"
-                                                max="100"
-                                                className="form-control"
-                                                value={browserSize}
-                                                onChange={(e) => setBrowserSize(e.target.value)}
-                                            />
+                                            <div className="col-md-3">
+                                                <label htmlFor="browserSortBy" className="form-label">
+                                                    Sort By
+                                                </label>
+                                                <select
+                                                    id="browserSortBy"
+                                                    className="form-select"
+                                                    value={browserSortBy}
+                                                    onChange={(e) => setBrowserSortBy(e.target.value)}
+                                                >
+                                                    <option value="createdAt">createdAt</option>
+                                                    <option value="priority">priority</option>
+                                                    <option value="destination">destination</option>
+                                                    <option value="innerMessageId">innerMessageId</option>
+                                                </select>
                                             </div>
-                                            <div className="col-md-4">
-                                                <div className="browser-button-row">
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-outline-secondary"
-                                                        onClick={loadPreviousPage}
-                                                        disabled={!messagesResponse || messagesResponse.first || isLoadingMessages || isBulkRetrying}
-                                                    >
-                                                        Previous Page
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-outline-secondary"
-                                                        onClick={loadNextPage}
-                                                        disabled={!messagesResponse || messagesResponse.last || isLoadingMessages || isBulkRetrying}
-                                                    >
-                                                        Next Page
-                                                    </button>
-                                                </div>
+                                            <div className="col-md-3">
+                                                <label htmlFor="browserSortDirection" className="form-label">
+                                                    Sort Direction
+                                                </label>
+                                                <select
+                                                    id="browserSortDirection"
+                                                    className="form-select"
+                                                    value={browserSortDirection}
+                                                    onChange={(e) => setBrowserSortDirection(e.target.value)}
+                                                >
+                                                    <option value="desc">desc</option>
+                                                    <option value="asc">asc</option>
+                                                </select>
                                             </div>
-                                        </div>
-                                    </section>
-
-                                    <section className="form-section-block browser-control-section">
-                                        <div className="browser-control-section-header">
-                                            <p className="workspace-kicker mb-1">searches</p>
-                                            <h3 className="browser-control-title mb-0">Use a Saved Search</h3>
-                                        </div>
-                                        <div className="saved-search-grid">
-                                            <div className="saved-search-group">
-                                                <h4 className="saved-search-group-title">Built-In Searches</h4>
-                                                <div className="browser-button-row align-items-end">
-                                                    <div className="saved-view-field">
-                                                        <label htmlFor="builtInBrowserViews" className="form-label">
-                                                            Built-In Searches
-                                                        </label>
-                                                        <select
-                                                            id="builtInBrowserViews"
-                                                            className="form-select"
-                                                            value={selectedBuiltInViewKey}
-                                                            onChange={(e) => setSelectedBuiltInViewKey(e.target.value)}
-                                                            disabled={isLoadingMessages || isBulkRetrying}
-                                                        >
-                                                            <option value="">select a built-in search</option>
-                                                            {builtInBrowserViews.map((view) => (
-                                                                <option key={view.key} value={view.key}>
-                                                                    {view.name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-outline-secondary"
-                                                        onClick={applyBuiltInView}
-                                                        disabled={isLoadingMessages || isBulkRetrying}
-                                                    >
-                                                        Apply Search
-                                                    </button>
-                                                </div>
+                                            <div className="col-md-3">
+                                                <label htmlFor="browserSize" className="form-label">
+                                                    Messages Per Page
+                                                </label>
+                                                <input
+                                                    id="browserSize"
+                                                    type="number"
+                                                    min="1"
+                                                    max="100"
+                                                    className="form-control"
+                                                    value={browserSize}
+                                                    onChange={(e) => updateBrowserSize(e.target.value)}
+                                                />
                                             </div>
-                                            <div className="saved-search-group">
-                                                <h4 className="saved-search-group-title">Saved Searches</h4>
-                                                <div className="browser-button-row align-items-end">
-                                                    <div className="saved-view-field">
-                                                        <label htmlFor="savedViews" className="form-label">
-                                                            Saved Searches
-                                                        </label>
-                                                        <select
-                                                            id="savedViews"
-                                                            className="form-select"
-                                                            value={selectedSavedViewName}
-                                                            onChange={(e) => setSelectedSavedViewName(e.target.value)}
-                                                            disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
-                                                        >
-                                                            <option value="">select a saved search</option>
-                                                            {savedViews.map((view) => (
-                                                                <option key={view.name} value={view.name}>
-                                                                    {view.name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-outline-primary"
-                                                        onClick={loadSavedView}
-                                                        disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
-                                                    >
-                                                        Load Search
-                                                    </button>
-                                                    <div className="saved-view-field">
-                                                        <label htmlFor="savedViewName" className="form-label">
-                                                            Saved Search Name
-                                                        </label>
-                                                        <input
-                                                            id="savedViewName"
-                                                            type="text"
-                                                            className="form-control"
-                                                            value={savedViewName}
-                                                            onChange={(e) => setSavedViewName(e.target.value)}
-                                                            placeholder="e.g. failed today"
-                                                        />
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-outline-success"
-                                                        onClick={saveCurrentView}
-                                                        disabled={isLoadingMessages || isBulkRetrying}
-                                                    >
-                                                        Save Current Search
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div className="saved-search-group">
-                                                <h4 className="saved-search-group-title">Manage Saved Searches</h4>
-                                                <div className="browser-button-row">
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-outline-warning"
-                                                        onClick={renameSavedView}
-                                                        disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
-                                                    >
-                                                        Rename
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-outline-dark"
-                                                        onClick={deleteSavedView}
-                                                        disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-outline-info"
-                                                        onClick={exportSavedViews}
-                                                        disabled={savedViews.length === 0 || isLoadingMessages || isBulkRetrying}
-                                                    >
-                                                        Export
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-outline-secondary"
-                                                        onClick={openSavedViewsImport}
-                                                        disabled={isLoadingMessages || isBulkRetrying}
-                                                    >
-                                                        Import
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <input
-                                                ref={savedViewsImportInputRef}
-                                                type="file"
-                                                accept="application/json"
-                                                className="d-none"
-                                                onChange={importSavedViews}
-                                                aria-label="Import Saved Searches File"
-                                            />
-                                        </div>
-                                        {savedViewActionHistory.length > 0 && (
-                                            <div className="saved-view-history w-100">
-                                                <div className="saved-view-history-header">
-                                                    <p className="saved-view-history-title mb-0">Recent Saved Search Actions</p>
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-sm btn-outline-secondary"
-                                                        onClick={clearSavedViewActionHistory}
-                                                        disabled={isLoadingMessages || isBulkRetrying}
-                                                    >
-                                                        Clear History
-                                                    </button>
-                                                </div>
-                                                <p className="saved-view-history-note mb-2">
-                                                    Keeps the {MAX_SAVED_VIEW_ACTION_HISTORY} most recent actions.
-                                                </p>
-                                                <div className="saved-view-history-list">
-                                                    {savedViewActionHistory.map((entry) => (
-                                                        <div key={entry.id} className="saved-view-history-item">
-                                                            <span>{formatSavedViewAction(entry)}</span>
-                                                            <time
-                                                                dateTime={entry.timestamp}
-                                                                title={formatSavedViewActionAbsoluteTimestamp(entry.timestamp)}
-                                                            >
-                                                                {savedViewHistoryClock >= 0 ? formatSavedViewActionTimestamp(entry.timestamp) : ""}
-                                                            </time>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </section>
-
-                                    <section className="form-section-block browser-control-section">
-                                        <div className="browser-control-section-header">
-                                            <p className="workspace-kicker mb-1">shortcuts</p>
-                                            <h3 className="browser-control-title mb-0">Common Searches</h3>
-                                            <p className="browser-control-copy mb-0">
-                                                Use these shortcuts to apply frequent filters and load matching messages quickly.
-                                            </p>
-                                        </div>
-                                        <div className="browser-button-row">
-                                            {messagesResponse && messagesResponse.items.some((message) => message.publishStatus === "FAILED" && message.retrySupported) && (
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-danger"
-                                                onClick={retryVisibleFailedMessages}
-                                                disabled={isLoadingMessages || isBulkRetrying || retryingMessageId !== null}
-                                            >
-                                                {isBulkRetrying ? "Retrying Visible Failed Messages..." : "Retry Visible Failed Messages"}
-                                            </button>
-                                            )}
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-danger"
-                                                onClick={() => applyBrowserPreset("FAILED_TODAY")}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Failed Today
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-success"
-                                                onClick={() => applyBrowserPreset("PUBLISHED_TODAY")}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Published Today
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-warning"
-                                                onClick={() => applyBrowserPreset("PENDING_NOW")}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Pending Now
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-secondary"
-                                                onClick={() => applyBrowserPreset("FAILED_LAST_24H")}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Failed Last 24h
-                                            </button>
                                         </div>
                                     </section>
 
@@ -2354,98 +1131,30 @@ function App() {
                                         <div className="browser-control-section-header">
                                             <p className="workspace-kicker mb-1">results</p>
                                             <h3 className="browser-control-title mb-0">Load Results</h3>
-                                            <p className="browser-control-copy mb-0">
-                                                Load Messages fetches one visible page from the full set matching the current filters.
-                                            </p>
                                         </div>
                                         <div className="browser-button-row">
-                                            <button type="submit" className="btn btn-secondary" disabled={isLoadingMessages || isBulkRetrying}>
+                                            <button type="submit" className="btn btn-outline-primary" disabled={isLoadingMessages}>
                                                 {isLoadingMessages ? "Loading..." : "Load Messages"}
                                             </button>
                                             <button
                                                 type="button"
                                                 className="btn btn-outline-primary"
                                                 onClick={refreshBrowserResults}
-                                                disabled={isLoadingMessages || isBulkRetrying}
+                                                disabled={isLoadingMessages}
                                             >
                                                 Refresh Results
                                             </button>
                                             <button
                                                 type="button"
-                                                className="btn btn-outline-info"
-                                                onClick={copyCurrentFilterQuery}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Copy Filter Query
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-dark"
+                                                className="btn btn-outline-primary"
                                                 onClick={resetBrowserFilters}
-                                                disabled={isLoadingMessages || isBulkRetrying}
+                                                disabled={isLoadingMessages}
                                             >
                                                 Reset Filters
                                             </button>
                                         </div>
                                     </section>
 
-                                    <section className="form-section-block browser-control-section">
-                                        <div className="browser-control-section-header">
-                                            <p className="workspace-kicker mb-1">export</p>
-                                            <h3 className="browser-control-title mb-0">Download Results</h3>
-                                            <p className="browser-control-copy mb-0">
-                                                Visible Page exports only the messages loaded below. All Matches exports every message matching the current filters.
-                                            </p>
-                                        </div>
-                                        <div className="browser-button-row">
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-info"
-                                                onClick={exportCurrentPage}
-                                                disabled={!messagesResponse || isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Export Visible Page JSON
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-info"
-                                                onClick={exportCurrentPageCsv}
-                                                disabled={!messagesResponse || isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Export Visible Page CSV
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-info"
-                                                onClick={exportFilteredResults}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Export All Matches JSON
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-info"
-                                                onClick={exportFilteredResultsCsv}
-                                                disabled={isLoadingMessages || isBulkRetrying}
-                                            >
-                                                Export All Matches CSV
-                                            </button>
-                                        </div>
-                                        <ul className="browser-export-note mb-0 mt-3">
-                                            <li>
-                                                <strong>Export Visible Page JSON:</strong> exports only the messages currently loaded below, in JSON format.
-                                            </li>
-                                            <li>
-                                                <strong>Export Visible Page CSV:</strong> exports only the messages currently loaded below, in CSV format.
-                                            </li>
-                                            <li>
-                                                <strong>Export All Matches JSON:</strong> gets every message matching the current filters, across all pages, then exports them in JSON format.
-                                            </li>
-                                            <li>
-                                                <strong>Export All Matches CSV:</strong> gets every message matching the current filters, across all pages, then exports them in CSV format.
-                                            </li>
-                                        </ul>
-                                    </section>
                                 </div>
                             </form>
 
@@ -2465,25 +1174,38 @@ function App() {
 
                             {!isLoadingMessages && messagesResponse && (
                                 <div className="mt-4">
-                                    <div className="browser-summary mb-3">
+                                    <div className="browser-summary mb-3" data-testid="browser-summary">
                                         <div>
                                             <strong>
                                                 Showing {visibleMessageCount === 0 ? "0" : `${visibleStartIndex}-${visibleEndIndex}`} of{" "}
                                                 {matchingMessageCount} matching messages
                                             </strong>
                                         </div>
-                                        <span>
-                                            Visible page {messagesResponse.page + 1} of {messagesResponse.totalPages || 1}, page size{" "}
-                                            {messagesResponse.size}
-                                        </span>
+                                        <div className="browser-summary-actions">
+                                            <span>
+                                                Visible page {messagesResponse.page + 1} of {messagesResponse.totalPages || 1}, page size{" "}
+                                                {messagesResponse.size}
+                                            </span>
+                                            <div className="browser-button-row">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-primary"
+                                                    onClick={loadPreviousPage}
+                                                    disabled={messagesResponse.first || isLoadingMessages}
+                                                >
+                                                    Previous Page
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-outline-primary"
+                                                    onClick={loadNextPage}
+                                                    disabled={messagesResponse.last || isLoadingMessages}
+                                                >
+                                                    Next Page
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p className="browser-summary-caption mb-2">
-                                        Matching messages are the full backend result set for the current filters. The visible page is only the
-                                        subset loaded below.
-                                    </p>
-                                    <p className="browser-summary-caption browser-summary-caption-secondary mb-2">
-                                        Retryable failed messages can be retried under the current server-side policy. Non-retryable failed messages are blocked by that policy.
-                                    </p>
                                     <div className="browser-lifecycle-summary browser-lifecycle-summary-aggregate mb-2" data-testid="browser-lifecycle-summary-aggregate">
                                         <div className="browser-lifecycle-pill">
                                             <span className="meta-label">filtered published</span>
@@ -2515,7 +1237,7 @@ function App() {
                                             type="button"
                                             className={`browser-lifecycle-pill browser-lifecycle-pill-button${filterPublishStatus === "PUBLISHED" ? " is-active" : ""}`}
                                             onClick={() => applyLifecycleQuickFilter("PUBLISHED")}
-                                            disabled={isLoadingMessages || isBulkRetrying || retryingMessageId !== null || reconcilingMessageId !== null}
+                                            disabled={isLoadingMessages || retryingMessageId !== null || reconcilingMessageId !== null}
                                         >
                                             <span className="meta-label">published</span>
                                             <strong>{pageLifecycleCounts.published}</strong>
@@ -2524,7 +1246,7 @@ function App() {
                                             type="button"
                                             className={`browser-lifecycle-pill browser-lifecycle-pill-button${filterPublishStatus === "FAILED" ? " is-active" : ""}`}
                                             onClick={() => applyLifecycleQuickFilter("FAILED")}
-                                            disabled={isLoadingMessages || isBulkRetrying || retryingMessageId !== null || reconcilingMessageId !== null}
+                                            disabled={isLoadingMessages || retryingMessageId !== null || reconcilingMessageId !== null}
                                         >
                                             <span className="meta-label">failed</span>
                                             <strong>{pageLifecycleCounts.failed}</strong>
@@ -2533,7 +1255,7 @@ function App() {
                                             type="button"
                                             className={`browser-lifecycle-pill browser-lifecycle-pill-button${filterPublishStatus === "PENDING" ? " is-active" : ""}`}
                                             onClick={() => applyLifecycleQuickFilter("PENDING")}
-                                            disabled={isLoadingMessages || isBulkRetrying || retryingMessageId !== null || reconcilingMessageId !== null}
+                                            disabled={isLoadingMessages || retryingMessageId !== null || reconcilingMessageId !== null}
                                         >
                                             <span className="meta-label">pending</span>
                                             <strong>{pageLifecycleCounts.pending}</strong>
@@ -2542,7 +1264,7 @@ function App() {
                                             type="button"
                                             className={`browser-lifecycle-pill browser-lifecycle-pill-button${filterPublishStatus === "PENDING" && filterStalePendingOnly ? " is-active" : ""}`}
                                             onClick={applyStalePendingQuickFilter}
-                                            disabled={isLoadingMessages || isBulkRetrying || retryingMessageId !== null || reconcilingMessageId !== null}
+                                            disabled={isLoadingMessages || retryingMessageId !== null || reconcilingMessageId !== null}
                                         >
                                             <span className="meta-label">stale pending</span>
                                             <strong>{pageLifecycleCounts.stalePending}</strong>
@@ -2618,7 +1340,7 @@ function App() {
                                                                     type="button"
                                                                     className="btn btn-sm btn-outline-danger"
                                                                     onClick={() => retryFailedMessage(message)}
-                                                                    disabled={isLoadingMessages || isBulkRetrying || retryingMessageId === messageKey || reconcilingMessageId === messageKey}
+                                                                    disabled={isLoadingMessages || retryingMessageId === messageKey || reconcilingMessageId === messageKey}
                                                                 >
                                                                     {retryingMessageId === messageKey ? "Retrying..." : "Retry Failed Message"}
                                                                 </button>
@@ -2628,7 +1350,7 @@ function App() {
                                                                     type="button"
                                                                     className="btn btn-sm btn-outline-warning"
                                                                     onClick={() => reconcileStalePendingMessage(message)}
-                                                                    disabled={isLoadingMessages || isBulkRetrying || retryingMessageId === messageKey || reconcilingMessageId === messageKey}
+                                                                    disabled={isLoadingMessages || retryingMessageId === messageKey || reconcilingMessageId === messageKey}
                                                                 >
                                                                     {reconcilingMessageId === messageKey ? "Reconciling..." : "Mark Stale Pending As Failed"}
                                                                 </button>
@@ -2844,203 +1566,29 @@ function publishStatusVariant(status: "PENDING" | "PUBLISHED" | "FAILED"): strin
     return "warning";
 }
 
-function downloadFile(content: string, type: string, filename: string) {
-    const blob = new Blob([content], {type});
-    const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(blobUrl);
+/**
+ * Formats the stored-message load result with correct singular and plural wording.
+ *
+ * @param count - Number of messages loaded into the visible page.
+ * @returns A user-facing load result message.
+ */
+function formatLoadedMessages(count: number): string {
+    return `Loaded ${count} ${count === 1 ? "message" : "messages"}.`;
 }
 
-function buildStoredMessagesCsv(messages: StoredMessage[]): string {
-    const headers = [
-        "id",
-        "innerMessageId",
-        "destination",
-        "deliveryMode",
-        "priority",
-        "publishStatus",
-        "stalePending",
-        "retrySupported",
-        "retryBlockedReason",
-        "failureReason",
-        "publishedAt",
-        "createdAt",
-        "updatedAt",
-        "payloadType",
-        "payloadContent",
-        "properties",
-    ];
-
-    const rows = messages.map((message) => [
-        message.id,
-        message.innerMessageId,
-        message.destination,
-        message.deliveryMode,
-        message.priority,
-        message.publishStatus,
-        message.stalePending,
-        message.retrySupported,
-        message.retryBlockedReason ?? "",
-        message.failureReason ?? "",
-        message.publishedAt ?? "",
-        message.createdAt ?? "",
-        message.updatedAt ?? "",
-        message.payload.type,
-        message.payload.content,
-        JSON.stringify(message.properties),
-    ]);
-
-    return [headers, ...rows]
-        .map((row) => row.map(csvEscape).join(","))
-        .join("\n");
-}
-
-function csvEscape(value: unknown): string {
-    const normalizedValue = String(value ?? "");
-    return `"${normalizedValue.replace(/"/g, "\"\"")}"`;
-}
-
+/**
+ * Converts a datetime-local input value to the backend ISO local date-time format.
+ *
+ * @param value - The datetime-local input value.
+ * @returns The ISO local date-time value expected by the API.
+ */
 function toIsoLocalDateTime(value: string): string {
     return value.length === 16 ? `${value}:00` : value;
 }
 
 /**
- * Converts a Date object to a string format compatible with datetime-local input fields.
- * 
- * @param value - The date to convert.
- * @returns A string in "YYYY-MM-DDTHH:mm" format.
- */
-function toDateTimeLocalValue(value: Date): string {
-    const year = value.getFullYear();
-    const month = `${value.getMonth() + 1}`.padStart(2, "0");
-    const day = `${value.getDate()}`.padStart(2, "0");
-    const hours = `${value.getHours()}`.padStart(2, "0");
-    const minutes = `${value.getMinutes()}`.padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
-/**
- * Returns a new Date object representing the start of the day (00:00:00.000) for the given date.
- * 
- * @param value - The reference date.
- * @returns A new Date object at the start of the day.
- */
-function startOfDay(value: Date): Date {
-    const nextValue = new Date(value);
-    nextValue.setHours(0, 0, 0, 0);
-    return nextValue;
-}
-
-/**
- * Returns a new Date object representing the end of the day (23:59:00.000) for the given date.
- * 
- * @param value - The reference date.
- * @returns A new Date object at the end of the day.
- */
-function endOfDay(value: Date): Date {
-    const nextValue = new Date(value);
-    nextValue.setHours(23, 59, 0, 0);
-    return nextValue;
-}
-
-/**
- * Generates the list of built-in browser views based on the current time.
- * 
- * @param now - The reference time (defaults to current time).
- * @returns An array of built-in browser views.
- */
-function getBuiltInBrowserViews(now: Date = new Date()): BuiltInBrowserView[] {
-    const todayStart = startOfDay(now);
-    const todayEnd = endOfDay(now);
-
-    return [
-        {
-            key: "FAILED_TODAY",
-            name: "failed today",
-            query: {
-                page: Number(DEFAULT_BROWSER_PAGE),
-                size: Number(DEFAULT_BROWSER_SIZE),
-                destination: "",
-                deliveryMode: "",
-                innerMessageId: "",
-                publishStatus: "FAILED",
-                stalePendingOnly: false,
-                createdAtFrom: toDateTimeLocalValue(todayStart),
-                createdAtTo: toDateTimeLocalValue(todayEnd),
-                publishedAtFrom: "",
-                publishedAtTo: "",
-                sortBy: DEFAULT_BROWSER_SORT_BY,
-                sortDirection: DEFAULT_BROWSER_SORT_DIRECTION,
-            }
-        },
-        {
-            key: "STALE_PENDING_ONLY",
-            name: "stale pending only",
-            query: {
-                page: Number(DEFAULT_BROWSER_PAGE),
-                size: Number(DEFAULT_BROWSER_SIZE),
-                destination: "",
-                deliveryMode: "",
-                innerMessageId: "",
-                publishStatus: "PENDING",
-                stalePendingOnly: true,
-                createdAtFrom: "",
-                createdAtTo: "",
-                publishedAtFrom: "",
-                publishedAtTo: "",
-                sortBy: DEFAULT_BROWSER_SORT_BY,
-                sortDirection: DEFAULT_BROWSER_SORT_DIRECTION,
-            }
-        },
-        {
-            key: "PUBLISHED_TODAY",
-            name: "published today",
-            query: {
-                page: Number(DEFAULT_BROWSER_PAGE),
-                size: Number(DEFAULT_BROWSER_SIZE),
-                destination: "",
-                deliveryMode: "",
-                innerMessageId: "",
-                publishStatus: "PUBLISHED",
-                stalePendingOnly: false,
-                createdAtFrom: "",
-                createdAtTo: "",
-                publishedAtFrom: toDateTimeLocalValue(todayStart),
-                publishedAtTo: toDateTimeLocalValue(todayEnd),
-                sortBy: DEFAULT_BROWSER_SORT_BY,
-                sortDirection: DEFAULT_BROWSER_SORT_DIRECTION,
-            }
-        },
-        {
-            key: "PENDING_NOW",
-            name: "pending now",
-            query: {
-                page: Number(DEFAULT_BROWSER_PAGE),
-                size: Number(DEFAULT_BROWSER_SIZE),
-                destination: "",
-                deliveryMode: "",
-                innerMessageId: "",
-                publishStatus: "PENDING",
-                stalePendingOnly: false,
-                createdAtFrom: "",
-                createdAtTo: "",
-                publishedAtFrom: "",
-                publishedAtTo: "",
-                sortBy: DEFAULT_BROWSER_SORT_BY,
-                sortDirection: DEFAULT_BROWSER_SORT_DIRECTION,
-            }
-        }
-    ];
-}
-
-/**
  * Formats an ISO timestamp into a human-readable date and time string.
- * 
+ *
  * @param value - The ISO timestamp to format.
  * @returns A formatted date string, or "not available" if the value is missing.
  */
