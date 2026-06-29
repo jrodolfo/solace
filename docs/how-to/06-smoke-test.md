@@ -149,13 +149,11 @@ solace/java/direct/system-01
 That value is also documented in
 [../reference/sample-destinations.md](../reference/sample-destinations.md).
 
-Message properties are optional.
-
-![Publisher UI with broker access fields filled](../images/smoke-test/17.png)
-
 ![Publisher UI with message fields filled](../images/smoke-test/18.png)
 
 ![Publisher UI with destination and payload fields filled](../images/smoke-test/19.png)
+
+Message properties are optional.
 
 When the form is complete, select **Publish Message**.
 
@@ -164,6 +162,10 @@ When the form is complete, select **Publish Message**.
 The UI should show a successful publish response.
 
 ![Publisher UI showing successful publish result](../images/smoke-test/21.png)
+
+If you scroll down, you can see the response.
+
+![Publisher UI showing successful publish result](../images/smoke-test/25.png)
 
 ## 10. Verify Logs and Solace Cloud
 
@@ -194,11 +196,13 @@ In Broker Manager, confirm that the subscribed topic receives the message.
 ## 11. Verify the Message in the Publisher UI Read Tab
 
 The Publisher UI can also confirm that the Broker API persisted the publish
-attempt. Open the read/stored-messages tab, load the records, and verify that
+attempt. Open the Read tab, load the records, and verify that
 the latest message shows the expected destination, payload, lifecycle status,
 and timestamps.
 
 ![Publisher UI Read tab showing the stored published message](../images/smoke-test/24.png)
+![Publisher UI Read tab showing the stored published message](../images/smoke-test/26.png)
+![Publisher UI Read tab showing the stored published message](../images/smoke-test/27.png)
 
 ## 12. Verify the Database
 
@@ -245,3 +249,7 @@ If it is not running, restart the Docker runtime from the repository root:
 
 Then retry the Beekeeper Studio connection. If `localhost` does not work on
 your machine, use `127.0.0.1` with the same port, `3307`.
+
+![Beekeeper Studio showing the stored published message on table message](../images/smoke-test/28.png)
+![Beekeeper Studio showing the stored published message on table payload](../images/smoke-test/29.png)
+![Beekeeper Studio showing the stored published message on table property](../images/smoke-test/30.png)
