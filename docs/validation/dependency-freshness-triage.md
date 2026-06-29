@@ -1,6 +1,6 @@
 # Dependency Freshness Triage
 
-Date: 2026-06-28
+Date: 2026-06-29
 
 Source command:
 
@@ -52,6 +52,10 @@ Completed in the 2026-06-27 and 2026-06-28 compatibility readiness passes:
 - `@types/node` `22 -> 26`
 - JUnit Jupiter `5.11.4 -> 6.1.1` for the subscriber module
 
+Completed in the 2026-06-29 frontend freshness pass:
+
+- `typescript-eslint` `8.62.0 -> 8.62.1`
+
 Validation completed for this batch:
 
 ```bash
@@ -64,6 +68,8 @@ make dependency-freshness
 ```
 
 `npm audit --omit=dev` reports zero runtime vulnerabilities after this batch.
+`make dependency-freshness` reports npm dependencies are current according to
+`npm outdated`.
 
 ## Remaining Compatibility-Risk Candidates
 
@@ -133,6 +139,9 @@ reporting findings without failing. It reported:
 
 The Java application WAR/JAR contents did not report application dependency
 vulnerabilities in the Trivy scan.
+
+`make release-check` passed again on 2026-06-29 after the smoke-test wording
+fixes, Read tab UI simplification, and `typescript-eslint` patch update.
 
 ## Current Recommendation
 
