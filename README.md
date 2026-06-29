@@ -3,9 +3,9 @@
 [![CI](https://github.com/jrodolfo/solace/actions/workflows/ci.yml/badge.svg)](https://github.com/jrodolfo/solace/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Java 21](https://img.shields.io/badge/Java-21-007396?logo=openjdk&logoColor=white)](https://openjdk.org/)
-[![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![Vite 6](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Spring Boot 4.1](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
 [![Solace](https://img.shields.io/badge/Solace-PubSub%2B-00C895)](https://solace.com/)
 
 Solace Workspace is a small full-stack PubSub+ project for publishing messages,
@@ -23,7 +23,7 @@ It is organized as three active modules:
 - Solace PubSub+ publishing and direct topic subscription from Java
 - a Spring Boot API that persists publish attempts before broker delivery
 - lifecycle tracking with `PENDING`, `PUBLISHED`, `FAILED`, stale-pending detection, retry, and manual reconciliation
-- a React/Vite publisher UI with filters, pagination, saved views, retry actions, and export flows
+- a React/Vite publisher UI with filters, pagination, lifecycle summaries, retry actions, and stale-pending reconciliation
 - practical project documentation through architecture notes, ADRs, curl/Postman/JMeter artifacts, and setup walkthroughs
 
 ## Shared Solace Contract
@@ -155,9 +155,9 @@ java -jar target/solace-subscriber-1.0-SNAPSHOT-all.jar
 
 - typed publish form instead of a raw JSON textarea
 - optional property editing
-- paginated stored-message browser
-- lifecycle and date-range filter presets
-- single-message and bulk retry actions for failed rows
+- filterable, paginated stored-message browser
+- lifecycle summaries and page navigation
+- single-message retry actions for failed rows
 - manual reconciliation action for stale pending rows
 
 ### `solace-subscriber`
@@ -196,7 +196,7 @@ make dependency-freshness
 
 ## Documentation Map
 
-- [Architecture overview](docs/architecture.md): current module boundaries, publish flow, lifecycle model, retry, reconciliation, and export behavior
+- [Architecture overview](docs/architecture.md): current module boundaries, publish flow, lifecycle model, retry, reconciliation, and read behavior
 - [Architecture walkthrough](docs/architecture-walkthrough.md): concise technical narrative for understanding the design quickly
 - [Architecture Decision Records](docs/adr/README.md): why the major design decisions were made
 - [Solace Cloud setup guide](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md): account, demo broker, credentials, and OS environment variables

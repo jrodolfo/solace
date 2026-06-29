@@ -30,10 +30,9 @@ Owns:
 
 - typed publish form
 - client-side validation
-- stored-message browser
-- browser-local saved views for query state
-- lifecycle/date filter presets
-- single-message and bulk retry actions for failed rows
+- filterable, paginated stored-message browser
+- lifecycle summaries and page navigation
+- single-message retry actions for failed rows
 - manual reconciliation action for stale pending rows
 
 Does not own:
@@ -168,13 +167,8 @@ Retry sequence:
 4. attempt publish again
 5. mark it `PUBLISHED` or `FAILED`
 
-The UI supports both:
-
-- retrying one failed message
-- retrying all currently visible failed messages in the browser
-
-The bulk retry action now delegates to the backend batch endpoint instead of sending one browser request per message.
-The backend also enforces `app.retry.max-batch-size` to prevent accidental large retry bursts.
+The UI exposes single-message retry for retryable failed messages.
+The backend also exposes batch retry by id list and enforces `app.retry.max-batch-size` to prevent accidental large retry bursts for API clients.
 
 Related ADR:
 
@@ -228,39 +222,23 @@ The broker API supports:
 
 The UI layers on:
 
-- quick presets such as `failed today`
-- built-in operator views such as `failed today`, `stale pending only`, `published today`, and `pending now`
+- form controls for destination, delivery mode, payload type, inner message id, publish status, stale pending, created date ranges, and published date ranges
+- messages-per-page control plus previous/next page navigation
 - clickable lifecycle summary pills for `published`, `failed`, `pending`, and stale pending
+- full filtered lifecycle aggregate counts returned by the backend
 - page-level lifecycle counts derived from the currently loaded items
-- saved browser views stored in browser `localStorage`
-- saved-view rename for user-defined local views
-- saved-view JSON import/export for sharing browser query state
-- full filtered export delegated to the backend export endpoint
-- current-page export generated directly from the loaded browser data
-- JSON and CSV export options for both current-page and full filtered-result workflows
-- refresh/reset behavior
+- reset behavior
 - detail expansion
 - copy actions
+- single-message retry for retryable failed messages
+- stale-pending reconciliation
 
 Important distinction:
 
 - backend `lifecycleCounts` describe the full filtered result set across all pages
 - backend retryability counts describe how many failed rows are retryable versus blocked
 - UI page counts describe only the items currently loaded in `items`
-- current-page export works from the browser's already loaded page state, while full filtered export calls the backend export endpoint
-- JSON preserves the full normalized response shape more naturally, while CSV is flattened client-side for spreadsheet-style inspection
-- CSV flattening turns nested payload fields into explicit columns and serializes `properties` into a single field
-- built-in browser views are shipped UI defaults, while saved browser views are user-defined local state
-- save and rename can overwrite existing user-defined saved views by name, but now require confirmation before doing so
-- saved-view import merges by name, skips invalid entries, and reports import outcomes back to the user
-- the UI also keeps a short browser-local saved-view action history for recent save, rename, delete, and import events
-- that saved-view history remains browser-local and is not part of saved-view import/export
-- saved browser views are client-side state only and are not stored by the backend
-
-Related ADRs:
-
-- [ADR-0008](./adr/0008-keep-browser-saved-views-in-localstorage-not-backend.md)
-- [ADR-0011](./adr/0011-separate-current-page-export-from-full-filtered-export.md)
+- page navigation changes the requested backend page while preserving the current filters and page size
 
 ## Subscriber Role
 

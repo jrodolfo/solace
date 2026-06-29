@@ -281,18 +281,19 @@ In the UI, validate:
 - filter by `PUBLISHED`
 - filter by destination
 - filter by inner message id
-- use lifecycle/date presets
-- export current page as JSON
-- export current page as CSV
-- export full filtered results as JSON
-- export full filtered results as CSV
-- save, load, rename, export, import, and delete a browser view
+- change messages per page
+- move between result pages with previous/next controls
+- use lifecycle summary quick filters
+- expand message details
+- copy destination, payload, and properties where available
+- reset filters
 
 Expected result:
 
-- browser filters produce the expected query
-- exports contain the expected stored-message shape
-- saved views remain browser-local and do not require backend persistence
+- browser filters produce the expected results
+- result summary shows the visible range, total matching messages, and current page
+- page navigation preserves the current filters and page size
+- reset filters returns the browser to the default query controls
 
 ## 11. Retry Workflow
 
@@ -301,15 +302,13 @@ Create or identify a retryable `FAILED` stored message.
 Validate:
 
 - single-message retry
-- visible-page bulk retry
-- mixed-result bulk retry behavior if possible
+- non-retryable failed-row behavior if possible
 
 Expected result:
 
 - retryable failed rows expose retry actions
 - successful retry changes lifecycle state to `PUBLISHED`
-- non-retryable or non-failed rows are skipped with clear result details
-- oversized bulk retry requests are rejected by the backend limit
+- non-retryable failed rows do not expose retry actions, or explain why retry is blocked
 
 ## 12. Stale Pending Reconciliation
 

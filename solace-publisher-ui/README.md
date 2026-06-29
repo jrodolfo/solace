@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/jrodolfo/solace/actions/workflows/ci.yml/badge.svg)](https://github.com/jrodolfo/solace/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
-[![React 18](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript 5](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vite 6](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript 6](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
 [![Bootstrap 5](https://img.shields.io/badge/Bootstrap-5-7952B3?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
 
 `solace-publisher-ui` is a React + TypeScript frontend for the local `solace-broker-api` module. It now supports both sides of the workflow:
@@ -68,68 +68,18 @@ The browser loads `GET /api/v1/messages/all` from `solace-broker-api` and suppor
 - `publishStatus`, `createdAt`, and `publishedAt` filtering
 - `stalePendingOnly` filtering for stale pending rows
 - `sortBy` and `sortDirection`
-- `page` and `size`
-- quick lifecycle/date presets such as `failed today`
+- messages-per-page control
+- previous/next page navigation
 - clickable lifecycle summary pills for `published`, `failed`, `pending`, and stale pending
 - one lifecycle summary strip for full filtered totals returned by the backend
 - filtered failed totals include retryable versus non-retryable counts
 - one lifecycle summary strip for counts on the current page only
-- previous/next paging
-- refresh and reset controls
+- reset controls
 - expandable message details
 - friendly timestamp rendering
 - copy actions for destination, payload content, and properties
-- bulk retry for currently visible failed messages
+- single-message retry for retryable failed messages
 - manual reconciliation for stale `PENDING` messages
-- built-in operator views for `failed today`, `stale pending only`, `published today`, and `pending now`
-- saving the current browser view in local storage
-- loading, renaming, and deleting saved browser views
-- exporting saved browser views to JSON
-- importing saved browser views from JSON
-- exporting the full filtered result set through the backend export endpoint
-- exporting the current page as JSON or CSV
-- exporting the full filtered result set as JSON or CSV
-
-Bulk retry now calls the backend batch retry endpoint (`POST /api/v1/messages/retry`) instead of sending one browser request per failed row.
-
-Saved browser views are client-side only:
-
-- built-in views ship with the app and are always available
-- built-in views are separate from user-defined saved views
-- built-in views reuse the normal browser query/load path and update the visible controls
-- rename applies only to user-defined saved views
-- save and rename intentionally overwrite by name when the target name already exists
-- save asks for confirmation before replacing an existing saved view with the same name
-- rename asks for confirmation before overwriting a different existing saved view
-- cancelling the confirmation keeps the existing saved view unchanged
-- saved-view import merges by name, so matching names update existing user-defined views
-- invalid saved-view import entries are skipped instead of stopping the whole import
-- saved-view import feedback reports how many views were added, updated, and skipped
-- saved-view import feedback also lists which views were added, updated, or skipped
-- skipped invalid entries use fallback labels such as `entry 3` when no usable view name is present
-- the UI also keeps a short recent-action history for save, rename, delete, and import events
-- that recent saved-view history can be cleared explicitly from the UI
-- only the 5 most recent saved-view actions are kept in that history
-- recent saved-view history timestamps are shown in relative form such as `just now` or `2 minutes ago`
-- those relative saved-view history labels refresh automatically while the page remains open
-- that saved-view history is local only and is not included in saved-view JSON import/export
-- they live in the browser's `localStorage`
-- they are not stored in `solace-broker-api`
-- JSON export/import is the intended sharing path between browsers or operators
-
-Export behavior:
-
-- `Export Current Page JSON` downloads the currently loaded page exactly as it exists in the browser, including page metadata, lifecycle aggregates, and `items`
-- `Export Current Page CSV` flattens the currently loaded page into spreadsheet-friendly rows
-- `Export Filtered Results JSON` calls the backend export endpoint and downloads the full filtered result set as structured JSON
-- `Export Filtered Results CSV` calls the backend export endpoint for the full filtered result set and then flattens that response into CSV in the browser
-
-CSV is intentionally flatter than JSON:
-
-- payload fields are split into explicit columns such as `payloadType` and `payloadContent`
-- lifecycle, retryability, and timestamp fields each get their own column
-- `properties` are serialized into a single CSV field
-- JSON is the better fit when you want to preserve the nested response structure exactly
 
 ## Notes
 
