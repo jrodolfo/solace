@@ -12,6 +12,8 @@ Solace Workspace is a small full-stack PubSub+ project for publishing messages,
 tracking publish lifecycle state, retrying failed sends, and observing direct
 topic traffic end to end.
 
+Solace Workspace is an open-source proof of concept. It demonstrates event-driven integration patterns, message lifecycle tracking, retry, and operational visibility; it is not a production system.
+
 It is organized as three active modules:
 
 - [solace-broker-api](solace-broker-api/README.md): Spring Boot backend for publishing, storing, retrying, reconciling, and querying messages
