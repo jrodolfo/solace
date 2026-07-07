@@ -17,6 +17,8 @@ At a high level:
 
 ![Solace workspace architecture](./solace.png)
 
+## System Runtime View
+
 The image above shows the main message flow. The Mermaid diagram below shows
 the broader repo/runtime view, including helper scripts, Docker Compose,
 database storage, and API exercise artifacts.
