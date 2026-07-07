@@ -17,6 +17,64 @@ At a high level:
 
 ![Solace workspace architecture](./solace.png)
 
+The image above shows the main message flow. The Mermaid diagram below shows
+the broader repo/runtime view, including helper scripts, Docker Compose,
+database storage, and API exercise artifacts.
+
+```mermaid
+flowchart LR
+    developer["Developer"]
+    browser["Browser"]
+    scripts["Makefile and scripts"]
+    dockerScripts["docker-* scripts<br/>docker-start / docker-status / docker-logs"]
+    localScripts["local scripts<br/>start-all / status-all / stop-all"]
+    apiClients["curl / Postman / JMeter"]
+    docs["docs"]
+    solaceCloud["Solace Cloud PubSub+"]
+
+    developer --> scripts
+    developer --> docs
+    browser --> ui
+    browser --> localUi
+    apiClients --> api
+    apiClients --> localApi
+
+    scripts --> dockerScripts
+    scripts --> localScripts
+
+    subgraph dockerCompose["Docker Compose runtime"]
+        mysql["mysql<br/>mysql:8.4<br/>localhost:3307"]
+        api["solace-broker-api<br/>Spring Boot<br/>localhost:8081"]
+        ui["solace-publisher-ui<br/>React / Vite<br/>localhost:5173"]
+        subscriber["solace-subscriber<br/>Java"]
+    end
+
+    subgraph localProcesses["Local process workflow"]
+        localMysql["mysql<br/>Spring Boot Docker Compose<br/>localhost:3307"]
+        localApi["solace-broker-api<br/>mvn spring-boot:run"]
+        localUi["solace-publisher-ui<br/>npm run dev"]
+        localSubscriber["solace-subscriber<br/>java -jar"]
+    end
+
+    dockerScripts --> mysql
+    dockerScripts --> api
+    dockerScripts --> ui
+    dockerScripts --> subscriber
+    localScripts --> localApi
+    localScripts --> localUi
+    localScripts --> localSubscriber
+
+    ui --> api
+    api --> mysql
+    api --> solaceCloud
+    subscriber --> solaceCloud
+
+    localUi --> localApi
+    localApi --> localMysql
+    localApi --> solaceCloud
+    localSubscriber --> solaceCloud
+```
+
 Related reading:
 
 - concise walkthrough: [architecture-walkthrough.md](./architecture-walkthrough.md)
