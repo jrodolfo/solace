@@ -196,13 +196,21 @@ For an advisory dependency freshness report, run:
 make dependency-freshness
 ```
 
-## Documentation Map
+## Documentation
 
-- [Architecture overview](docs/architecture.md): current module boundaries, publish flow, lifecycle model, retry, reconciliation, and read behavior
+- [Overview](docs/architecture.md): current module boundaries, publish flow, lifecycle model, retry, reconciliation, and read behavior
+- [Message-flow diagram](docs/solace.png): high-level execution flow across UI, API, subscriber, and Solace Cloud
+- [Runtime diagram](docs/architecture.md#system-runtime-view): full repo/runtime view with Docker Compose, scripts, MySQL, API clients, and local workflows
+
+## Tutorials
+
+- [Create a Solace Cloud account](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md): guided setup for a demo broker service, credentials, and local environment variables
+- [Smoke test](docs/how-to/06-smoke-test.md): guided end-to-end validation with UI, API, subscriber, Solace Cloud, logs, and MySQL
+
+## Reference
+
 - [Architecture walkthrough](docs/architecture-walkthrough.md): concise technical narrative for understanding the design quickly
 - [Architecture Decision Records](docs/adr/README.md): why the major design decisions were made
-- [Solace Cloud setup guide](docs/how-to/01-solace-cloud-account-demo-and-env-vars.md): account, demo broker, credentials, and OS environment variables
-- [Smoke test guide](docs/how-to/06-smoke-test.md): end-to-end validation with API, UI, subscriber, Solace Cloud, logs, and MySQL
 - [Fresh clone release validation checklist](docs/validation/fresh-clone-release-checklist.md): repeatable pre-release validation from setup through publish, retry, reconciliation, and shutdown
 - [Sample destinations](docs/reference/sample-destinations.md): canonical demo topic names used by docs, tests, and tooling artifacts
 - [Broker API README](solace-broker-api/README.md): backend API contract, MySQL runtime, request/response examples, and tuning settings
