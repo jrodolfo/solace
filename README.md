@@ -8,11 +8,7 @@
 [![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
 [![Solace](https://img.shields.io/badge/Solace-PubSub%2B-00C895)](https://solace.com/)
 
-Solace Workspace is a small full-stack PubSub+ project for publishing messages,
-tracking publish lifecycle state, retrying failed sends, and observing direct
-topic traffic end to end.
-
-Solace Workspace is an open-source proof of concept. It demonstrates event-driven integration patterns, message lifecycle tracking, retry, and operational visibility; it is not a production system.
+Solace Workspace is an open-source proof-of-concept that demonstrates event-driven integration patterns using Solace PubSub+. Built as a small full-stack application, it showcases message publishing, lifecycle tracking, retries, and operational visibility while illustrating how isolated systems can communicate through an Event-Driven Architecture. Explore the sections below to learn more about the architecture, implementation, and design decisions behind the project.
 
 It is organized as three active modules:
 
