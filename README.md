@@ -8,7 +8,7 @@
 [![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
 [![Solace](https://img.shields.io/badge/Solace-PubSub%2B-00C895)](https://solace.com/)
 
-Solace Workspace is an open-source proof-of-concept that demonstrates event-driven integration patterns using Solace PubSub+. Built as a small full-stack application, it showcases message publishing, lifecycle tracking, retries, and operational visibility while illustrating how isolated systems can communicate through an Event-Driven Architecture. Explore the sections below to learn more about the architecture, implementation, and design decisions behind the project.
+Solace Workspace is an open-source proof-of-concept that demonstrates event-driven integration patterns using Solace PubSub+. Built as a small full-stack application, it showcases message publishing, lifecycle tracking, retries, and operational visibility while illustrating how isolated systems can communicate through an Event-Driven Architecture. Explore the sections below for architecture diagrams, implementation details, and design decisions behind the project.
 
 It is organized as three active modules:
 
