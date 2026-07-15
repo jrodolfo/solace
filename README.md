@@ -26,6 +26,31 @@ It is organized as three active modules:
 - a React/Vite publisher UI with filters, pagination, lifecycle summaries, retry actions, and stale-pending reconciliation
 - practical project documentation through architecture notes, ADRs, curl/Postman/JMeter artifacts, and setup walkthroughs
 
+## Preview
+
+The thumbnails below show the end-to-end proof of concept. Each one links to the full-size screenshot.
+
+| Publish from the workspace | Confirm publish feedback |
+| --- | --- |
+| <a href="docs/images/solace-doc/01-solace-write.png"><img src="docs/images/solace-doc/01-solace-write-small.png" alt="Solace Workspace publish form" width="420"></a> | <a href="docs/images/solace-doc/02-solace-write-feedback.png"><img src="docs/images/solace-doc/02-solace-write-feedback-small.png" alt="Solace Workspace publish feedback" width="420"></a> |
+| Inspect the API response | Verify delivery in Solace Cloud |
+| <a href="docs/images/solace-doc/03-solace-write-response.png"><img src="docs/images/solace-doc/03-solace-write-response-small.png" alt="Solace Workspace publish response" width="420"></a> | <a href="docs/images/solace-doc/04-solace-pubsub+.png"><img src="docs/images/solace-doc/04-solace-pubsub+-small.png" alt="Solace Cloud subscriber receiving the published message" width="420"></a> |
+| Browse stored messages | Inspect persisted rows in MySQL |
+| <a href="docs/images/solace-doc/05-solace-read.png"><img src="docs/images/solace-doc/05-solace-read-small.png" alt="Solace Workspace read tab" width="420"></a> | <a href="docs/images/solace-doc/06-solace-database.png"><img src="docs/images/solace-doc/06-solace-database-small.png" alt="Stored messages in MySQL" width="420"></a> |
+
+## Architecture at a Glance
+
+Solace Workspace uses a browser UI to publish and inspect messages, a Spring Boot API to persist and manage publish lifecycle state, MySQL for stored message records, a Java subscriber to observe topic traffic, and Solace Cloud PubSub+ as the event broker.
+
+```mermaid
+flowchart LR
+    browser["Browser<br/>React UI"] --> api["Spring Boot API"]
+    api --> mysql["MySQL<br/>stored messages"]
+    api --> solace["Solace Cloud<br/>PubSub+"]
+    subscriber["Java Subscriber"] --> solace
+    apiClients["curl / Postman / JMeter"] --> api
+```
+
 ## Shared Solace Configuration
 
 The backend and subscriber both use the same environment-variable names for Solace Cloud connectivity:
