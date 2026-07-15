@@ -215,20 +215,6 @@ make dependency-freshness
 - `docs/curl`, `docs/postman`, and `docs/jmeter`: ready-to-use API exercise artifacts
 - `docs/mysql/mysql-schema.sql`: schema reference for the broker API database
 
-## GitHub About
-
-Suggested repository description:
-
-```text
-Full-stack Solace PubSub+ workspace with a Spring Boot broker API, React publisher UI, Java subscriber, lifecycle tracking, retry, reconciliation, and architecture documentation.
-```
-
-Suggested topics:
-
-```text
-solace, pubsub, pubsubplus, spring-boot, java, react, vite, mysql, messaging, event-driven-architecture, rest-api, jms, publisher-subscriber, architecture-decision-records
-```
-
 ## Contact
 
 - Software Developer: Rod Oliveira
