@@ -1167,7 +1167,7 @@ function App() {
                                         <div>
                                             <strong>
                                                 Showing {visibleMessageCount === 0 ? "0" : `${visibleStartIndex}-${visibleEndIndex}`} of{" "}
-                                                {matchingMessageCount} messages
+                                                {matchingMessageCount} stored messages matching filters
                                             </strong>
                                         </div>
                                         <div className="browser-summary-actions">
@@ -1559,11 +1559,11 @@ function publishStatusVariant(status: "PENDING" | "PUBLISHED" | "FAILED"): strin
 /**
  * Formats the stored-message load result with correct singular and plural wording.
  *
- * @param count - Number of messages loaded into the visible page.
+ * @param count - Number of stored database records loaded into the visible page.
  * @returns A user-facing load result message.
  */
 function formatLoadedMessages(count: number): string {
-    return `Loaded ${count} ${count === 1 ? "message" : "messages"}.`;
+    return `Loaded ${count} stored database ${count === 1 ? "record" : "records"} for the current page.`;
 }
 
 /**

@@ -543,7 +543,7 @@ describe("Stored Messages Browser", () => {
 
         await waitFor(() => expect(mockedAxios.get).toHaveBeenCalledTimes(1));
         const loadAlert = await screen.findByRole("alert");
-        expect(loadAlert).toHaveTextContent("Loaded 1 message.");
+        expect(loadAlert).toHaveTextContent("Loaded 1 stored database record for the current page.");
         expect(loadAlert).not.toHaveTextContent("status: 200");
         expect(screen.getByText(/Page 1 of 1/i)).toBeInTheDocument();
         expect(screen.getByText(/solace\/java\/direct\/system-01/i)).toBeInTheDocument();
