@@ -26,7 +26,7 @@ It is organized as three active modules:
 - a React/Vite publisher UI with filters, pagination, lifecycle summaries, retry actions, and stale-pending reconciliation
 - practical project documentation through architecture notes, ADRs, curl/Postman/JMeter artifacts, and setup walkthroughs
 
-## Preview
+## Application Preview
 
 The thumbnails below show the end-to-end proof of concept. Each one links to the full-size screenshot.
 
