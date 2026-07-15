@@ -82,7 +82,7 @@ already configured.
 Set the shared Solace environment variables:
 
 ```bash
-export SOLACE_CLOUD_HOST="tcps://..."
+export SOLACE_CLOUD_HOST="wss://...messaging.solace.cloud:443"
 export SOLACE_CLOUD_VPN="..."
 export SOLACE_CLOUD_USERNAME="..."
 export SOLACE_CLOUD_PASSWORD="..."
